@@ -325,12 +325,14 @@ async function startAnalysis() {
 
 Матч: ${match}
 Вид спорта: ${currentSport}
-Дата: ${date} | Время: ${time}
+Дата запроса: ${date} | Время запроса: ${time}
+
+ВАЖНО: Найди точную дату и время начала матча "${match}" и укажи их в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если время неизвестно — напиши дату и "время уточняется".
 
 ANALYSIS_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
 ${emoji} ${match}
-📅 ${date} | ⏰ ${time}
+📅 [дата матча] | ⏰ [время МСК]
 
 📊 АНАЛИЗ 7 ПУНКТОВ
 
@@ -359,7 +361,7 @@ ANALYSIS_END
 VERDICT_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
 ${emoji} ${match}
-📅 ${date} | ⏰ ${time}
+📅 [дата матча] | ⏰ [время МСК]
 
 🏆 ВЕРДИКТ
 
