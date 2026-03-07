@@ -605,6 +605,309 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   width: 100%;
   position: relative; z-index: 1;
 }
+
+/* ===== MENU BUTTON ===== */
+.menu-btn {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 9px;
+  color: rgba(240,240,248,0.7);
+  font-size: 18px; font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  letter-spacing: -1px; line-height: 1;
+}
+.menu-btn:active { background: rgba(108,99,255,0.2); border-color: rgba(108,99,255,0.4); }
+
+/* ===== DROPDOWN MENU ===== */
+.dropdown-menu {
+  position: fixed;
+  top: 56px; right: 14px;
+  width: 230px;
+  background: rgba(16,16,28,0.98);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+  z-index: 200;
+  overflow: hidden;
+  opacity: 0; transform: scale(0.92) translateY(-8px);
+  transform-origin: top right;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+}
+.dropdown-menu.open {
+  opacity: 1; transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+.dm-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dm-title { color: rgba(240,240,248,0.4); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.dm-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dm-item:last-child { border-bottom: none; }
+.dm-item:active { background: rgba(255,255,255,0.06); }
+.dm-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.dm-icon-purple { background: rgba(108,99,255,0.15); }
+.dm-icon-green  { background: rgba(0,229,160,0.12); }
+.dm-icon-orange { background: rgba(255,184,48,0.12); }
+.dm-icon-red    { background: rgba(255,69,102,0.12); }
+.dm-icon-blue   { background: rgba(100,180,255,0.12); }
+.dm-body { flex: 1; }
+.dm-item-title { color: #F0F0F8; font-size: 12px; font-weight: 700; }
+.dm-item-sub   { color: rgba(240,240,248,0.3); font-size: 10px; margin-top: 1px; }
+.dm-chevron    { color: rgba(240,240,248,0.2); font-size: 14px; }
+.dm-overlay {
+  position: fixed; inset: 0;
+  z-index: 199;
+  display: none;
+}
+.dm-overlay.open { display: block; }
+
+/* ===== MODAL BASE ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 300;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  width: 100%; max-width: 480px;
+  background: rgba(14,14,24,0.99);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px 24px 0 0;
+  padding: 0 0 40px;
+  transform: translateY(30px);
+  transition: transform 0.3s cubic-bezier(0.34,1.3,0.64,1);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modal-head h2 { color: #F0F0F8; font-size: 16px; font-weight: 800; }
+.modal-close {
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.07);
+  border: none; border-radius: 8px;
+  color: rgba(240,240,248,0.5); font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.modal-body { padding: 18px 20px; }
+
+/* Settings */
+.settings-section { margin-bottom: 20px; }
+.settings-label { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 13px; margin-bottom: 8px;
+}
+.settings-row-label { color: #F0F0F8; font-size: 12px; font-weight: 600; }
+.settings-row-sub   { color: rgba(240,240,248,0.3); font-size: 10px; margin-top: 2px; }
+.toggle-switch {
+  width: 42px; height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px; position: relative;
+  cursor: pointer; transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: #6C63FF; }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  background: #FFF; border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle-switch.on .toggle-knob { transform: translateX(18px); }
+.seg-control {
+  display: flex; gap: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px; padding: 3px;
+}
+.seg-btn {
+  flex: 1; padding: 5px 8px;
+  border: none; border-radius: 7px;
+  font-size: 10px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer; transition: all 0.2s;
+  color: rgba(240,240,248,0.4);
+  background: transparent;
+}
+.seg-btn.active { background: #6C63FF; color: #FFF; box-shadow: 0 2px 8px rgba(108,99,255,0.4); }
+
+/* Theme cards */
+.theme-grid { display: flex; gap: 8px; }
+.theme-card {
+  flex: 1; padding: 10px 8px;
+  border-radius: 13px; border: 2px solid transparent;
+  cursor: pointer; text-align: center;
+  transition: all 0.2s;
+}
+.theme-card.active { border-color: #6C63FF; }
+.theme-preview {
+  width: 100%; height: 28px;
+  border-radius: 8px; margin-bottom: 6px;
+}
+.theme-name { font-size: 10px; font-weight: 700; color: rgba(240,240,248,0.5); }
+.theme-card.active .theme-name { color: #6C63FF; }
+
+/* About screen */
+.about-logo-wrap {
+  text-align: center; padding: 24px 0 16px;
+}
+.about-logo {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg,#6C63FF,#00E5A0);
+  border-radius: 24px;
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px;
+  box-shadow: 0 0 40px rgba(108,99,255,0.4), 0 0 80px rgba(0,229,160,0.15);
+  animation: aboutGlow 3s ease-in-out infinite;
+}
+@keyframes aboutGlow {
+  0%,100% { box-shadow: 0 0 30px rgba(108,99,255,0.4), 0 0 60px rgba(0,229,160,0.1); }
+  50%      { box-shadow: 0 0 50px rgba(108,99,255,0.6), 0 0 100px rgba(0,229,160,0.2); }
+}
+.about-name  { color: #F0F0F8; font-size: 22px; font-weight: 800; }
+.about-ver   { color: rgba(240,240,248,0.3); font-size: 11px; letter-spacing: 2px; margin-top: 4px; }
+.about-stats {
+  display: flex; gap: 8px; margin: 20px 0;
+}
+.about-stat {
+  flex: 1; text-align: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 12px 8px;
+}
+.about-stat-val { color: #6C63FF; font-size: 18px; font-weight: 800; }
+.about-stat-lbl { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 600; margin-top: 3px; }
+.about-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px;
+}
+.about-row-key { color: rgba(240,240,248,0.35); font-weight: 500; }
+.about-row-val { color: #F0F0F8; font-weight: 700; }
+
+/* Confirm dialog */
+.confirm-dialog {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(10px);
+  z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.confirm-dialog.open { opacity: 1; pointer-events: auto; }
+.confirm-box {
+  background: rgba(16,16,28,0.99);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 24px 20px;
+  width: 100%; max-width: 300px;
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+}
+.confirm-dialog.open .confirm-box { transform: scale(1); }
+.confirm-icon  { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { color: #F0F0F8; font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.confirm-text  { color: rgba(240,240,248,0.4); font-size: 12px; line-height: 1.6; margin-bottom: 20px; }
+.confirm-btns  { display: flex; gap: 10px; }
+.confirm-cancel {
+  flex: 1; padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; color: rgba(240,240,248,0.6);
+  font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+}
+.confirm-ok {
+  flex: 1; padding: 12px;
+  background: rgba(255,69,102,0.15);
+  border: 1px solid rgba(255,69,102,0.3);
+  border-radius: 12px; color: #FF4566;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+}
+
+/* Password change inputs */
+.settings-input {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: #F0F0F8; font-size: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  outline: none; margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.settings-input:focus { border-color: rgba(108,99,255,0.5); }
+.settings-input::placeholder { color: rgba(240,240,248,0.2); }
+.btn-settings-save {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg,#6C63FF,#9B59F5);
+  border: none; border-radius: 12px;
+  color: #FFF; font-size: 12px; font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer; margin-top: 4px;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.3);
+}
+
+/* Steam alert toast */
+.steam-alert {
+  position: fixed; top: 20px; left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(255,69,102,0.15);
+  border: 1px solid rgba(255,69,102,0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 14px; padding: 12px 20px;
+  display: flex; align-items: center; gap: 10px;
+  z-index: 500; opacity: 0;
+  transition: all 0.3s;
+  box-shadow: 0 8px 32px rgba(255,69,102,0.2);
+  white-space: nowrap;
+}
+.steam-alert.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.steam-alert-icon { font-size: 18px; animation: livepulse 1s infinite; }
+.steam-alert-text { color: #FF4566; font-size: 12px; font-weight: 800; }
+
 </style>
 </head>
 <body>
@@ -649,6 +952,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
+        <button class="menu-btn" id="menu-btn" onclick="toggleMenu()">⋯</button>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -808,6 +1112,233 @@ input::placeholder { color: rgba(240,240,248,0.2); }
     <span id="footer-time">--:--</span>
   </div>
 
+  <!-- DROPDOWN MENU OVERLAY -->
+  <div class="dm-overlay" id="dm-overlay" onclick="closeMenu()"></div>
+
+  <!-- DROPDOWN MENU -->
+  <div class="dropdown-menu" id="dropdown-menu">
+    <div class="dm-header"><div class="dm-title">Меню</div></div>
+    <div class="dm-item" onclick="openModal('settings')">
+      <div class="dm-icon dm-icon-purple">⚙️</div>
+      <div class="dm-body">
+        <div class="dm-item-title">Настройки</div>
+        <div class="dm-item-sub">Логин, пароль, коэффициенты</div>
+      </div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" onclick="openModal('theme')">
+      <div class="dm-icon dm-icon-blue">🎨</div>
+      <div class="dm-body">
+        <div class="dm-item-title">Тема</div>
+        <div class="dm-item-sub" id="dm-theme-sub">Тёмная</div>
+      </div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" onclick="openModal('notifications')">
+      <div class="dm-icon dm-icon-orange">🔔</div>
+      <div class="dm-body">
+        <div class="dm-item-title">Уведомления</div>
+        <div class="dm-item-sub">Steam Move alert</div>
+      </div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" onclick="openModal('about')">
+      <div class="dm-icon dm-icon-green">💎</div>
+      <div class="dm-body">
+        <div class="dm-item-title">О приложении</div>
+        <div class="dm-item-sub">SharpRadar v3.0</div>
+      </div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" onclick="openConfirm()">
+      <div class="dm-icon dm-icon-red">🗑️</div>
+      <div class="dm-body">
+        <div class="dm-item-title">Очистить историю</div>
+        <div class="dm-item-sub">Удалить все анализы</div>
+      </div>
+      <div class="dm-chevron">›</div>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS -->
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>⚙️ Настройки</h2>
+        <button class="modal-close" onclick="closeModal('settings')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-label">Коэффициенты</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Формат коэффициентов</div>
+              <div class="settings-row-sub">EU — десятичные (1.85)</div>
+            </div>
+            <div class="seg-control">
+              <button class="seg-btn active" id="odds-eu" onclick="setOdds('EU',this)">EU</button>
+              <button class="seg-btn" id="odds-uk" onclick="setOdds('UK',this)">UK</button>
+              <button class="seg-btn" id="odds-us" onclick="setOdds('US',this)">US</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Сменить пароль</div>
+          <input class="settings-input" type="password" id="set-old-pass" placeholder="Текущий пароль">
+          <input class="settings-input" type="password" id="set-new-pass" placeholder="Новый пароль">
+          <input class="settings-input" type="password" id="set-new-pass2" placeholder="Повтор нового пароля">
+          <div id="set-pass-msg" style="font-size:11px;margin-bottom:8px;display:none"></div>
+          <button class="btn-settings-save" onclick="changePassword()">💾 Сохранить пароль</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THEME -->
+  <div class="modal-overlay" id="modal-theme">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>🎨 Тема</h2>
+        <button class="modal-close" onclick="closeModal('theme')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-label" style="margin-bottom:14px">Выбери оформление</div>
+        <div class="theme-grid">
+          <div class="theme-card active" id="theme-dark" onclick="setTheme('dark')">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#080810,#0c0c1a)"></div>
+            <div class="theme-name">Тёмная</div>
+          </div>
+          <div class="theme-card" id="theme-amoled" onclick="setTheme('amoled')">
+            <div class="theme-preview" style="background:#000"></div>
+            <div class="theme-name">AMOLED</div>
+          </div>
+          <div class="theme-card" id="theme-light" onclick="setTheme('light')">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#f0f0f8,#e8e8f0)"></div>
+            <div class="theme-name">Светлая</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
+          <div style="color:rgba(240,240,248,0.4);font-size:11px;line-height:1.6">💡 AMOLED чёрная экономит заряд батареи на OLED-экранах до 30%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOTIFICATIONS -->
+  <div class="modal-overlay" id="modal-notifications">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>🔔 Уведомления</h2>
+        <button class="modal-close" onclick="closeModal('notifications')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-label">Steam Move Alert</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">🔴 Steam Move</div>
+              <div class="settings-row-sub">Резкое падение кефа у 5+ букмекеров</div>
+            </div>
+            <div class="toggle-switch on" id="notif-steam" onclick="toggleNotif('steam')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">🐋 Sharp Money</div>
+              <div class="settings-row-sub">Движение крупных синдикатов</div>
+            </div>
+            <div class="toggle-switch on" id="notif-sharp" onclick="toggleNotif('sharp')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">⚡ Лимит запросов</div>
+              <div class="settings-row-sub">Предупреждение при ≤2 запросах</div>
+            </div>
+            <div class="toggle-switch on" id="notif-limit" onclick="toggleNotif('limit')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 14px;background:rgba(255,184,48,0.05);border:1px solid rgba(255,184,48,0.15);border-radius:12px;">
+          <div style="color:rgba(255,184,48,0.8);font-size:11px;line-height:1.6">⚠️ Steam Move alert срабатывает автоматически при обнаружении сигнала в вердикте анализа</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ABOUT -->
+  <div class="modal-overlay" id="modal-about">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>💎 О приложении</h2>
+        <button class="modal-close" onclick="closeModal('about')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-logo-wrap">
+          <div class="about-logo">📡</div>
+          <div class="about-name">SharpRadar</div>
+          <div class="about-ver">АНАЛИТИК 3.0 · v3.0.0</div>
+        </div>
+        <div class="about-stats">
+          <div class="about-stat">
+            <div class="about-stat-val" id="about-analyses">0</div>
+            <div class="about-stat-lbl">Анализов</div>
+          </div>
+          <div class="about-stat">
+            <div class="about-stat-val">4</div>
+            <div class="about-stat-lbl">Вида спорта</div>
+          </div>
+          <div class="about-stat">
+            <div class="about-stat-val">3.0</div>
+            <div class="about-stat-lbl">Версия</div>
+          </div>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Движок</span>
+          <span class="about-row-val">Claude Sonnet 4</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Sharp Money</span>
+          <span class="about-row-val">Pinnacle · Betburger</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Шаблон</span>
+          <span class="about-row-val">Аналитик 3.0 Full</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Разработка</span>
+          <span class="about-row-val">SharpRadar Team</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM: CLEAR HISTORY -->
+  <div class="confirm-dialog" id="confirm-clear">
+    <div class="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <div class="confirm-title">Очистить историю?</div>
+      <div class="confirm-text">Все 5 последних анализов будут удалены. Это действие нельзя отменить.</div>
+      <div class="confirm-btns">
+        <button class="confirm-cancel" onclick="closeConfirm()">Отмена</button>
+        <button class="confirm-ok" onclick="clearHistory()">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEAM ALERT -->
+  <div class="steam-alert" id="steam-alert">
+    <div class="steam-alert-icon">🔴</div>
+    <div class="steam-alert-text">STEAM MOVE DETECTED!</div>
+  </div>
+
 </div>
 
 <script>
@@ -912,12 +1443,17 @@ async function doRefresh() {
       const t = comp.competitors;
       const home = t.find(x=>x.homeAway==='home');
       const away = t.find(x=>x.homeAway==='away');
-      const status = e.status.type.shortDetail || '';
-      const score  = `${away?.score||0}:${home?.score||0}`;
+      const state = e.status.type.state;
+      const isLive = state === 'in';
+      const isPre  = state === 'pre';
+      let minute = '';
+      if(isLive)     minute = e.status.type.shortDetail || 'LIVE';
+      else if(isPre) minute = espnTimeToMSK(e.date);
+      else           minute = e.status.type.shortDetail || '';
+      const score  = isLive || state === 'post' ? `${away?.score||0}:${home?.score||0}` : '— : —';
       const aName  = away?.team?.shortDisplayName || away?.team?.name || '?';
       const hName  = home?.team?.shortDisplayName || home?.team?.name || '?';
-      const isLive = e.status.type.state === 'in';
-      return { sport:'🏀', teams:`${aName} — ${hName}`, score, minute: status, live: isLive };
+      return { sport:'🏀', teams:`${aName} — ${hName}`, score, minute, live: isLive };
     });
     if(items.length) {
       lastRefreshData.nba = items;
@@ -1170,6 +1706,14 @@ function doLogin() {
       buildLiveMatches();
       updateReqDots();
       renderHistory();
+      applyTheme(currentTheme);
+      applyNotifUI();
+      // restore odds format
+      const savedOdds = localStorage.getItem('sr_odds') || 'EU';
+      document.getElementById('odds-' + savedOdds.toLowerCase())?.classList.add('active');
+      // restore theme selection
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+      document.getElementById('theme-' + currentTheme)?.classList.add('active');
     } else {
       err.textContent = '⚠️ Неверный логин или пароль';
       err.style.display = 'block';
@@ -1352,6 +1896,11 @@ VERDICT_END`;
     // parse sharp money from verdict
     parseSharpFromVerdict(verdictText || analysisResult);
 
+    // steam alert if detected
+    if((verdictText || analysisResult).match(/Steam\s*(Да|Yes)/i)) {
+      setTimeout(() => showSteamAlert(match), 800);
+    }
+
     // update run button
     const runBtn = document.getElementById('run-btn');
     runBtn.textContent = `✅ Готово${confVal ? ' · ' + confVal + '% уверенность' : ''}`;
@@ -1386,6 +1935,144 @@ function renderText(text) {
     else if(line.startsWith('🥉')) cls='line-top3';
     return `<div class="${cls}" style="margin-bottom:5px;line-height:1.7">${line}</div>`;
   }).join('');
+}
+
+// ===== MENU =====
+function toggleMenu() {
+  const m = document.getElementById('dropdown-menu');
+  const o = document.getElementById('dm-overlay');
+  const open = m.classList.contains('open');
+  if(open) { m.classList.remove('open'); o.classList.remove('open'); }
+  else      { m.classList.add('open');   o.classList.add('open'); }
+}
+function closeMenu() {
+  document.getElementById('dropdown-menu').classList.remove('open');
+  document.getElementById('dm-overlay').classList.remove('open');
+}
+
+// ===== MODALS =====
+function openModal(id) {
+  closeMenu();
+  if(id === 'about') {
+    document.getElementById('about-analyses').textContent = analysisHistory.length;
+  }
+  setTimeout(() => {
+    document.getElementById('modal-' + id).classList.add('open');
+  }, 80);
+}
+function closeModal(id) {
+  document.getElementById('modal-' + id).classList.remove('open');
+}
+
+// ===== SETTINGS: ODDS FORMAT =====
+let oddsFormat = localStorage.getItem('sr_odds') || 'EU';
+function setOdds(fmt, btn) {
+  oddsFormat = fmt;
+  localStorage.setItem('sr_odds', fmt);
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const subs = { EU:'EU — десятичные (1.85)', UK:'UK — дробные (17/20)', US:'US — монилайн (+185)' };
+  document.querySelector('#modal-settings .settings-row .settings-row-sub').textContent = subs[fmt];
+}
+
+// ===== SETTINGS: CHANGE PASSWORD =====
+function changePassword() {
+  const old   = document.getElementById('set-old-pass').value;
+  const n1    = document.getElementById('set-new-pass').value;
+  const n2    = document.getElementById('set-new-pass2').value;
+  const msg   = document.getElementById('set-pass-msg');
+  msg.style.display = 'block';
+  if(old !== ACCESS.password) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Текущий пароль неверный'; return;
+  }
+  if(n1.length < 4) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Пароль слишком короткий (мин. 4 символа)'; return;
+  }
+  if(n1 !== n2) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Пароли не совпадают'; return;
+  }
+  ACCESS.password = n1;
+  msg.style.color = '#00E5A0'; msg.textContent = '✅ Пароль успешно изменён';
+  document.getElementById('set-old-pass').value = '';
+  document.getElementById('set-new-pass').value = '';
+  document.getElementById('set-new-pass2').value = '';
+  setTimeout(() => { msg.style.display = 'none'; }, 3000);
+}
+
+// ===== THEME =====
+let currentTheme = localStorage.getItem('sr_theme') || 'dark';
+const THEMES = {
+  dark:   { bg:'#080810', bg2:'rgba(12,12,22,0.95)', text:'#F0F0F8', grad1:'rgba(108,99,255,0.18)', grad2:'rgba(0,229,160,0.08)' },
+  amoled: { bg:'#000000', bg2:'rgba(0,0,0,0.98)',    text:'#F0F0F8', grad1:'rgba(108,99,255,0.1)',  grad2:'rgba(0,229,160,0.05)' },
+  light:  { bg:'#F0F0F8', bg2:'rgba(240,240,248,0.97)', text:'#0c0c1a', grad1:'rgba(108,99,255,0.08)', grad2:'rgba(0,229,160,0.05)' }
+};
+function setTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('sr_theme', theme);
+  applyTheme(theme);
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('theme-' + theme).classList.add('active');
+  const names = { dark:'Тёмная', amoled:'AMOLED', light:'Светлая' };
+  document.getElementById('dm-theme-sub').textContent = names[theme];
+}
+function applyTheme(theme) {
+  const t = THEMES[theme] || THEMES.dark;
+  document.body.style.background = t.bg;
+  document.documentElement.style.setProperty('--bg-main', t.bg);
+  if(theme === 'light') {
+    document.querySelectorAll('.app-header,.tabs,.app-footer,.modal-sheet,.dropdown-menu')
+      .forEach(el => { el.style.background = 'rgba(240,240,248,0.97)'; });
+    document.querySelectorAll('.brand-text h1,.tab.active,.modal-head h2')
+      .forEach(el => { el.style.color = '#0c0c1a'; });
+  } else {
+    document.querySelectorAll('.app-header,.tabs,.app-footer,.modal-sheet,.dropdown-menu')
+      .forEach(el => { el.style.background = ''; });
+    document.querySelectorAll('.brand-text h1,.tab.active,.modal-head h2')
+      .forEach(el => { el.style.color = ''; });
+  }
+}
+
+// ===== NOTIFICATIONS =====
+let notifSettings = JSON.parse(localStorage.getItem('sr_notif') || '{"steam":true,"sharp":true,"limit":true}');
+function toggleNotif(key) {
+  notifSettings[key] = !notifSettings[key];
+  localStorage.setItem('sr_notif', JSON.stringify(notifSettings));
+  const el = document.getElementById('notif-' + key);
+  if(el) el.classList.toggle('on', notifSettings[key]);
+}
+function applyNotifUI() {
+  Object.keys(notifSettings).forEach(k => {
+    const el = document.getElementById('notif-' + k);
+    if(el) el.classList.toggle('on', notifSettings[k]);
+  });
+}
+function showSteamAlert(matchName) {
+  if(!notifSettings.steam) return;
+  const el = document.getElementById('steam-alert');
+  if(!el) return;
+  el.querySelector('.steam-alert-text').textContent = `🔴 STEAM: ${matchName || 'движение кефа!'}`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ===== CONFIRM CLEAR =====
+function openConfirm() { closeMenu(); document.getElementById('confirm-clear').classList.add('open'); }
+function closeConfirm() { document.getElementById('confirm-clear').classList.remove('open'); }
+function clearHistory() {
+  analysisHistory = [];
+  localStorage.removeItem('sr_history');
+  renderHistory();
+  closeConfirm();
+  showRefreshToast('🗑️ История очищена');
+}
+
+// ===== ESPN MSK TIME FIX =====
+function espnTimeToMSK(dateStr) {
+  if(!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow' }) + ' МСК';
+  } catch(e) { return dateStr; }
 }
 
 function copyVerdict() {
