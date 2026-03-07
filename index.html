@@ -305,7 +305,7 @@ function updateBtn() {
 
 // Analysis
 async function startAnalysis() {
-  let match = document.getElementById('match-input').value.trim().replace(/\s*[-–—]\s*/g, ' ');
+  let match = document.getElementById('match-input').value.trim().replace(/\s*[-–—−‐_vs\.]+\s*/gi, ' ').trim();
   if(!match) return;
   switchTabById('analysis');
 
