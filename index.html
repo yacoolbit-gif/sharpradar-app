@@ -327,7 +327,7 @@ async function startAnalysis() {
 Вид спорта: ${currentSport}
 Дата запроса: ${date} | Время запроса: ${time}
 
-ВАЖНО: Найди точную дату и время начала матча "${match}" и укажи их в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если время неизвестно — напиши дату и "время уточняется".
+ВАЖНО: Найди точную дату и время начала матча "${match}" в открытых источниках. Анализируй ТОЛЬКО предстоящие матчи (в пределах ближайшего месяца). Укажи дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если матч уже сыгран или не найден в ближайшем расписании — сообщи об этом и не делай анализ. Если время неизвестно — напиши дату и "время уточняется".
 
 ANALYSIS_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
@@ -389,10 +389,36 @@ VERDICT_END`;
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
     });
     const data = await res.json();
+
+    // Check for API errors (rate limit, etc.)
+    if(data.error) {
+      const errType = data.error.type || '';
+      const errMsg = data.error.message || '';
+      let userMsg = '';
+      if(errType === 'rate_limit_error' || errMsg.includes('rate') || errMsg.includes('limit')) {
+        userMsg = '⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК — лимиты сбрасываются автоматически.';
+      } else if(errType === 'overloaded_error') {
+        userMsg = '🔄 Сервер перегружен\n\nПопробуй снова через 1-2 минуты.';
+      } else {
+        userMsg = '❌ Ошибка API: ' + errMsg;
+      }
+      document.getElementById('analysis-loading').style.display = 'none';
+      document.getElementById('analysis-text').innerHTML = renderText(userMsg);
+      document.getElementById('analysis-content').style.display = 'block';
+      return;
+    }
+
     const text = (data.content||[]).map(c=>c.text||'').join('');
+    if(!text) {
+      document.getElementById('analysis-loading').style.display = 'none';
+      document.getElementById('analysis-text').innerHTML = renderText('⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК.');
+      document.getElementById('analysis-content').style.display = 'block';
+      return;
+    }
+
     const aM = text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
     const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
-    analysisResult = aM ? aM[1].trim() : (text || JSON.stringify(data));
+    analysisResult = aM ? aM[1].trim() : text;
     verdictText = vM ? vM[1].trim() : '';
 
     document.getElementById('analysis-loading').style.display = 'none';
@@ -407,7 +433,7 @@ VERDICT_END`;
     }
   } catch(e) {
     document.getElementById('analysis-loading').style.display = 'none';
-    document.getElementById('analysis-text').innerHTML = '<span style="color:#FF4566">Ошибка: '+e.message+'</span>';
+    document.getElementById('analysis-text').innerHTML = renderText('❌ Ошибка соединения\n\nПроверь интернет и попробуй снова.');
     document.getElementById('analysis-content').style.display = 'block';
   }
 }
