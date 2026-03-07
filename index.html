@@ -730,7 +730,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 .dm-chevron    { color: rgba(240,240,248,0.2); font-size: 14px; }
 .dm-overlay {
   position: fixed; inset: 0;
-  z-index: 199;
+  z-index: 9998;
   display: none;
 }
 .dm-overlay.open { display: block; }
@@ -740,7 +740,8 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(8px);
-  z-index: 300;
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
   display: flex; align-items: flex-end; justify-content: center;
   opacity: 0; pointer-events: none;
   transition: opacity 0.25s;
