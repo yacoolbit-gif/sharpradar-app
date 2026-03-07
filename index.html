@@ -390,7 +390,7 @@ VERDICT_END`;
     const text = (data.content||[]).map(c=>c.text||'').join('');
     const aM = text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
     const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
-    analysisResult = aM ? aM[1].trim() : text;
+    analysisResult = aM ? aM[1].trim() : (text || JSON.stringify(data));
     verdictText = vM ? vM[1].trim() : '';
 
     document.getElementById('analysis-loading').style.display = 'none';
