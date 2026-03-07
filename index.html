@@ -388,8 +388,8 @@ VERDICT_END`;
     });
     const data = await res.json();
     const text = (data.content||[]).map(c=>c.text||'').join('');
-    const aM = text.match(/АНАЛИЗ_START([\s\S]*?)АНАЛИЗ_END/);
-    const vM = text.match(/ВЕРДИКТ_START([\s\S]*?)ВЕРДИКТ_КОНЕЦ/);
+    text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
+    const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
     analysisResult = aM ? aM[1].trim() : text;
     verdictText = vM ? vM[1].trim() : '';
 
