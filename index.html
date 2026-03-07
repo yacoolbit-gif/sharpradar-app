@@ -27,9 +27,10 @@ body::before {
 
 /* ===== HEADER ===== */
 .app-header {
-  position: relative; z-index: 10;
-  background: rgba(12,12,22,0.95);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(12,12,22,0.98);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255,255,255,0.07);
   padding: 0 18px;
   flex-shrink: 0;
@@ -177,27 +178,16 @@ body::before {
   transition: all 0.3s;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sw-confidence {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+.sw-conf-badge {
   flex-shrink: 0;
-}
-.sw-conf-ring {
-  width: 36px; height: 36px;
-  position: relative;
-}
-.sw-conf-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
-.sw-conf-ring circle {
-  fill: none; stroke-width: 3;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.8s ease, stroke 0.4s;
-}
-.sw-conf-ring .bg-circle { stroke: rgba(255,255,255,0.07); }
-.sw-conf-ring .fg-circle { stroke: #6C63FF; stroke-dasharray: 100; stroke-dashoffset: 100; }
-.sw-conf-val {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800;
-  color: rgba(240,240,248,0.6);
+  background: rgba(108,99,255,0.15);
+  border: 1px solid rgba(108,99,255,0.3);
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 11px; font-weight: 800;
+  color: #a09aff;
+  pointer-events: none;
+  transition: all 0.4s;
 }
 
 /* ===== SHARP MONEY BAR ===== */
@@ -681,6 +671,9 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   transition: all 0.2s;
   letter-spacing: -2px; line-height: 1;
   padding-bottom: 3px;
+  position: relative;
+  z-index: 10000;
+  -webkit-tap-highlight-color: rgba(108,99,255,0.3);
 }
 .menu-btn:active { background: rgba(108,99,255,0.3); transform: scale(0.93); }
 
@@ -1015,7 +1008,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
-        <button class="menu-btn" id="menu-btn" onclick="toggleMenu()">⋯</button>
+        <button class="menu-btn" id="menu-btn" onclick="toggleMenu(event)">···</button>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -1038,7 +1031,6 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="sw-glow" id="sw-glow"></div>
         <div class="sw-icon-bg" id="sw-icon-bg">
           <svg class="sw-svg" id="sw-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- default radar icon -->
             <circle cx="14" cy="14" r="11" stroke="rgba(108,99,255,0.6)" stroke-width="1.5"/>
             <circle cx="14" cy="14" r="6"  stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
             <circle cx="14" cy="14" r="2"  fill="#6C63FF"/>
@@ -1053,14 +1045,8 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="sw-sport-name" id="sw-sport-name" style="color:rgba(240,240,248,0.4)">Введи матч</div>
         <div class="sw-sport-sub"  id="sw-sport-sub">Вид спорта определится автоматически</div>
       </div>
-      <div class="sw-confidence">
-        <div class="sw-conf-ring">
-          <svg viewBox="0 0 36 36">
-            <circle class="bg-circle" cx="18" cy="18" r="15.9"/>
-            <circle class="fg-circle" id="sw-conf-circle" cx="18" cy="18" r="15.9"/>
-          </svg>
-          <div class="sw-conf-val" id="sw-conf-val">—</div>
-        </div>
+      <div class="sw-conf-badge" id="sw-conf-badge" style="display:none">
+        <span id="sw-conf-val">—</span>
       </div>
     </div>
   </div>
@@ -1767,8 +1753,6 @@ function buildLiveMatches() {
 function fillMatch(name) {
   document.getElementById('match-input').value = name;
   updateBtn();
-  // scroll to input
-  document.getElementById('match-input').scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 // ===== LOGIN =====
@@ -1885,18 +1869,17 @@ function updateSportWidget(sportKey, matchText, confidence) {
   if(sportKey === currentSportKey && !confidence) return;
   currentSportKey = sportKey;
 
-  const cfg = SPORT_CONFIG[sportKey];
-  const glowEl   = document.getElementById('sw-glow');
-  const bgEl     = document.getElementById('sw-icon-bg');
-  const svgEl    = document.getElementById('sw-svg');
-  const nameEl   = document.getElementById('sw-sport-name');
-  const subEl    = document.getElementById('sw-sport-sub');
-  const circleEl = document.getElementById('sw-conf-circle');
-  const valEl    = document.getElementById('sw-conf-val');
+  const cfg     = SPORT_CONFIG[sportKey];
+  const glowEl  = document.getElementById('sw-glow');
+  const bgEl    = document.getElementById('sw-icon-bg');
+  const svgEl   = document.getElementById('sw-svg');
+  const nameEl  = document.getElementById('sw-sport-name');
+  const subEl   = document.getElementById('sw-sport-sub');
+  const badgeEl = document.getElementById('sw-conf-badge');
+  const valEl   = document.getElementById('sw-conf-val');
 
   if(!cfg) {
-    // reset to radar
-    if(glowEl) glowEl.style.background = 'rgba(108,99,255,0.4)';
+    if(glowEl) glowEl.style.background = 'rgba(108,99,255,0.3)';
     if(bgEl)   { bgEl.style.background = 'rgba(108,99,255,0.1)'; bgEl.style.boxShadow = ''; }
     if(nameEl) { nameEl.textContent = matchText ? 'Определяю...' : 'Введи матч'; nameEl.style.color = 'rgba(240,240,248,0.4)'; }
     if(subEl)  subEl.textContent = 'Вид спорта определится автоматически';
@@ -1907,38 +1890,31 @@ function updateSportWidget(sportKey, matchText, confidence) {
       <line x1="14" y1="21" x2="14" y2="25" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
       <line x1="3" y1="14" x2="7" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
       <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>`;
-    if(circleEl) { circleEl.style.strokeDashoffset = 100; circleEl.style.stroke = '#6C63FF'; }
-    if(valEl) valEl.textContent = '—';
+    if(badgeEl) badgeEl.style.display = 'none';
     currentSport = '⚽ Футбол';
     return;
   }
 
-  // Update glow
   if(glowEl) glowEl.style.background = cfg.glow;
-  // Update bg
   if(bgEl)   { bgEl.style.background = cfg.bg; bgEl.style.boxShadow = cfg.shadow; }
-  // Update SVG with animation
   if(svgEl) {
     svgEl.innerHTML = cfg.svg;
     svgEl.classList.remove('entering');
-    void svgEl.offsetWidth; // reflow
+    void svgEl.offsetWidth;
     svgEl.classList.add('entering');
   }
-  // Update name
   if(nameEl) { nameEl.textContent = cfg.name; nameEl.style.color = cfg.color; }
-  // Update sub
-  if(subEl) subEl.textContent = matchText ? matchText : cfg.label;
-  // Ring
-  if(confidence && circleEl) {
-    const circ = 2 * Math.PI * 15.9;
-    const offset = circ - (confidence / 100) * circ;
-    circleEl.style.strokeDasharray = circ;
-    circleEl.style.strokeDashoffset = offset;
-    circleEl.style.stroke = cfg.color;
-    if(valEl) { valEl.textContent = confidence + '%'; valEl.style.color = cfg.color; }
+  if(subEl)  subEl.textContent = matchText ? matchText : cfg.label;
+
+  // Confidence badge (показывается только после анализа)
+  if(confidence && badgeEl && valEl) {
+    valEl.textContent = confidence + '%';
+    badgeEl.style.display = 'flex';
+    badgeEl.style.borderColor = cfg.color + '60';
+    badgeEl.style.color = cfg.color;
+    badgeEl.style.background = cfg.color + '18';
   }
 
-  // Update currentSport for API calls
   currentSport = cfg.name;
 }
 
@@ -2154,24 +2130,23 @@ function renderText(text) {
 }
 
 // ===== MENU =====
-function toggleMenu() {
+function toggleMenu(e) {
+  if(e) { e.stopPropagation(); e.preventDefault(); }
   const m   = document.getElementById('dropdown-menu');
   const o   = document.getElementById('dm-overlay');
   const btn = document.getElementById('menu-btn');
   if(!m || !btn) return;
-  const open = m.classList.contains('open');
-  if(open) {
+  if(m.classList.contains('open')) {
     m.classList.remove('open');
-    o.classList.remove('open');
+    if(o) o.classList.remove('open');
   } else {
     const rect = btn.getBoundingClientRect();
-    m.style.top  = Math.round(rect.bottom + 6) + 'px';
-    m.style.right = Math.round(window.innerWidth - rect.right) + 'px';
+    m.style.top   = (rect.bottom + 6) + 'px';
+    m.style.right = (window.innerWidth - rect.right) + 'px';
     m.style.left  = 'auto';
-    // force reflow before adding class
     void m.offsetWidth;
     m.classList.add('open');
-    o.classList.add('open');
+    if(o) o.classList.add('open');
   }
 }
 function closeMenu() {
