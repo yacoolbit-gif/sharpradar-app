@@ -114,29 +114,90 @@ body::before {
 .api-dot { width:5px; height:5px; border-radius:50%; background:#00E5A0; }
 .api-status span { color: rgba(0,229,160,0.7); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; }
 
-/* Sport pills */
-.sport-pills {
-  display: flex; gap: 6px;
-  overflow-x: auto;
-  padding: 10px 0 12px;
+/* ===== SMART SPORT WIDGET ===== */
+.sport-widget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 10px;
 }
-.pill {
-  white-space: nowrap;
-  padding: 6px 14px;
-  font-size: 11px; border-radius: 30px;
-  cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: rgba(240,240,248,0.35);
+.sw-icon-wrap {
+  position: relative;
+  width: 48px; height: 48px;
+  flex-shrink: 0;
 }
-.pill.active {
-  background: #6C63FF;
-  border-color: #6C63FF;
-  color: #FFF; font-weight: 700;
-  box-shadow: 0 0 16px rgba(108,99,255,0.4);
+.sw-glow {
+  position: absolute; inset: -6px;
+  border-radius: 50%;
+  filter: blur(10px);
+  opacity: 0.5;
+  transition: background 0.5s, opacity 0.3s;
+  animation: swGlowPulse 2.5s ease-in-out infinite;
+}
+@keyframes swGlowPulse {
+  0%,100% { opacity: 0.4; transform: scale(0.9); }
+  50%      { opacity: 0.75; transform: scale(1.1); }
+}
+.sw-icon-bg {
+  width: 48px; height: 48px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+  transition: background 0.4s, box-shadow 0.4s;
+  overflow: hidden;
+}
+.sw-icon-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.07);
+  border-radius: 16px;
+}
+.sw-svg {
+  width: 28px; height: 28px;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  position: relative; z-index: 1;
+}
+.sw-svg.entering {
+  animation: swEnter 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes swEnter {
+  0%   { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+.sw-info { flex: 1; min-width: 0; }
+.sw-sport-name {
+  font-size: 15px; font-weight: 800;
+  letter-spacing: -0.3px; line-height: 1.1;
+  transition: color 0.4s;
+}
+.sw-sport-sub {
+  font-size: 10px; font-weight: 500;
+  color: rgba(240,240,248,0.3);
+  margin-top: 2px;
+  transition: all 0.3s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sw-confidence {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+  flex-shrink: 0;
+}
+.sw-conf-ring {
+  width: 36px; height: 36px;
+  position: relative;
+}
+.sw-conf-ring svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+.sw-conf-ring circle {
+  fill: none; stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease, stroke 0.4s;
+}
+.sw-conf-ring .bg-circle { stroke: rgba(255,255,255,0.07); }
+.sw-conf-ring .fg-circle { stroke: #6C63FF; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.sw-conf-val {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800;
+  color: rgba(240,240,248,0.6);
 }
 
 /* ===== SHARP MONEY BAR ===== */
@@ -608,35 +669,36 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 
 /* ===== MENU BUTTON ===== */
 .menu-btn {
-  width: 32px; height: 32px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 9px;
-  color: rgba(240,240,248,0.7);
-  font-size: 18px; font-weight: 800;
+  width: 34px; height: 34px;
+  background: rgba(108,99,255,0.15);
+  border: 1px solid rgba(108,99,255,0.35);
+  border-radius: 10px;
+  color: #a09aff;
+  font-size: 20px; font-weight: 900;
   font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
-  letter-spacing: -1px; line-height: 1;
+  letter-spacing: -2px; line-height: 1;
+  padding-bottom: 3px;
 }
-.menu-btn:active { background: rgba(108,99,255,0.2); border-color: rgba(108,99,255,0.4); }
+.menu-btn:active { background: rgba(108,99,255,0.3); transform: scale(0.93); }
 
 /* ===== DROPDOWN MENU ===== */
 .dropdown-menu {
   position: fixed;
-  top: 56px; right: 14px;
-  width: 230px;
-  background: rgba(16,16,28,0.98);
+  top: 110px; right: 14px;
+  width: 240px;
+  background: rgba(14,14,26,0.99);
   backdrop-filter: blur(30px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(108,99,255,0.2);
   border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
-  z-index: 200;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04), 0 0 30px rgba(108,99,255,0.1);
+  z-index: 9999;
   overflow: hidden;
   opacity: 0; transform: scale(0.92) translateY(-8px);
   transform-origin: top right;
-  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
   pointer-events: none;
 }
 .dropdown-menu.open {
@@ -969,11 +1031,36 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       </div>
     </div>
 
-    <div class="sport-pills">
-      <div class="pill active" onclick="setSport(this,'⚽ Футбол')">⚽ Футбол</div>
-      <div class="pill" onclick="setSport(this,'🏒 Хоккей')">🏒 Хоккей</div>
-      <div class="pill" onclick="setSport(this,'🏀 НБА')">🏀 НБА</div>
-      <div class="pill" onclick="setSport(this,'🎾 Теннис')">🎾 Теннис</div>
+    <!-- SMART SPORT WIDGET -->
+    <div class="sport-widget">
+      <div class="sw-icon-wrap">
+        <div class="sw-glow" id="sw-glow"></div>
+        <div class="sw-icon-bg" id="sw-icon-bg">
+          <svg class="sw-svg" id="sw-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- default radar icon -->
+            <circle cx="14" cy="14" r="11" stroke="rgba(108,99,255,0.6)" stroke-width="1.5"/>
+            <circle cx="14" cy="14" r="6"  stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <circle cx="14" cy="14" r="2"  fill="#6C63FF"/>
+            <line x1="14" y1="3" x2="14" y2="7"  stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="14" y1="21" x2="14" y2="25" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="3" y1="14" x2="7" y2="14"   stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sw-info">
+        <div class="sw-sport-name" id="sw-sport-name" style="color:rgba(240,240,248,0.4)">Введи матч</div>
+        <div class="sw-sport-sub"  id="sw-sport-sub">Вид спорта определится автоматически</div>
+      </div>
+      <div class="sw-confidence">
+        <div class="sw-conf-ring">
+          <svg viewBox="0 0 36 36">
+            <circle class="bg-circle" cx="18" cy="18" r="15.9"/>
+            <circle class="fg-circle" id="sw-conf-circle" cx="18" cy="18" r="15.9"/>
+          </svg>
+          <div class="sw-conf-val" id="sw-conf-val">—</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1732,10 +1819,131 @@ function doLogout() {
   document.getElementById('login-btn').disabled = false;
 }
 
-// ===== SPORT =====
+// ===== SMART SPORT WIDGET =====
+const SPORT_CONFIG = {
+  football: {
+    name: '⚽ Футбол', label: 'Футбол',
+    color: '#00C853', glow: 'rgba(0,200,83,0.6)',
+    bg: 'linear-gradient(135deg,rgba(0,200,83,0.2),rgba(0,150,60,0.1))',
+    shadow: '0 6px 24px rgba(0,200,83,0.3)',
+    svgColor: '#00C853',
+    svg: `<circle cx="14" cy="14" r="11" stroke="#00C853" stroke-width="1.5" fill="rgba(0,200,83,0.08)"/>
+          <path d="M14 3 L14 25 M3 14 L25 14" stroke="rgba(0,200,83,0.3)" stroke-width="1"/>
+          <circle cx="14" cy="14" r="4.5" fill="none" stroke="#00C853" stroke-width="1.5"/>
+          <path d="M14 9.5 Q18 11 18 14 Q18 17 14 18.5 Q10 17 10 14 Q10 11 14 9.5Z" fill="rgba(0,200,83,0.3)" stroke="#00C853" stroke-width="1"/>
+          <path d="M9.5 9.5 L14 9.5 M14 18.5 L18.5 18.5 M9.5 18.5 L10 14" stroke="rgba(0,200,83,0.5)" stroke-width="0.8"/>`,
+    keywords: ['футбол','football','soccer','реал','барсел','манчест','ливерпул','арсенал','челси','псж','байер','ювентус','милан','интер','атлетик','бавари','дортмунд','аякс','порту','бенфика','спартак','цска','зенит','динамо','локомотив','шахтер','валенсия','севилья','наполи','рома','лацио','вильярреал','боруссия','шальке','лейпциг','лион','марсель','монако','бордо','страсбур','ренн','нант','лилль','ницца','тулуза','анже','клермон','бест','селтик','рейнджерс','хиберниан','херт','хетафе']
+  },
+  basketball: {
+    name: '🏀 НБА', label: 'Баскетбол / НБА',
+    color: '#FF6B35', glow: 'rgba(255,107,53,0.6)',
+    bg: 'linear-gradient(135deg,rgba(255,107,53,0.2),rgba(200,60,0,0.1))',
+    shadow: '0 6px 24px rgba(255,107,53,0.3)',
+    svg: `<circle cx="14" cy="14" r="11" stroke="#FF6B35" stroke-width="1.5" fill="rgba(255,107,53,0.08)"/>
+          <path d="M3 14 Q8 8 14 14 Q20 20 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
+          <path d="M3 14 Q8 20 14 14 Q20 8 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
+          <line x1="14" y1="3" x2="14" y2="25" stroke="#FF6B35" stroke-width="1.5"/>`,
+    keywords: ['нба','nba','баскетбол','basketball','лейкерс','лakers','celtics','селтикс','warriors','голден','чикаго','bulls','miami','heat','бостон','бруклин','nets','knicks','никс','thunder','клипперс','clippers','nuggets','jazz','suns','mavs','mavericks','rockets','spurs','pelicans','hawks','bucks','sixers','pistons','cavs','cavaliers','raptors','magic','timberwolves','wolves','grizzlies','blazers','kings','hornets','wizards','pacers']
+  },
+  hockey: {
+    name: '🏒 Хоккей', label: 'Хоккей / КХЛ / НХЛ',
+    color: '#64B5F6', glow: 'rgba(100,181,246,0.6)',
+    bg: 'linear-gradient(135deg,rgba(100,181,246,0.2),rgba(30,100,200,0.1))',
+    shadow: '0 6px 24px rgba(100,181,246,0.3)',
+    svg: `<ellipse cx="14" cy="20" rx="8" ry="2.5" fill="rgba(100,181,246,0.25)" stroke="#64B5F6" stroke-width="1.2"/>
+          <path d="M7 20 L7 10 Q7 7 9 7 L10.5 7 Q12 7 12 9 L12 17" stroke="#64B5F6" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M12 9 L19 9 Q21 9 21 11 Q21 13 19 13 L12 13" stroke="#64B5F6" stroke-width="1.8" fill="none"/>`,
+    keywords: ['хоккей','hockey','нхл','nhl','кхл','кhl','цска','ска','динамо','ак барс','локомотив','авангард','металлург','трактор','салават','сибирь','барыс','торпедо','спартак','северсталь','куньлунь','витязь','ак барс','автомобилист','admiral','адмирал','canadiens','maple leafs','bruins','rangers','penguins','blackhawks','red wings','oilers','flames','canucks','senators','jets','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','stars','ducks','sharks','coyotes','kings','golden knights','kraken','sabres','devils','islanders','blue jackets']
+  },
+  tennis: {
+    name: '🎾 Теннис', label: 'Теннис / ATP / WTA',
+    color: '#CDDC39', glow: 'rgba(205,220,57,0.6)',
+    bg: 'linear-gradient(135deg,rgba(205,220,57,0.2),rgba(150,170,0,0.1))',
+    shadow: '0 6px 24px rgba(205,220,57,0.3)',
+    svg: `<circle cx="14" cy="14" r="9" stroke="#CDDC39" stroke-width="1.5" fill="rgba(205,220,57,0.08)"/>
+          <path d="M5 14 Q10 10 14 14 Q18 18 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
+          <path d="M5 14 Q10 18 14 14 Q18 10 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
+          <path d="M21 7 L26 4 Q27 3 27 4 Q27 5 26 6 L23 11" stroke="#CDDC39" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <path d="M23 11 L21 7" stroke="#CDDC39" stroke-width="2.5" stroke-linecap="round"/>`,
+    keywords: ['теннис','tennis','джокович','надаль','федерер','медведев','зверев','алькарас','синнер','рублев','циципас','берреттини','wimbledon','уимблдон','ролан','roland','us open','australian','открытый','atp','wta','свитолина','соболенко','арына','элина','ига','свентек','swiatek','halep','halep','gauff','keys','рыбакина','касаткина','самсонова','александрова']
+  }
+};
+
+let currentSportKey = 'none';
+
+function detectSport(text) {
+  if(!text || text.length < 2) return 'none';
+  const t = text.toLowerCase();
+  for(const [key, cfg] of Object.entries(SPORT_CONFIG)) {
+    if(cfg.keywords.some(kw => t.includes(kw))) return key;
+  }
+  return 'none';
+}
+
+function updateSportWidget(sportKey, matchText, confidence) {
+  if(sportKey === currentSportKey && !confidence) return;
+  currentSportKey = sportKey;
+
+  const cfg = SPORT_CONFIG[sportKey];
+  const glowEl   = document.getElementById('sw-glow');
+  const bgEl     = document.getElementById('sw-icon-bg');
+  const svgEl    = document.getElementById('sw-svg');
+  const nameEl   = document.getElementById('sw-sport-name');
+  const subEl    = document.getElementById('sw-sport-sub');
+  const circleEl = document.getElementById('sw-conf-circle');
+  const valEl    = document.getElementById('sw-conf-val');
+
+  if(!cfg) {
+    // reset to radar
+    if(glowEl) glowEl.style.background = 'rgba(108,99,255,0.4)';
+    if(bgEl)   { bgEl.style.background = 'rgba(108,99,255,0.1)'; bgEl.style.boxShadow = ''; }
+    if(nameEl) { nameEl.textContent = matchText ? 'Определяю...' : 'Введи матч'; nameEl.style.color = 'rgba(240,240,248,0.4)'; }
+    if(subEl)  subEl.textContent = 'Вид спорта определится автоматически';
+    if(svgEl)  svgEl.innerHTML = `<circle cx="14" cy="14" r="11" stroke="rgba(108,99,255,0.6)" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="6" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="2" fill="#6C63FF"/>
+      <line x1="14" y1="3" x2="14" y2="7" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="14" y1="21" x2="14" y2="25" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="3" y1="14" x2="7" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>`;
+    if(circleEl) { circleEl.style.strokeDashoffset = 100; circleEl.style.stroke = '#6C63FF'; }
+    if(valEl) valEl.textContent = '—';
+    currentSport = '⚽ Футбол';
+    return;
+  }
+
+  // Update glow
+  if(glowEl) glowEl.style.background = cfg.glow;
+  // Update bg
+  if(bgEl)   { bgEl.style.background = cfg.bg; bgEl.style.boxShadow = cfg.shadow; }
+  // Update SVG with animation
+  if(svgEl) {
+    svgEl.innerHTML = cfg.svg;
+    svgEl.classList.remove('entering');
+    void svgEl.offsetWidth; // reflow
+    svgEl.classList.add('entering');
+  }
+  // Update name
+  if(nameEl) { nameEl.textContent = cfg.name; nameEl.style.color = cfg.color; }
+  // Update sub
+  if(subEl) subEl.textContent = matchText ? matchText : cfg.label;
+  // Ring
+  if(confidence && circleEl) {
+    const circ = 2 * Math.PI * 15.9;
+    const offset = circ - (confidence / 100) * circ;
+    circleEl.style.strokeDasharray = circ;
+    circleEl.style.strokeDashoffset = offset;
+    circleEl.style.stroke = cfg.color;
+    if(valEl) { valEl.textContent = confidence + '%'; valEl.style.color = cfg.color; }
+  }
+
+  // Update currentSport for API calls
+  currentSport = cfg.name;
+}
+
+// ===== SPORT (legacy compat) =====
 function setSport(el, name) {
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
+  // kept for history/compat but widget replaces visual
   currentSport = name;
 }
 
@@ -1756,6 +1964,9 @@ function switchTabById(id) {
 function updateBtn() {
   const v = document.getElementById('match-input').value.trim();
   document.getElementById('run-btn').disabled = !v;
+  // Auto-detect sport
+  const detected = detectSport(v);
+  updateSportWidget(detected, v.length > 2 ? v : null, null);
 }
 
 // ===== ANALYSIS =====
@@ -1890,6 +2101,10 @@ VERDICT_END`;
     const confMatch = (verdictText || analysisResult).match(/Уверенность[^0-9]*(\d+)%/);
     const confVal   = confMatch ? confMatch[1] : null;
 
+    // update sport widget with confidence ring
+    const detectedSport = detectSport(match);
+    updateSportWidget(detectedSport, match, confVal ? parseInt(confVal) : null);
+
     // save to history
     saveHistory(match, currentSport, confVal);
 
@@ -1941,9 +2156,19 @@ function renderText(text) {
 function toggleMenu() {
   const m = document.getElementById('dropdown-menu');
   const o = document.getElementById('dm-overlay');
+  const btn = document.getElementById('menu-btn');
   const open = m.classList.contains('open');
-  if(open) { m.classList.remove('open'); o.classList.remove('open'); }
-  else      { m.classList.add('open');   o.classList.add('open'); }
+  if(open) {
+    m.classList.remove('open');
+    o.classList.remove('open');
+  } else {
+    // Position menu below button dynamically
+    const rect = btn.getBoundingClientRect();
+    m.style.top  = (rect.bottom + 8) + 'px';
+    m.style.right = (window.innerWidth - rect.right) + 'px';
+    m.classList.add('open');
+    o.classList.add('open');
+  }
 }
 function closeMenu() {
   document.getElementById('dropdown-menu').classList.remove('open');
