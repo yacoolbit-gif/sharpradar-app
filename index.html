@@ -388,7 +388,7 @@ VERDICT_END`;
     });
     const data = await res.json();
     const text = (data.content||[]).map(c=>c.text||'').join('');
-    text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
+    const aM = text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
     const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
     analysisResult = aM ? aM[1].trim() : text;
     verdictText = vM ? vM[1].trim() : '';
