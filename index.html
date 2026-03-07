@@ -139,6 +139,32 @@ body::before {
   box-shadow: 0 0 16px rgba(108,99,255,0.4);
 }
 
+/* ===== BANKROLL BAR ===== */
+.bankroll-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 18px;
+  background: rgba(255,184,48,0.04);
+  border-bottom: 1px solid rgba(255,184,48,0.08);
+  flex-shrink: 0;
+  position: relative; z-index: 9;
+}
+.br-item {
+  display: flex; align-items: center; gap: 5px;
+}
+.br-label { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+.br-value { color: #FFB830; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.br-roi-pos { color: #00E5A0; font-size: 12px; font-weight: 800; }
+.br-roi-neg { color: #FF4566; font-size: 12px; font-weight: 800; }
+.br-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.07); }
+.br-requests { display: flex; align-items: center; gap: 4px; }
+.br-req-dots { display: flex; gap: 3px; }
+.br-req-dot { width: 6px; height: 6px; border-radius: 50%; }
+.br-req-dot.used   { background: rgba(255,255,255,0.12); }
+.br-req-dot.avail  { background: #6C63FF; box-shadow: 0 0 4px rgba(108,99,255,0.6); }
+.br-req-label { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 600; }
+
 /* ===== LIVE TICKER ===== */
 .live-ticker {
   background: rgba(108,99,255,0.05);
@@ -327,7 +353,36 @@ body::before {
   animation: livepulse 1.5s infinite;
 }
 
-/* ===== MATCH INPUT ===== */
+/* ===== HISTORY ===== */
+.history-list { margin-bottom: 18px; }
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 13px;
+  margin-bottom: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.history-item:active { transform: scale(0.98); background: rgba(108,99,255,0.06); }
+.hi-sport { font-size: 15px; flex-shrink: 0; }
+.hi-body  { flex: 1; min-width: 0; }
+.hi-match { color: rgba(240,240,248,0.8); font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hi-meta  { color: rgba(240,240,248,0.25); font-size: 10px; margin-top: 2px; }
+.hi-right { text-align: right; flex-shrink: 0; }
+.hi-conf  { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+.hi-time  { color: rgba(240,240,248,0.2); font-size: 9px; margin-top: 3px; }
+
+/* ===== RUN BUTTON STATES ===== */
+.btn-ready {
+  background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,229,160,0.06)) !important;
+  border: 1px solid rgba(0,229,160,0.3) !important;
+  color: #00E5A0 !important;
+  box-shadow: 0 6px 28px rgba(0,229,160,0.15) !important;
+}
+
+/* ===== HISTORY ===== */
 .label { color: rgba(240,240,248,0.4); font-size: 12px; font-weight: 500; margin-bottom: 8px; }
 input[type=text], input[type=password] {
   width: 100%; padding: 14px 16px;
@@ -562,6 +617,24 @@ input::placeholder { color: rgba(240,240,248,0.2); }
     </div>
   </div>
 
+  <!-- BANKROLL BAR -->
+  <div class="bankroll-bar">
+    <div class="br-item">
+      <span class="br-label">💰 Банк</span>
+      <span class="br-value" id="br-bank">10 000 ₽</span>
+    </div>
+    <div class="br-sep"></div>
+    <div class="br-item">
+      <span class="br-label">ROI</span>
+      <span class="br-roi-pos" id="br-roi">+12.4%</span>
+    </div>
+    <div class="br-sep"></div>
+    <div class="br-item br-requests">
+      <div class="br-req-dots" id="req-dots"></div>
+      <span class="br-req-label" id="req-label">⚡ 5 запросов</span>
+    </div>
+  </div>
+
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('manual',this)">✏️ Матч</button>
@@ -582,6 +655,12 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       <!-- LIVE NOW -->
       <div class="section-title">🔥 Горячие матчи сейчас</div>
       <div class="live-matches" id="live-matches-list"></div>
+
+      <!-- HISTORY -->
+      <div id="history-block" style="display:none">
+        <div class="section-title">🕐 Недавние анализы</div>
+        <div class="history-list" id="history-list"></div>
+      </div>
 
       <!-- INPUT -->
       <div class="section-title">🧠 Свой анализ</div>
@@ -659,6 +738,109 @@ const ACCESS = { login: "sharp", password: "radar2026" };
 let currentSport = "⚽ Футбол";
 let verdictText = "";
 let analysisResult = "";
+
+// ===== BANKROLL & REQUESTS =====
+let bankroll = parseFloat(localStorage.getItem('sr_bank') || '10000');
+let roi       = parseFloat(localStorage.getItem('sr_roi')  || '12.4');
+let reqUsed   = parseInt(localStorage.getItem('sr_req_date') === new Date().toDateString()
+                  ? localStorage.getItem('sr_req_used') || '0'
+                  : '0');
+const REQ_LIMIT = 10;
+
+function saveBankroll() {
+  localStorage.setItem('sr_bank', bankroll);
+  localStorage.setItem('sr_roi',  roi);
+}
+function saveReq() {
+  localStorage.setItem('sr_req_date', new Date().toDateString());
+  localStorage.setItem('sr_req_used', reqUsed);
+}
+function updateBankrollUI() {
+  const bEl = document.getElementById('br-bank');
+  const rEl = document.getElementById('br-roi');
+  if(bEl) bEl.textContent = bankroll.toLocaleString('ru-RU') + ' ₽';
+  if(rEl) {
+    rEl.textContent = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%';
+    rEl.className = roi >= 0 ? 'br-roi-pos' : 'br-roi-neg';
+  }
+  updateReqDots();
+}
+function updateReqDots() {
+  const dotsEl = document.getElementById('req-dots');
+  const labelEl = document.getElementById('req-label');
+  if(!dotsEl) return;
+  const avail = REQ_LIMIT - reqUsed;
+  dotsEl.innerHTML = Array.from({length: REQ_LIMIT}, (_,i) =>
+    `<div class="br-req-dot ${i < reqUsed ? 'used' : 'avail'}"></div>`
+  ).join('');
+  if(labelEl) {
+    labelEl.textContent = avail > 0 ? `⚡ ${avail} запросов` : '⏳ лимит';
+    labelEl.style.color = avail <= 2 ? '#FF4566' : avail <= 5 ? '#FFB830' : 'rgba(240,240,248,0.3)';
+  }
+}
+
+// ===== HISTORY =====
+let analysisHistory = JSON.parse(localStorage.getItem('sr_history') || '[]');
+
+function saveHistory(match, sport, conf) {
+  const now = new Date();
+  const item = {
+    match, sport, conf,
+    time: now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+    date: now.toLocaleDateString('ru-RU'),
+    verdict: verdictText,
+    analysis: analysisResult
+  };
+  analysisHistory.unshift(item);
+  if(analysisHistory.length > 5) analysisHistory = analysisHistory.slice(0,5);
+  localStorage.setItem('sr_history', JSON.stringify(analysisHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const block = document.getElementById('history-block');
+  if(!list || !block) return;
+  if(analysisHistory.length === 0) { block.style.display='none'; return; }
+  block.style.display = 'block';
+  list.innerHTML = analysisHistory.map((item, idx) => {
+    const confVal = parseInt(item.conf) || 0;
+    const confCls = confVal >= 80 ? 'conf-high' : 'conf-mid';
+    const sport = item.sport ? item.sport.split(' ')[0] : '📊';
+    return `<div class="history-item" onclick="loadHistory(${idx})">
+      <div class="hi-sport">${sport}</div>
+      <div class="hi-body">
+        <div class="hi-match">${item.match}</div>
+        <div class="hi-meta">${item.sport} · ${item.date}</div>
+      </div>
+      <div class="hi-right">
+        ${item.conf ? `<div class="hi-conf pick-conf ${confCls}">🔥 ${item.conf}%</div>` : ''}
+        <div class="hi-time">${item.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadHistory(idx) {
+  const item = analysisHistory[idx];
+  if(!item) return;
+  analysisResult = item.analysis || '';
+  verdictText    = item.verdict  || '';
+  document.getElementById('match-input').value = item.match;
+  updateBtn();
+  if(analysisResult) {
+    document.getElementById('analysis-empty').style.display = 'none';
+    document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
+    document.getElementById('analysis-content').style.display = 'block';
+    document.getElementById('shortcut-block').style.display = 'block';
+  }
+  if(verdictText) {
+    document.getElementById('verdict-empty').style.display = 'none';
+    document.getElementById('verdict-text').innerHTML = renderText(verdictText);
+    document.getElementById('verdict-content').style.display = 'block';
+  }
+  switchTabById('analysis');
+}
 
 // ===== CLOCK =====
 function updateClock() {
@@ -775,6 +957,8 @@ function doLogin() {
       buildTicker();
       buildTopPicks();
       buildLiveMatches();
+      updateBankrollUI();
+      renderHistory();
     } else {
       err.textContent = '⚠️ Неверный логин или пароль';
       err.style.display = 'block';
@@ -837,6 +1021,11 @@ async function startAnalysis() {
   document.getElementById('verdict-loading').style.display = 'none';
   document.getElementById('verdict-empty').style.display = 'block';
   document.getElementById('verdict-content').style.display = 'none';
+
+  // count request
+  reqUsed = Math.min(reqUsed + 1, REQ_LIMIT);
+  saveReq();
+  updateReqDots();
 
   const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
 
@@ -941,6 +1130,22 @@ VERDICT_END`;
     document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
     document.getElementById('analysis-content').style.display = 'block';
     document.getElementById('shortcut-block').style.display = 'block';
+
+    // extract confidence % from verdict
+    const confMatch = (verdictText || analysisResult).match(/Уверенность[^0-9]*(\d+)%/);
+    const confVal   = confMatch ? confMatch[1] : null;
+
+    // save to history
+    saveHistory(match, currentSport, confVal);
+
+    // update run button
+    const runBtn = document.getElementById('run-btn');
+    runBtn.textContent = `✅ Готово${confVal ? ' · ' + confVal + '% уверенность' : ''}`;
+    runBtn.classList.add('btn-ready');
+    setTimeout(() => {
+      runBtn.textContent = '🧠 ЗАПУСТИТЬ АНАЛИЗ 3.0';
+      runBtn.classList.remove('btn-ready');
+    }, 4000);
 
     if(verdictText) {
       document.getElementById('verdict-empty').style.display = 'none';
