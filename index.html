@@ -677,48 +677,50 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 }
 .menu-btn:active { background: rgba(108,99,255,0.3); transform: scale(0.93); }
 
-/* ===== DROPDOWN MENU ===== */
+/* ===== DROPDOWN MENU — bottom sheet ===== */
 .dropdown-menu {
   position: fixed;
-  top: 60px; right: 14px;
-  width: 240px;
-  background: rgba(14,14,26,0.99);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(108,99,255,0.25);
-  border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(108,99,255,0.12);
+  bottom: 0; left: 0; right: 0;
+  width: 100%;
+  background: #0e0e1a;
+  border: 1px solid rgba(108,99,255,0.2);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 60px rgba(0,0,0,0.9);
   z-index: 99999;
-  overflow: hidden;
-  opacity: 0; transform: scale(0.92) translateY(-8px);
-  transform-origin: top right;
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: visible;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.32,0.72,0,1);
   pointer-events: none;
-  will-change: opacity, transform;
+  padding-bottom: 30px;
 }
 .dropdown-menu.open {
-  opacity: 1; transform: scale(1) translateY(0);
+  opacity: 1;
+  transform: translateY(0);
   pointer-events: auto;
 }
 .dm-header {
-  padding: 14px 16px 10px;
+  padding: 10px 20px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.dm-title { color: rgba(240,240,248,0.4); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.dm-title { color: rgba(240,240,248,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
 .dm-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 13px 16px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 22px;
   cursor: pointer;
-  transition: background 0.15s;
   border-bottom: 1px solid rgba(255,255,255,0.04);
+  -webkit-tap-highlight-color: rgba(108,99,255,0.15);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .dm-item:last-child { border-bottom: none; }
-.dm-item:active { background: rgba(255,255,255,0.06); }
+.dm-item:active { background: rgba(255,255,255,0.07); }
 .dm-icon {
-  width: 32px; height: 32px;
-  border-radius: 9px;
+  width: 36px; height: 36px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
+  font-size: 17px; flex-shrink: 0;
 }
 .dm-icon-purple { background: rgba(108,99,255,0.15); }
 .dm-icon-green  { background: rgba(0,229,160,0.12); }
@@ -726,15 +728,15 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 .dm-icon-red    { background: rgba(255,69,102,0.12); }
 .dm-icon-blue   { background: rgba(100,180,255,0.12); }
 .dm-body { flex: 1; }
-.dm-item-title { color: #F0F0F8; font-size: 12px; font-weight: 700; }
-.dm-item-sub   { color: rgba(240,240,248,0.3); font-size: 10px; margin-top: 1px; }
-.dm-chevron    { color: rgba(240,240,248,0.2); font-size: 14px; }
+.dm-item-title { color: #F0F0F8; font-size: 14px; font-weight: 700; }
+.dm-item-sub   { color: rgba(240,240,248,0.3); font-size: 11px; margin-top: 2px; }
+.dm-chevron    { color: rgba(240,240,248,0.2); font-size: 16px; }
 .dm-overlay {
   position: fixed; inset: 0;
   z-index: 99998;
-  background: transparent;
+  background: rgba(0,0,0,0.55);
   display: none;
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .dm-overlay.open { display: block; }
 
@@ -1193,47 +1195,33 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   <!-- DROPDOWN MENU OVERLAY -->
   <div class="dm-overlay" id="dm-overlay"></div>
 
-  <!-- DROPDOWN MENU -->
+  <!-- DROPDOWN MENU (bottom sheet) -->
   <div class="dropdown-menu" id="dropdown-menu">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:14px auto 10px;"></div>
     <div class="dm-header"><div class="dm-title">Меню</div></div>
-    <div class="dm-item" onclick="openModal('settings')">
+    <div class="dm-item" id="dm-settings">
       <div class="dm-icon dm-icon-purple">⚙️</div>
-      <div class="dm-body">
-        <div class="dm-item-title">Настройки</div>
-        <div class="dm-item-sub">Логин, пароль, коэффициенты</div>
-      </div>
+      <div class="dm-body"><div class="dm-item-title">Настройки</div><div class="dm-item-sub">Логин, пароль, коэффициенты</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" onclick="openModal('theme')">
+    <div class="dm-item" id="dm-theme">
       <div class="dm-icon dm-icon-blue">🎨</div>
-      <div class="dm-body">
-        <div class="dm-item-title">Тема</div>
-        <div class="dm-item-sub" id="dm-theme-sub">Тёмная</div>
-      </div>
+      <div class="dm-body"><div class="dm-item-title">Тема</div><div class="dm-item-sub" id="dm-theme-sub">Тёмная</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" onclick="openModal('notifications')">
+    <div class="dm-item" id="dm-notifications">
       <div class="dm-icon dm-icon-orange">🔔</div>
-      <div class="dm-body">
-        <div class="dm-item-title">Уведомления</div>
-        <div class="dm-item-sub">Steam Move alert</div>
-      </div>
+      <div class="dm-body"><div class="dm-item-title">Уведомления</div><div class="dm-item-sub">Steam Move alert</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" onclick="openModal('about')">
+    <div class="dm-item" id="dm-about">
       <div class="dm-icon dm-icon-green">💎</div>
-      <div class="dm-body">
-        <div class="dm-item-title">О приложении</div>
-        <div class="dm-item-sub">SharpRadar v3.0</div>
-      </div>
+      <div class="dm-body"><div class="dm-item-title">О приложении</div><div class="dm-item-sub">SharpRadar v3.0</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" onclick="openConfirm()">
+    <div class="dm-item" id="dm-clear">
       <div class="dm-icon dm-icon-red">🗑️</div>
-      <div class="dm-body">
-        <div class="dm-item-title">Очистить историю</div>
-        <div class="dm-item-sub">Удалить все анализы</div>
-      </div>
+      <div class="dm-body"><div class="dm-item-title">Очистить историю</div><div class="dm-item-sub">Удалить все анализы</div></div>
       <div class="dm-chevron">›</div>
     </div>
   </div>
@@ -2180,25 +2168,30 @@ function closeMenu() {
   if(o) o.classList.remove('open');
 }
 function initMenuListeners() {
-  const btn = document.getElementById('menu-btn');
-  const overlay = document.getElementById('dm-overlay');
-  if(btn) {
-    btn.addEventListener('touchstart', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      toggleMenu(e);
+  function addTap(id, fn) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    let tapped = false;
+    el.addEventListener('touchstart', function(e) {
+      tapped = true;
+      e.stopPropagation();
+      if(id === 'menu-btn') e.preventDefault();
+    }, { passive: id !== 'menu-btn' });
+    el.addEventListener('touchend', function(e) {
+      if(tapped) { tapped = false; e.preventDefault(); fn(e); }
     }, { passive: false });
-    btn.addEventListener('click', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      toggleMenu(e);
+    el.addEventListener('click', function(e) {
+      if(!tapped) fn(e);
     });
   }
-  if(overlay) {
-    overlay.addEventListener('touchstart', function(e) {
-      e.preventDefault();
-      closeMenu();
-    }, { passive: false });
-    overlay.addEventListener('click', closeMenu);
-  }
+
+  addTap('menu-btn', toggleMenu);
+  addTap('dm-overlay', closeMenu);
+  addTap('dm-settings',     function(){ closeMenu(); setTimeout(function(){ openModal('settings'); }, 50); });
+  addTap('dm-theme',        function(){ closeMenu(); setTimeout(function(){ openModal('theme'); }, 50); });
+  addTap('dm-notifications',function(){ closeMenu(); setTimeout(function(){ openModal('notifications'); }, 50); });
+  addTap('dm-about',        function(){ closeMenu(); setTimeout(function(){ openModal('about'); }, 50); });
+  addTap('dm-clear',        function(){ closeMenu(); setTimeout(function(){ openConfirm(); }, 50); });
 }
 
 // ===== MODALS =====
