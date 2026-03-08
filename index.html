@@ -1732,6 +1732,8 @@ function doLogin() {
   setTimeout(() => {
     if(l === ACCESS.login && p === ACCESS.password) {
       document.getElementById('login-screen').style.display = 'none';
+      var fab = document.getElementById('menu-fab');
+      if(fab) fab.style.display = 'flex';
       const app = document.getElementById('app-screen');
       app.style.display = 'flex';
       initMenuListeners();
@@ -2317,5 +2319,7 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
 
+
+<div id="menu-fab" ontouchstart="this.style.background='rgba(108,99,255,0.95)';this.style.transform='scale(0.88)'" ontouchend="this.style.background='rgba(108,99,255,0.7)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:none;position:fixed;top:18px;right:90px;width:44px;height:44px;background:rgba(108,99,255,0.7);border-radius:12px;align-items:center;justify-content:center;font-size:20px;color:#fff;z-index:999999;box-shadow:0 4px 20px rgba(108,99,255,0.6);user-select:none;-webkit-user-select:none;">···</div>
 </body>
 </html>
