@@ -1012,7 +1012,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
-        <button class="menu-btn" id="menu-btn" onclick="toggleMenu(event)">···</button>
+        <button class="menu-btn" id="menu-btn">···</button>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -1191,7 +1191,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   </div>
 
   <!-- DROPDOWN MENU OVERLAY -->
-  <div class="dm-overlay" id="dm-overlay" onclick="closeMenu()"></div>
+  <div class="dm-overlay" id="dm-overlay"></div>
 
   <!-- DROPDOWN MENU -->
   <div class="dropdown-menu" id="dropdown-menu">
@@ -2164,15 +2164,11 @@ function toggleMenu(e) {
     m.classList.remove('open');
     if(o) o.classList.remove('open');
   } else {
-    // Position under the button
     const rect = btn.getBoundingClientRect();
-    const menuTop = rect.bottom + 6;
-    const menuRight = window.innerWidth - rect.right;
-    m.style.top   = menuTop + 'px';
-    m.style.right = menuRight + 'px';
+    m.style.top   = (rect.bottom + 6) + 'px';
+    m.style.right = (window.innerWidth - rect.right) + 'px';
     m.style.left  = 'auto';
-    // Force reflow before adding open class
-    m.getBoundingClientRect();
+    m.getBoundingClientRect(); // force reflow
     m.classList.add('open');
     if(o) o.classList.add('open');
   }
@@ -2182,6 +2178,27 @@ function closeMenu() {
   const o = document.getElementById('dm-overlay');
   if(m) m.classList.remove('open');
   if(o) o.classList.remove('open');
+}
+function initMenuListeners() {
+  const btn = document.getElementById('menu-btn');
+  const overlay = document.getElementById('dm-overlay');
+  if(btn) {
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      toggleMenu(e);
+    }, { passive: false });
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      toggleMenu(e);
+    });
+  }
+  if(overlay) {
+    overlay.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      closeMenu();
+    }, { passive: false });
+    overlay.addEventListener('click', closeMenu);
+  }
 }
 
 // ===== MODALS =====
@@ -2322,6 +2339,11 @@ function copyVerdict() {
     }, 2200);
   });
 }
+
+// Init menu listeners after DOM ready
+document.addEventListener('DOMContentLoaded', initMenuListeners);
+// Also init immediately in case DOM already loaded
+if(document.readyState !== 'loading') initMenuListeners();
 </script>
 </body>
 </html>
