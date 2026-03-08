@@ -1018,11 +1018,13 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <span>LIVE</span>
         </div>
         
-        <div ontouchstart="this.style.background='rgba(108,99,255,0.99)';this.style.transform='scale(0.85)'" ontouchend="this.style.background='rgba(108,99,255,0.2)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="width:36px;height:36px;background:rgba(108,99,255,0.2);border:1px solid rgba(108,99,255,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0;touch-action:manipulation;user-select:none;-webkit-user-select:none;">···</div>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
 
+    <div style="padding:6px 18px 8px;display:flex;justify-content:flex-end;">
+      <div ontouchstart="this.style.background='rgba(108,99,255,0.99)';this.style.transform='scale(0.93)'" ontouchend="this.style.background='rgba(108,99,255,0.15)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.35);border-radius:10px;padding:5px 14px;color:#a09af0;font-size:13px;font-weight:600;touch-action:manipulation;user-select:none;-webkit-user-select:none;">⋯ Меню</div>
+    </div>
     <div class="header-info-bar">
       <div class="hib-datetime">
         <span class="hib-date" id="hib-date">--</span>
