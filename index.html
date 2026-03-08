@@ -1765,6 +1765,7 @@ function doLogin() {
       document.getElementById('login-screen').style.display = 'none';
       const app = document.getElementById('app-screen');
       app.style.display = 'flex';
+      initMenuListeners();
       buildTicker();
       buildTopPicks();
       buildLiveMatches();
@@ -2333,10 +2334,7 @@ function copyVerdict() {
   });
 }
 
-// Init menu listeners after DOM ready
-document.addEventListener('DOMContentLoaded', initMenuListeners);
-// Also init immediately in case DOM already loaded
-if(document.readyState !== 'loading') initMenuListeners();
+// Menu listeners initialized after login (inside doLogin)
 </script>
 </body>
 </html>
