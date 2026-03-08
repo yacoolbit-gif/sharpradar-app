@@ -1014,7 +1014,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
-        <button class="menu-btn" id="menu-btn" style="position:relative;z-index:999999;pointer-events:auto;-webkit-tap-highlight-color:rgba(108,99,255,0.5)" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}">···</button>
+        <div id="menu-btn" style="width:40px;height:40px;background:rgba(108,99,255,0.2);border:1px solid rgba(108,99,255,0.4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:rgba(108,99,255,0.5);user-select:none;" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}">···</div>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
