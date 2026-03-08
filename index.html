@@ -680,7 +680,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 /* ===== DROPDOWN MENU ===== */
 .dropdown-menu {
   position: fixed;
-  top: 0; right: 14px;
+  top: 60px; right: 14px;
   width: 240px;
   background: rgba(14,14,26,0.99);
   backdrop-filter: blur(30px);
@@ -688,12 +688,13 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   border: 1px solid rgba(108,99,255,0.25);
   border-radius: 18px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(108,99,255,0.12);
-  z-index: 9999;
+  z-index: 99999;
   overflow: hidden;
   opacity: 0; transform: scale(0.92) translateY(-8px);
   transform-origin: top right;
-  transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
   pointer-events: none;
+  will-change: opacity, transform;
 }
 .dropdown-menu.open {
   opacity: 1; transform: scale(1) translateY(0);
@@ -730,8 +731,10 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 .dm-chevron    { color: rgba(240,240,248,0.2); font-size: 14px; }
 .dm-overlay {
   position: fixed; inset: 0;
-  z-index: 9998;
+  z-index: 99998;
+  background: transparent;
   display: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .dm-overlay.open { display: block; }
 
@@ -2033,12 +2036,31 @@ ${emoji} ${match}
 VERDICT_END`;
 
   try {
-    const res = await fetch('https://sharpradar-proxy.ya-coolbit.workers.dev', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await res.json();
+    const WORKER_URL = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
+    const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+    const payload = {model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]};
+
+    let res, data;
+    // Try Worker first (has API key), fallback to direct API
+    try {
+      res = await fetch(WORKER_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000)
+      });
+      data = await res.json();
+      // If worker returned HTML or error page instead of JSON
+      if(!data || (!data.content && !data.error)) throw new Error('bad_worker');
+    } catch(workerErr) {
+      // Fallback: direct Anthropic API (works in Claude artifacts environment)
+      res = await fetch(ANTHROPIC_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      data = await res.json();
+    }
 
     if(data.error) {
       const errType = data.error.type || '';
@@ -2137,15 +2159,20 @@ function toggleMenu(e) {
   const o   = document.getElementById('dm-overlay');
   const btn = document.getElementById('menu-btn');
   if(!m || !btn) return;
-  if(m.classList.contains('open')) {
+  const isOpen = m.classList.contains('open');
+  if(isOpen) {
     m.classList.remove('open');
     if(o) o.classList.remove('open');
   } else {
+    // Position under the button
     const rect = btn.getBoundingClientRect();
-    m.style.top   = (rect.bottom + 6) + 'px';
-    m.style.right = (window.innerWidth - rect.right) + 'px';
+    const menuTop = rect.bottom + 6;
+    const menuRight = window.innerWidth - rect.right;
+    m.style.top   = menuTop + 'px';
+    m.style.right = menuRight + 'px';
     m.style.left  = 'auto';
-    void m.offsetWidth;
+    // Force reflow before adding open class
+    m.getBoundingClientRect();
     m.classList.add('open');
     if(o) o.classList.add('open');
   }
