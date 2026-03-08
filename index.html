@@ -1014,7 +1014,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
-        <a href="#menu" class="menu-btn" id="menu-btn" onclick="toggleMenu(event);return false;">···</a>
+        <button class="menu-btn" id="menu-btn" style="position:relative;z-index:999999;pointer-events:auto;-webkit-tap-highlight-color:rgba(108,99,255,0.5)" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}">···</button>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -2303,6 +2303,15 @@ function copyVerdict() {
 }
 
 // Menu listeners initialized after login (inside doLogin)
+// Also attach directly for safety
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('menu-btn');
+  if(btn) {
+    btn.onclick = function(e) { e.preventDefault(); toggleMenu(e); return false; };
+  }
+  var ov = document.getElementById('dm-overlay');
+  if(ov) { ov.onclick = closeMenu; }
+});
 </script>
 </body>
 </html>
