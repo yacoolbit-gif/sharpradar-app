@@ -1014,7 +1014,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div class="live-dot"></div>
           <span>LIVE</span>
         </div>
-        <button class="menu-btn" id="menu-btn">···</button>
+        <a href="#menu" class="menu-btn" id="menu-btn" onclick="toggleMenu(event);return false;">···</a>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -1193,33 +1193,33 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   </div>
 
   <!-- DROPDOWN MENU OVERLAY -->
-  <div class="dm-overlay" id="dm-overlay"></div>
+  <div class="dm-overlay" id="dm-overlay" onclick="closeMenu()"></div>
 
   <!-- DROPDOWN MENU (bottom sheet) -->
   <div class="dropdown-menu" id="dropdown-menu">
     <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:14px auto 10px;"></div>
     <div class="dm-header"><div class="dm-title">Меню</div></div>
-    <div class="dm-item" id="dm-settings">
+    <div class="dm-item" id="dm-settings" onclick="closeMenu();openModal('settings')">
       <div class="dm-icon dm-icon-purple">⚙️</div>
       <div class="dm-body"><div class="dm-item-title">Настройки</div><div class="dm-item-sub">Логин, пароль, коэффициенты</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" id="dm-theme">
+    <div class="dm-item" id="dm-theme" onclick="closeMenu();openModal('theme')">
       <div class="dm-icon dm-icon-blue">🎨</div>
       <div class="dm-body"><div class="dm-item-title">Тема</div><div class="dm-item-sub" id="dm-theme-sub">Тёмная</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" id="dm-notifications">
+    <div class="dm-item" id="dm-notifications" onclick="closeMenu();openModal('notifications')">
       <div class="dm-icon dm-icon-orange">🔔</div>
       <div class="dm-body"><div class="dm-item-title">Уведомления</div><div class="dm-item-sub">Steam Move alert</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" id="dm-about">
+    <div class="dm-item" id="dm-about" onclick="closeMenu();openModal('about')">
       <div class="dm-icon dm-icon-green">💎</div>
       <div class="dm-body"><div class="dm-item-title">О приложении</div><div class="dm-item-sub">SharpRadar v3.0</div></div>
       <div class="dm-chevron">›</div>
     </div>
-    <div class="dm-item" id="dm-clear">
+    <div class="dm-item" id="dm-clear" onclick="closeMenu();openConfirm()">
       <div class="dm-icon dm-icon-red">🗑️</div>
       <div class="dm-body"><div class="dm-item-title">Очистить историю</div><div class="dm-item-sub">Удалить все анализы</div></div>
       <div class="dm-chevron">›</div>
@@ -2144,20 +2144,13 @@ function renderText(text) {
 // ===== MENU =====
 function toggleMenu(e) {
   if(e) { e.stopPropagation(); e.preventDefault(); }
-  const m   = document.getElementById('dropdown-menu');
-  const o   = document.getElementById('dm-overlay');
-  const btn = document.getElementById('menu-btn');
-  if(!m || !btn) return;
-  const isOpen = m.classList.contains('open');
-  if(isOpen) {
+  var m = document.getElementById('dropdown-menu');
+  var o = document.getElementById('dm-overlay');
+  if(!m) return;
+  if(m.classList.contains('open')) {
     m.classList.remove('open');
     if(o) o.classList.remove('open');
   } else {
-    const rect = btn.getBoundingClientRect();
-    m.style.top   = (rect.bottom + 6) + 'px';
-    m.style.right = (window.innerWidth - rect.right) + 'px';
-    m.style.left  = 'auto';
-    m.getBoundingClientRect(); // force reflow
     m.classList.add('open');
     if(o) o.classList.add('open');
   }
@@ -2168,32 +2161,7 @@ function closeMenu() {
   if(m) m.classList.remove('open');
   if(o) o.classList.remove('open');
 }
-function initMenuListeners() {
-  function addTap(id, fn) {
-    const el = document.getElementById(id);
-    if(!el) return;
-    let tapped = false;
-    el.addEventListener('touchstart', function(e) {
-      tapped = true;
-      e.stopPropagation();
-      if(id === 'menu-btn') e.preventDefault();
-    }, { passive: id !== 'menu-btn' });
-    el.addEventListener('touchend', function(e) {
-      if(tapped) { tapped = false; e.preventDefault(); fn(e); }
-    }, { passive: false });
-    el.addEventListener('click', function(e) {
-      if(!tapped) fn(e);
-    });
-  }
-
-  addTap('menu-btn', toggleMenu);
-  addTap('dm-overlay', closeMenu);
-  addTap('dm-settings',     function(){ closeMenu(); setTimeout(function(){ openModal('settings'); }, 50); });
-  addTap('dm-theme',        function(){ closeMenu(); setTimeout(function(){ openModal('theme'); }, 50); });
-  addTap('dm-notifications',function(){ closeMenu(); setTimeout(function(){ openModal('notifications'); }, 50); });
-  addTap('dm-about',        function(){ closeMenu(); setTimeout(function(){ openModal('about'); }, 50); });
-  addTap('dm-clear',        function(){ closeMenu(); setTimeout(function(){ openConfirm(); }, 50); });
-}
+function initMenuListeners() { /* handled by onclick */ }
 
 // ===== MODALS =====
 function openModal(id) {
