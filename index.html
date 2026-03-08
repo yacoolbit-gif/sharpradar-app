@@ -1015,6 +1015,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <span>LIVE</span>
         </div>
         
+        <button class="menu-btn" id="menu-btn" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}">···</button>
         <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
       </div>
     </div>
@@ -2316,6 +2317,5 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
 
-<div id="menu-fab" ontouchstart="this.style.background='rgba(108,99,255,0.9)';this.style.transform='scale(0.92)'" ontouchend="this.style.background='rgba(108,99,255,0.6)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;background:rgba(108,99,255,0.6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;z-index:888888;box-shadow:0 4px 20px rgba(108,99,255,0.5);user-select:none;">⋯</div>
 </body>
 </html>
