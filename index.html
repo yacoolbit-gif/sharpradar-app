@@ -1196,7 +1196,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         </div>
         <div class="status-chip" id="sc-odds">
           <div class="status-chip-dot idle" id="sc-odds-dot"></div>
-          <span class="status-chip-label" id="sc-odds-lbl">ODDS</span>
+          <span class="status-chip-label" id="sc-odds-lbl">HOT</span>
         </div>
         <div class="status-chip" id="sc-groq">
           <div class="status-chip-dot idle" id="sc-groq-dot"></div>
@@ -2040,56 +2040,69 @@ async function fetchESPNTicker() {
 }
 
 // ===== THE-ODDS-API ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
-const ODDS_API_KEY = '6a6e97c0ac5e0892af5d7ba1c10e31aa';
-const ODDS_SPORTS = ['soccer_epl','basketball_nba','icehockey_nhl','tennis_atp_french_open'];
+// ===== ESPN ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
+const HOT_ENDPOINTS = [
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',   sport:'⚽', league:'АПЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',   sport:'⚽', league:'Ла Лига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',   sport:'⚽', league:'Бундеслига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',   sport:'⚽', league:'Серия А' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', sport:'🏀', league:'НБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',     sport:'🏒', league:'НХЛ' },
+];
 
 async function fetchOddsHotMatches() {
   setChipLoading('Odds API');
   const allEvents = [];
   let anyOk = false;
-  for(const sport of ODDS_SPORTS) {
+
+  for(const ep of HOT_ENDPOINTS) {
     try {
-      const r = await fetch(
-        `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso`,
-        { signal: AbortSignal.timeout(10000) }
-      );
-      if(!r.ok) {
-        const errBody = await r.json().catch(()=>({}));
-        const detail = errBody.message || `HTTP ${r.status}`;
-        if(r.status === 401) logEvent('Odds API', false, `${sport} → 401 Неверный API ключ`);
-        else if(r.status === 422) logEvent('Odds API', false, `${sport} → 422 ${detail}`);
-        else if(r.status === 429) logEvent('Odds API', false, `${sport} → 429 Лимит запросов исчерпан`);
-        else logEvent('Odds API', false, `${sport} → ${detail}`);
-        continue;
-      }
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) { logEvent('Odds API', false, `${ep.league} → HTTP ${r.status}`); continue; }
+      const d = await r.json();
       anyOk = true;
-      const events = await r.json();
-      const sportEmoji = sport.includes('soccer')?'⚽':sport.includes('basketball')?'🏀':sport.includes('hockey')?'🏒':'🎾';
-      for(const ev of (events||[]).slice(0,2)) {
+      const events = (d.events || []);
+      // Сначала берём LIVE, потом upcoming
+      const live     = events.filter(e => e.status?.type?.state === 'in');
+      const upcoming = events.filter(e => e.status?.type?.state === 'pre');
+      const pick     = [...live, ...upcoming].slice(0, 2);
+
+      for(const e of pick) {
         try {
-          const bm = ev.bookmakers?.[0];
-          const mkt = bm?.markets?.[0];
-          const outcomes = mkt?.outcomes || [];
-          const h1 = outcomes.find(o=>o.name===ev.home_team);
-          const h2 = outcomes.find(o=>o.name===ev.away_team);
-          const bestOdds = h1 && h2 ? Math.max(h1.price, h2.price).toFixed(2) : '—';
+          const comp  = e.competitions[0];
+          const t     = comp.competitors;
+          const home  = t.find(x => x.homeAway === 'home');
+          const away  = t.find(x => x.homeAway === 'away');
+          const state = e.status.type.state;
+          const isLive = state === 'in';
+          const isPre  = state === 'pre';
+          let minute = '';
+          if(isLive)     minute = e.status.type.shortDetail || 'LIVE';
+          else if(isPre) minute = espnTimeToMSK(e.date);
+          else           minute = e.status.type.shortDetail || 'FT';
+          const score = (isLive || state === 'post')
+            ? `${away?.score||0}:${home?.score||0}` : '— : —';
+          const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
+          const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
           allEvents.push({
-            sport: sportEmoji,
-            teams: `${ev.away_team} — ${ev.home_team}`,
-            score: '— : —',
-            minute: espnTimeToMSK(ev.commence_time),
-            odds: bestOdds
+            sport: ep.sport,
+            teams: `${aName} — ${hName}`,
+            score,
+            minute: `${ep.league} · ${minute}`,
+            live: isLive
           });
         } catch(_){}
       }
     } catch(err) {
       const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
-      logEvent('Odds API', false, `${sport} — ${isTimeout ? 'timeout 10s' : err.message || 'сеть'}`);
+      logEvent('Odds API', false, `${ep.league} — ${isTimeout ? 'timeout 8s' : err.message || 'сеть'}`);
     }
   }
-  if(anyOk) logEvent('Odds API', true, `OK · загружено ${allEvents.length} матчей`);
-  if(allEvents.length >= 2) {
-    liveMatches = allEvents;
+
+  if(anyOk) logEvent('Odds API', true, `OK · горячих матчей: ${allEvents.length}`);
+  if(allEvents.length >= 1) {
+    liveMatches = allEvents.slice(0, 8);
     buildLiveMatches();
   }
 }
