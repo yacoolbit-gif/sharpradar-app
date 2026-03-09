@@ -1179,10 +1179,16 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <p>Вердикт появится после анализа</p>
       </div>
       <div id="verdict-content" style="display:none">
-        <button class="btn-copy" id="copy-btn" onclick="copyVerdict()">
-          <span id="copy-icon">📋</span>
-          <span id="copy-text">СКОПИРОВАТЬ И ПОДЕЛИТЬСЯ</span>
-        </button>
+        <div style="display:flex;gap:10px">
+          <button class="btn-copy" id="copy-btn" onclick="copyVerdict()" style="flex:1">
+            <span id="copy-icon">📋</span>
+            <span id="copy-text">СКОПИРОВАТЬ</span>
+          </button>
+          <button class="btn-copy" id="share-btn" onclick="shareVerdict()" style="flex:1;background:linear-gradient(135deg,#1a9e6e,#0d7a54)">
+            <span id="share-icon">📤</span>
+            <span id="share-text">ПОДЕЛИТЬСЯ</span>
+          </button>
+        </div>
         <div class="verdict-card">
           <div id="verdict-text" class="analysis-text"></div>
         </div>
@@ -1944,18 +1950,12 @@ async function startAnalysis() {
 Вид спорта: ${currentSport}
 Дата запроса: ${date} | Время запроса: ${time}
 
-ВАЖНО: На основе своих знаний определи:
-1. Точную дату матча "${match}" в формате ДД.ММ.ГГГГ
-2. Время начала в МСК (если неизвестно — "время уточняется")
-3. Стадион и город проведения (если неизвестно — "место уточняется")
-
-Подставь эти данные в шапке вместо [дата], [время МСК], [стадион, город].
-Делай ПОЛНЫЙ анализ — не отказывайся. Команды могут быть из любой лиги и страны.
+ВАЖНО: Найди точную дату и время начала матча "${match}" в открытых источниках. Анализируй ТОЛЬКО предстоящие матчи (в пределах ближайшего месяца). Укажи дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если матч уже сыгран или не найден в ближайшем расписании — сообщи об этом и не делай анализ. Если время неизвестно — напиши дату и "время уточняется".
 
 ANALYSIS_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
 ${emoji} ${match}
-📅 [дата] | ⏰ [время МСК] | 🏟 [стадион, город]
+📅 [дата матча] | ⏰ [время МСК]
 
 📊 АНАЛИЗ 7 ПУНКТОВ
 
@@ -1984,7 +1984,7 @@ ANALYSIS_END
 VERDICT_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
 ${emoji} ${match}
-📅 [дата] | ⏰ [время МСК] | 🏟 [стадион, город]
+📅 [дата матча] | ⏰ [время МСК]
 
 🏆 ВЕРДИКТ
 
@@ -2265,9 +2265,37 @@ function copyVerdict() {
     setTimeout(() => {
       document.getElementById('copy-btn').classList.remove('copied');
       document.getElementById('copy-icon').textContent = '📋';
-      document.getElementById('copy-text').textContent = 'СКОПИРОВАТЬ И ПОДЕЛИТЬСЯ';
+      document.getElementById('copy-text').textContent = 'СКОПИРОВАТЬ';
     }, 2200);
   });
+}
+
+function shareVerdict() {
+  if(!verdictText) return;
+  const shareText = verdictText;
+  if(navigator.share) {
+    navigator.share({
+      title: '🎯 SharpRadar — Аналитик 3.0',
+      text: shareText
+    }).then(() => {
+      document.getElementById('share-icon').textContent = '✅';
+      document.getElementById('share-text').textContent = 'ОТПРАВЛЕНО';
+      setTimeout(() => {
+        document.getElementById('share-icon').textContent = '📤';
+        document.getElementById('share-text').textContent = 'ПОДЕЛИТЬСЯ';
+      }, 2200);
+    }).catch(() => {});
+  } else {
+    // fallback — копируем если Web Share недоступен
+    navigator.clipboard.writeText(shareText).then(() => {
+      document.getElementById('share-icon').textContent = '✅';
+      document.getElementById('share-text').textContent = 'СКОПИРОВАНО';
+      setTimeout(() => {
+        document.getElementById('share-icon').textContent = '📤';
+        document.getElementById('share-text').textContent = 'ПОДЕЛИТЬСЯ';
+      }, 2200);
+    });
+  }
 }
 
 // Menu listeners initialized after login (inside doLogin)
