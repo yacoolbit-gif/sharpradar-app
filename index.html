@@ -2001,30 +2001,15 @@ VERDICT_END`;
 
   try {
     const WORKER_URL = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
-    const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-    const payload = {model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]};
+    const payload = {messages:[{role:'user',content:prompt}]};
 
-    let res, data;
-    // Try Worker first (has API key), fallback to direct API
-    try {
-      res = await fetch(WORKER_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000)
-      });
-      data = await res.json();
-      // If worker returned HTML or error page instead of JSON
-      if(!data || (!data.content && !data.error)) throw new Error('bad_worker');
-    } catch(workerErr) {
-      // Fallback: direct Anthropic API (works in Claude artifacts environment)
-      res = await fetch(ANTHROPIC_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload)
-      });
-      data = await res.json();
-    }
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),
+      signal: AbortSignal.timeout(30000)
+    });
+    const data = await res.json();
 
     if(data.error) {
       const errType = data.error.type || '';
@@ -2043,7 +2028,9 @@ VERDICT_END`;
       return;
     }
 
-    const text = (data.content||[]).map(c=>c.text||'').join('');
+    const text = (data.choices && data.choices[0] && data.choices[0].message)
+      ? data.choices[0].message.content
+      : (data.content||[]).map(c=>c.text||'').join('');
     if(!text) {
       document.getElementById('analysis-loading').style.display = 'none';
       document.getElementById('analysis-text').innerHTML = renderText('⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК.');
