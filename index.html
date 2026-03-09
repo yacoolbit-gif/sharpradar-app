@@ -2968,8 +2968,30 @@ VERDICT_END`;
 
     const aM = text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
     const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
-    analysisResult = aM ? aM[1].trim() : text;
-    verdictText    = vM ? vM[1].trim() : '';
+
+    if(aM && vM) {
+      // Нормальный случай — оба блока найдены
+      analysisResult = aM[1].trim();
+      verdictText    = vM[1].trim();
+    } else if(vM) {
+      // Только вердикт — показываем всё до VERDICT_START как анализ
+      analysisResult = text.split('VERDICT_START')[0].replace('ANALYSIS_START','').replace('ANALYSIS_END','').trim();
+      verdictText    = vM[1].trim();
+    } else if(aM) {
+      // Только анализ — вердикт не пришёл
+      analysisResult = aM[1].trim();
+      verdictText    = '';
+    } else {
+      // Маркеры не найдены — весь текст в анализ, разбиваем по ключевым словам
+      const splitIdx = text.indexOf('ВЕРДИКТ');
+      if(splitIdx > 0) {
+        analysisResult = text.substring(0, splitIdx).trim();
+        verdictText    = text.substring(splitIdx).trim();
+      } else {
+        analysisResult = text.replace(/VERDICT_START|VERDICT_END|ANALYSIS_START|ANALYSIS_END/g,'').trim();
+        verdictText    = '';
+      }
+    }
 
     document.getElementById('analysis-loading').style.display = 'none';
     document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
@@ -3017,7 +3039,9 @@ VERDICT_END`;
 }
 
 function renderText(text) {
-  return text.split('\n').map(line => {
+  // Убираем служебные маркеры если они вдруг попали в текст
+  const clean = text.replace(/ANALYSIS_START|ANALYSIS_END|VERDICT_START|VERDICT_END/g, '').trim();
+  return clean.split('\n').map(line => {
     if(!line.trim()) return '<div style="margin-bottom:8px">&nbsp;</div>';
     let cls = 'line-muted';
     if(line.startsWith('🎯')) cls='line-title';
