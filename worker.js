@@ -16,19 +16,25 @@ export default {
 
     const body = await request.json();
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.ANTHROPIC_API_KEY}`,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        messages: body.messages,
+        max_tokens: body.max_tokens || 4000,
+      }),
     });
 
     const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || 'Нет ответа';
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify({
+      content: [{ type: 'text', text }]
+    }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
