@@ -639,4 +639,1678 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   border-radius: 28px; padding: 28px 24px;
   width: 100%; max-width: 360px;
 }
-.login-card h2 { color: #F0F0F8; font-size: 16px; font-weight: 700; text-align: center; margin-botto
+.login-card h2 { color: #F0F0F8; font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 20px; }
+.field-label  { color: rgba(240,240,248,0.4); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
+.pass-wrap { position: relative; }
+.pass-wrap input { padding-right: 44px; }
+.toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-60%); background: none; border: none; cursor: pointer; font-size: 16px; color: rgba(240,240,248,0.4); padding: 4px; }
+.error-msg { background: rgba(255,69,102,0.1); border: 1px solid rgba(255,69,102,0.3); border-radius: 10px; padding: 9px 14px; color: #FF4566; font-size: 12px; font-weight: 600; text-align: center; margin-bottom: 14px; }
+.login-footer-text { text-align: center; margin-top: 20px; color: rgba(240,240,248,0.15); font-size: 11px; }
+
+@keyframes pulse { 0%,100%{opacity:0.25;transform:scale(0.75)} 50%{opacity:1;transform:scale(1.15)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+.spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#FFF; border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; margin-right:8px; vertical-align:middle; }
+
+/* APP SCREEN fullscreen flex column */
+#app-screen {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  position: relative; z-index: 1;
+}
+
+/* ===== MENU BUTTON ===== */
+.menu-btn {
+  width: 34px; height: 34px;
+  background: rgba(108,99,255,0.15);
+  border: 1px solid rgba(108,99,255,0.35);
+  border-radius: 10px;
+  color: #a09aff;
+  font-size: 20px; font-weight: 900;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  letter-spacing: -2px; line-height: 1;
+  padding-bottom: 3px;
+  position: relative;
+  z-index: 10000;
+  -webkit-tap-highlight-color: rgba(108,99,255,0.3);
+}
+.menu-btn:active { background: rgba(108,99,255,0.3); transform: scale(0.93); }
+
+/* ===== DROPDOWN MENU — bottom sheet ===== */
+.dropdown-menu {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  width: 100%;
+  background: #0e0e1a;
+  border: 1px solid rgba(108,99,255,0.2);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 60px rgba(0,0,0,0.9);
+  z-index: 99999;
+  overflow: visible;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  pointer-events: none;
+  padding-bottom: 30px;
+}
+.dropdown-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.dm-header {
+  padding: 10px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dm-title { color: rgba(240,240,248,0.4); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+.dm-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 22px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  -webkit-tap-highlight-color: rgba(108,99,255,0.15);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dm-item:last-child { border-bottom: none; }
+.dm-item:active { background: rgba(255,255,255,0.07); }
+.dm-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.dm-icon-purple { background: rgba(108,99,255,0.15); }
+.dm-icon-green  { background: rgba(0,229,160,0.12); }
+.dm-icon-orange { background: rgba(255,184,48,0.12); }
+.dm-icon-red    { background: rgba(255,69,102,0.12); }
+.dm-icon-blue   { background: rgba(100,180,255,0.12); }
+.dm-body { flex: 1; }
+.dm-item-title { color: #F0F0F8; font-size: 14px; font-weight: 700; }
+.dm-item-sub   { color: rgba(240,240,248,0.3); font-size: 11px; margin-top: 2px; }
+.dm-chevron    { color: rgba(240,240,248,0.2); font-size: 16px; }
+.dm-overlay {
+  position: fixed; inset: 0;
+  z-index: 99998;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  touch-action: manipulation;
+}
+.dm-overlay.open { display: block; }
+
+/* ===== MODAL BASE ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  width: 100%; max-width: 480px;
+  background: rgba(14,14,24,0.99);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px 24px 0 0;
+  padding: 0 0 40px;
+  transform: translateY(30px);
+  transition: transform 0.3s cubic-bezier(0.34,1.3,0.64,1);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modal-head h2 { color: #F0F0F8; font-size: 16px; font-weight: 800; }
+.modal-close {
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.07);
+  border: none; border-radius: 8px;
+  color: rgba(240,240,248,0.5); font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.modal-body { padding: 18px 20px; }
+
+/* Settings */
+.settings-section { margin-bottom: 20px; }
+.settings-label { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 13px; margin-bottom: 8px;
+}
+.settings-row-label { color: #F0F0F8; font-size: 12px; font-weight: 600; }
+.settings-row-sub   { color: rgba(240,240,248,0.3); font-size: 10px; margin-top: 2px; }
+.toggle-switch {
+  width: 42px; height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px; position: relative;
+  cursor: pointer; transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: #6C63FF; }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  background: #FFF; border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle-switch.on .toggle-knob { transform: translateX(18px); }
+.seg-control {
+  display: flex; gap: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px; padding: 3px;
+}
+.seg-btn {
+  flex: 1; padding: 5px 8px;
+  border: none; border-radius: 7px;
+  font-size: 10px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer; transition: all 0.2s;
+  color: rgba(240,240,248,0.4);
+  background: transparent;
+}
+.seg-btn.active { background: #6C63FF; color: #FFF; box-shadow: 0 2px 8px rgba(108,99,255,0.4); }
+
+/* Theme cards */
+.theme-grid { display: flex; gap: 8px; }
+.theme-card {
+  flex: 1; padding: 10px 8px;
+  border-radius: 13px; border: 2px solid transparent;
+  cursor: pointer; text-align: center;
+  transition: all 0.2s;
+}
+.theme-card.active { border-color: #6C63FF; }
+.theme-preview {
+  width: 100%; height: 28px;
+  border-radius: 8px; margin-bottom: 6px;
+}
+.theme-name { font-size: 10px; font-weight: 700; color: rgba(240,240,248,0.5); }
+.theme-card.active .theme-name { color: #6C63FF; }
+
+/* About screen */
+.about-logo-wrap {
+  text-align: center; padding: 24px 0 16px;
+}
+.about-logo {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg,#6C63FF,#00E5A0);
+  border-radius: 24px;
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px;
+  box-shadow: 0 0 40px rgba(108,99,255,0.4), 0 0 80px rgba(0,229,160,0.15);
+  animation: aboutGlow 3s ease-in-out infinite;
+}
+@keyframes aboutGlow {
+  0%,100% { box-shadow: 0 0 30px rgba(108,99,255,0.4), 0 0 60px rgba(0,229,160,0.1); }
+  50%      { box-shadow: 0 0 50px rgba(108,99,255,0.6), 0 0 100px rgba(0,229,160,0.2); }
+}
+.about-name  { color: #F0F0F8; font-size: 22px; font-weight: 800; }
+.about-ver   { color: rgba(240,240,248,0.3); font-size: 11px; letter-spacing: 2px; margin-top: 4px; }
+.about-stats {
+  display: flex; gap: 8px; margin: 20px 0;
+}
+.about-stat {
+  flex: 1; text-align: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 12px 8px;
+}
+.about-stat-val { color: #6C63FF; font-size: 18px; font-weight: 800; }
+.about-stat-lbl { color: rgba(240,240,248,0.3); font-size: 9px; font-weight: 600; margin-top: 3px; }
+.about-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px;
+}
+.about-row-key { color: rgba(240,240,248,0.35); font-weight: 500; }
+.about-row-val { color: #F0F0F8; font-weight: 700; }
+
+/* Confirm dialog */
+.confirm-dialog {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(10px);
+  z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.confirm-dialog.open { opacity: 1; pointer-events: auto; }
+.confirm-box {
+  background: rgba(16,16,28,0.99);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 24px 20px;
+  width: 100%; max-width: 300px;
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.25s cubic-bezier(0.34,1.5,0.64,1);
+}
+.confirm-dialog.open .confirm-box { transform: scale(1); }
+.confirm-icon  { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { color: #F0F0F8; font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.confirm-text  { color: rgba(240,240,248,0.4); font-size: 12px; line-height: 1.6; margin-bottom: 20px; }
+.confirm-btns  { display: flex; gap: 10px; }
+.confirm-cancel {
+  flex: 1; padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; color: rgba(240,240,248,0.6);
+  font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+}
+.confirm-ok {
+  flex: 1; padding: 12px;
+  background: rgba(255,69,102,0.15);
+  border: 1px solid rgba(255,69,102,0.3);
+  border-radius: 12px; color: #FF4566;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+}
+
+/* Password change inputs */
+.settings-input {
+  width: 100%; padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: #F0F0F8; font-size: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  outline: none; margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.settings-input:focus { border-color: rgba(108,99,255,0.5); }
+.settings-input::placeholder { color: rgba(240,240,248,0.2); }
+.btn-settings-save {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg,#6C63FF,#9B59F5);
+  border: none; border-radius: 12px;
+  color: #FFF; font-size: 12px; font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer; margin-top: 4px;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.3);
+}
+
+/* Steam alert toast */
+.steam-alert {
+  position: fixed; top: 20px; left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(255,69,102,0.15);
+  border: 1px solid rgba(255,69,102,0.4);
+  backdrop-filter: blur(20px);
+  border-radius: 14px; padding: 12px 20px;
+  display: flex; align-items: center; gap: 10px;
+  z-index: 500; opacity: 0;
+  transition: all 0.3s;
+  box-shadow: 0 8px 32px rgba(255,69,102,0.2);
+  white-space: nowrap;
+}
+.steam-alert.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.steam-alert-icon { font-size: 18px; animation: livepulse 1s infinite; }
+.steam-alert-text { color: #FF4566; font-size: 12px; font-weight: 800; }
+
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-logo">
+    <div class="login-icon">📡</div>
+    <div class="login-title">SharpRadar</div>
+    <div class="login-sub">АНАЛИТИК 3.0</div>
+  </div>
+  <div class="login-card">
+    <h2>Вход в систему</h2>
+    <div class="field-label">ЛОГИН</div>
+    <input type="text" id="inp-login" placeholder="Введи логин" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="field-label">ПАРОЛЬ</div>
+    <div class="pass-wrap">
+      <input type="password" id="inp-pass" placeholder="Введи пароль" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="toggle-pass" onclick="togglePass()">👁</button>
+    </div>
+    <div id="login-error" class="error-msg" style="display:none"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">🔐 ВОЙТИ</button>
+  </div>
+  <div class="login-footer-text">SharpRadar v3.0 · Аналитик 3.0</div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app-screen">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="header-top-bar">
+      <div class="header-brand">
+        <div class="app-icon">📡</div>
+        <div class="brand-text">
+          <h1>SharpRadar</h1>
+          <p>АНАЛИТИК 3.0</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          <span>LIVE</span>
+        </div>
+        
+        <button class="logout-btn" onclick="doLogout()">⎋ Выйти</button>
+      </div>
+    </div>
+
+    <div style="padding:6px 18px 8px;display:flex;justify-content:flex-end;">
+      <div ontouchstart="this.style.background='rgba(108,99,255,0.99)';this.style.transform='scale(0.93)'" ontouchend="this.style.background='rgba(108,99,255,0.15)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.35);border-radius:10px;padding:5px 14px;color:#a09af0;font-size:13px;font-weight:600;touch-action:manipulation;user-select:none;-webkit-user-select:none;">⋯ Меню</div>
+    </div>
+    <div class="header-info-bar">
+      <div class="hib-datetime">
+        <span class="hib-date" id="hib-date">--</span>
+        <span class="hib-sep">|</span>
+        <span class="hib-time" id="hib-time">--:--:--</span>
+      </div>
+      <div class="api-status" id="api-status">
+        <div class="api-dot"></div>
+        <span>API ONLINE</span>
+      </div>
+    </div>
+
+    <!-- SMART SPORT WIDGET -->
+    <div class="sport-widget">
+      <div class="sw-icon-wrap">
+        <div class="sw-glow" id="sw-glow"></div>
+        <div class="sw-icon-bg" id="sw-icon-bg">
+          <svg class="sw-svg" id="sw-svg" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="14" cy="14" r="11" stroke="rgba(108,99,255,0.6)" stroke-width="1.5"/>
+            <circle cx="14" cy="14" r="6"  stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <circle cx="14" cy="14" r="2"  fill="#6C63FF"/>
+            <line x1="14" y1="3" x2="14" y2="7"  stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="14" y1="21" x2="14" y2="25" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="3" y1="14" x2="7" y2="14"   stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+            <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sw-info">
+        <div class="sw-sport-name" id="sw-sport-name" style="color:rgba(240,240,248,0.4)">Введи матч</div>
+        <div class="sw-sport-sub"  id="sw-sport-sub">Вид спорта определится автоматически</div>
+      </div>
+      <div class="sw-conf-badge" id="sw-conf-badge" style="display:none">
+        <span id="sw-conf-val">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE TICKER -->
+  <div class="live-ticker">
+    <span class="ticker-label">🔴 LIVE</span>
+    <div class="ticker-track">
+      <div class="ticker-inner" id="ticker-inner">
+        <!-- duplicated for seamless loop -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARP MONEY BAR -->
+  <div class="sharp-bar" id="sharp-bar">
+    <div class="sb-main">
+      <!-- WHALE -->
+      <div class="sb-block">
+        <span class="sb-whale">🐋</span>
+        <div>
+          <div class="sb-label">Sharp Money</div>
+          <div class="sb-direction sb-dir-none" id="sb-direction">— ожидание</div>
+        </div>
+      </div>
+      <!-- CLV -->
+      <div class="sb-block">
+        <div>
+          <div class="sb-label">📊 CLV</div>
+          <div class="sb-clv-nil" id="sb-clv">—</div>
+        </div>
+      </div>
+      <!-- STEAM -->
+      <div class="sb-block">
+        <div>
+          <div class="sb-label">🔴 Steam Move</div>
+          <div id="sb-steam"><span class="sb-steam-no">—</span></div>
+        </div>
+      </div>
+      <!-- REQUESTS -->
+      <div class="sb-req-block">
+        <div class="sb-req-dots" id="req-dots"></div>
+      </div>
+    </div>
+    <!-- REFRESH -->
+    <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="Обновить данные">🔄</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('manual',this)">✏️ Матч</button>
+    <button class="tab" onclick="switchTab('analysis',this)">📊 Анализ</button>
+    <button class="tab" onclick="switchTab('verdict',this)">🏆 Вердикт</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- MANUAL -->
+    <div id="sec-manual" class="section active">
+
+      <!-- TOP PICKS -->
+      <div class="section-title">🏆 Топ прогнозы дня</div>
+      <div class="top-picks-grid" id="top-picks-grid"></div>
+
+      <!-- LIVE NOW -->
+      <div class="section-title">🔥 Горячие матчи сейчас</div>
+      <div class="live-matches" id="live-matches-list"></div>
+
+      <!-- HISTORY -->
+      <div id="history-block" style="display:none">
+        <div class="section-title">🕐 Недавние анализы</div>
+        <div class="history-list" id="history-list"></div>
+      </div>
+
+      <!-- INPUT -->
+      <div class="section-title">🧠 Свой анализ</div>
+      <div class="label">Введи матч:</div>
+      <input type="text" id="match-input" placeholder="Например: Real Madrid — Barcelona" oninput="updateBtn()" onkeydown="if(event.key==='Enter')startAnalysis()">
+      <button class="btn-primary" id="run-btn" onclick="startAnalysis()" disabled>🧠 ЗАПУСТИТЬ АНАЛИЗ 3.0</button>
+      <div id="shortcut-block" style="display:none" class="glass-card" style="margin-top:10px">
+        <div class="label">Последний анализ готов</div>
+        <div class="shortcuts">
+          <button class="shortcut shortcut-purple" onclick="switchTabById('analysis')">📊 Анализ</button>
+          <button class="shortcut shortcut-green"  onclick="switchTabById('verdict')">🏆 Вердикт</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div id="sec-analysis" class="section">
+      <div id="analysis-loading" class="loading" style="display:none">
+        <div class="icon">🧠</div>
+        <h3>Аналитик 3.0</h3>
+        <p>Формирую анализ...</p>
+        <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+      <div id="analysis-empty" class="empty">
+        <div class="icon">📊</div>
+        <p>Введи матч во вкладке Матч</p>
+      </div>
+      <div id="analysis-content" style="display:none">
+        <div class="glass-card">
+          <div id="analysis-text" class="analysis-text"></div>
+        </div>
+        <button class="btn-green" onclick="switchTabById('verdict')">🏆 Смотреть Вердикт →</button>
+      </div>
+    </div>
+
+    <!-- VERDICT -->
+    <div id="sec-verdict" class="section">
+      <div id="verdict-loading" class="loading" style="display:none">
+        <div class="icon">⏳</div>
+        <h3 style="color:#FFB830">Формирую вердикт...</h3>
+      </div>
+      <div id="verdict-empty" class="empty">
+        <div class="icon">🏆</div>
+        <p>Вердикт появится после анализа</p>
+      </div>
+      <div id="verdict-content" style="display:none">
+        <button class="btn-copy" id="copy-btn" onclick="copyVerdict()">
+          <span id="copy-icon">📋</span>
+          <span id="copy-text">СКОПИРОВАТЬ И ПОДЕЛИТЬСЯ</span>
+        </button>
+        <div class="verdict-card">
+          <div id="verdict-text" class="analysis-text"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="app-footer">
+    <span>SharpRadar v3.0</span>
+    <span><span class="footer-dot"></span>Аналитик 3.0</span>
+    <span id="footer-time">--:--</span>
+  </div>
+
+  <!-- DROPDOWN MOVED TO BODY -->
+
+  <!-- MODAL: SETTINGS -->
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>⚙️ Настройки</h2>
+        <button class="modal-close" onclick="closeModal('settings')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-label">Коэффициенты</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Формат коэффициентов</div>
+              <div class="settings-row-sub">EU — десятичные (1.85)</div>
+            </div>
+            <div class="seg-control">
+              <button class="seg-btn active" id="odds-eu" onclick="setOdds('EU',this)">EU</button>
+              <button class="seg-btn" id="odds-uk" onclick="setOdds('UK',this)">UK</button>
+              <button class="seg-btn" id="odds-us" onclick="setOdds('US',this)">US</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Сменить пароль</div>
+          <input class="settings-input" type="password" id="set-old-pass" placeholder="Текущий пароль">
+          <input class="settings-input" type="password" id="set-new-pass" placeholder="Новый пароль">
+          <input class="settings-input" type="password" id="set-new-pass2" placeholder="Повтор нового пароля">
+          <div id="set-pass-msg" style="font-size:11px;margin-bottom:8px;display:none"></div>
+          <button class="btn-settings-save" onclick="changePassword()">💾 Сохранить пароль</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THEME -->
+  <div class="modal-overlay" id="modal-theme">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>🎨 Тема</h2>
+        <button class="modal-close" onclick="closeModal('theme')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-label" style="margin-bottom:14px">Выбери оформление</div>
+        <div class="theme-grid">
+          <div class="theme-card active" id="theme-dark" onclick="setTheme('dark')">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#080810,#0c0c1a)"></div>
+            <div class="theme-name">Тёмная</div>
+          </div>
+          <div class="theme-card" id="theme-amoled" onclick="setTheme('amoled')">
+            <div class="theme-preview" style="background:#000"></div>
+            <div class="theme-name">AMOLED</div>
+          </div>
+          <div class="theme-card" id="theme-light" onclick="setTheme('light')">
+            <div class="theme-preview" style="background:linear-gradient(135deg,#f0f0f8,#e8e8f0)"></div>
+            <div class="theme-name">Светлая</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
+          <div style="color:rgba(240,240,248,0.4);font-size:11px;line-height:1.6">💡 AMOLED чёрная экономит заряд батареи на OLED-экранах до 30%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOTIFICATIONS -->
+  <div class="modal-overlay" id="modal-notifications">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>🔔 Уведомления</h2>
+        <button class="modal-close" onclick="closeModal('notifications')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-label">Steam Move Alert</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">🔴 Steam Move</div>
+              <div class="settings-row-sub">Резкое падение кефа у 5+ букмекеров</div>
+            </div>
+            <div class="toggle-switch on" id="notif-steam" onclick="toggleNotif('steam')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">🐋 Sharp Money</div>
+              <div class="settings-row-sub">Движение крупных синдикатов</div>
+            </div>
+            <div class="toggle-switch on" id="notif-sharp" onclick="toggleNotif('sharp')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">⚡ Лимит запросов</div>
+              <div class="settings-row-sub">Предупреждение при ≤2 запросах</div>
+            </div>
+            <div class="toggle-switch on" id="notif-limit" onclick="toggleNotif('limit')">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 14px;background:rgba(255,184,48,0.05);border:1px solid rgba(255,184,48,0.15);border-radius:12px;">
+          <div style="color:rgba(255,184,48,0.8);font-size:11px;line-height:1.6">⚠️ Steam Move alert срабатывает автоматически при обнаружении сигнала в вердикте анализа</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ABOUT -->
+  <div class="modal-overlay" id="modal-about">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <h2>💎 О приложении</h2>
+        <button class="modal-close" onclick="closeModal('about')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-logo-wrap">
+          <div class="about-logo">📡</div>
+          <div class="about-name">SharpRadar</div>
+          <div class="about-ver">АНАЛИТИК 3.0 · v3.0.0</div>
+        </div>
+        <div class="about-stats">
+          <div class="about-stat">
+            <div class="about-stat-val" id="about-analyses">0</div>
+            <div class="about-stat-lbl">Анализов</div>
+          </div>
+          <div class="about-stat">
+            <div class="about-stat-val">4</div>
+            <div class="about-stat-lbl">Вида спорта</div>
+          </div>
+          <div class="about-stat">
+            <div class="about-stat-val">3.0</div>
+            <div class="about-stat-lbl">Версия</div>
+          </div>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Движок</span>
+          <span class="about-row-val">Claude Sonnet 4</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Sharp Money</span>
+          <span class="about-row-val">Pinnacle · Betburger</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Шаблон</span>
+          <span class="about-row-val">Аналитик 3.0 Full</span>
+        </div>
+        <div class="about-row">
+          <span class="about-row-key">Разработка</span>
+          <span class="about-row-val">SharpRadar Team</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM: CLEAR HISTORY -->
+  <div class="confirm-dialog" id="confirm-clear">
+    <div class="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <div class="confirm-title">Очистить историю?</div>
+      <div class="confirm-text">Все 5 последних анализов будут удалены. Это действие нельзя отменить.</div>
+      <div class="confirm-btns">
+        <button class="confirm-cancel" onclick="closeConfirm()">Отмена</button>
+        <button class="confirm-ok" onclick="clearHistory()">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEAM ALERT -->
+  <div class="steam-alert" id="steam-alert">
+    <div class="steam-alert-icon">🔴</div>
+    <div class="steam-alert-text">STEAM MOVE DETECTED!</div>
+  </div>
+
+</div>
+
+<script>
+// ============================================
+// 🔐 ДОСТУП
+// ============================================
+const ACCESS = { login: "sharp", password: "radar2026" };
+// ============================================
+
+let currentSport = "⚽ Футбол";
+let verdictText = "";
+let analysisResult = "";
+
+// ===== SHARP MONEY BAR =====
+let sharpData = { direction: null, clv: null, steam: null };
+
+function updateSharpBar(direction, clv, steam) {
+  sharpData = { direction, clv, steam };
+
+  // Direction
+  const dEl = document.getElementById('sb-direction');
+  if(dEl) {
+    if(!direction) { dEl.textContent = '— ожидание'; dEl.className = 'sb-direction sb-dir-none'; }
+    else {
+      dEl.textContent = direction;
+      dEl.className = 'sb-direction ' + (direction.includes('▲') || direction.includes('↑') ? 'sb-dir-up' : 'sb-dir-down');
+    }
+  }
+
+  // CLV
+  const cEl = document.getElementById('sb-clv');
+  if(cEl) {
+    if(clv === null || clv === undefined) { cEl.textContent = '—'; cEl.className = 'sb-clv-nil'; }
+    else {
+      const num = parseFloat(clv);
+      cEl.textContent = (num >= 0 ? '+' : '') + num.toFixed(1) + '%';
+      cEl.className = num >= 0 ? 'sb-clv-pos' : 'sb-clv-neg';
+    }
+  }
+
+  // Steam
+  const sEl = document.getElementById('sb-steam');
+  if(sEl) {
+    if(steam === true)       sEl.innerHTML = '<span class="sb-steam-yes">🔴 STEAM</span>';
+    else if(steam === false) sEl.innerHTML = '<span class="sb-steam-no">Нет</span>';
+    else                     sEl.innerHTML = '<span class="sb-steam-no">—</span>';
+  }
+}
+
+function parseSharpFromVerdict(text) {
+  if(!text) return;
+  // Extract Sharp direction
+  const sharpMatch = text.match(/Sharp\s+([^\|]+)/i);
+  const direction  = sharpMatch ? sharpMatch[1].trim() : null;
+  // Extract CLV
+  const clvMatch   = text.match(/CLV\s*([+\-]?\d+\.?\d*)/i);
+  const clv        = clvMatch ? parseFloat(clvMatch[1]) : null;
+  // Extract Steam
+  const steamMatch = text.match(/Steam\s*(Да|Нет|Yes|No)/i);
+  const steam      = steamMatch ? (steamMatch[1].toLowerCase() === 'да' || steamMatch[1].toLowerCase() === 'yes') : null;
+
+  if(direction || clv !== null || steam !== null) {
+    updateSharpBar(direction, clv, steam);
+  }
+}
+
+// ===== REQUESTS COUNTER =====
+let reqUsed = parseInt(
+  localStorage.getItem('sr_req_date') === new Date().toDateString()
+    ? localStorage.getItem('sr_req_used') || '0' : '0'
+);
+const REQ_LIMIT = 10;
+
+function saveReq() {
+  localStorage.setItem('sr_req_date', new Date().toDateString());
+  localStorage.setItem('sr_req_used', reqUsed);
+}
+function updateReqDots() {
+  const dotsEl = document.getElementById('req-dots');
+  if(!dotsEl) return;
+  dotsEl.innerHTML = Array.from({length: REQ_LIMIT}, (_,i) =>
+    `<div class="sb-req-dot ${i < reqUsed ? 'used' : 'avail'}"></div>`
+  ).join('');
+}
+
+// ===== REFRESH =====
+let lastRefreshData = {};
+
+async function doRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  if(!btn) return;
+  btn.classList.add('spinning');
+  btn.style.pointerEvents = 'none';
+
+  // 1. Fetch ESPN NBA live scores (free, no key)
+  try {
+    const r = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
+    const d = await r.json();
+    const events = (d.events || []).slice(0, 6);
+    const items = events.map(e => {
+      const comp = e.competitions[0];
+      const t = comp.competitors;
+      const home = t.find(x=>x.homeAway==='home');
+      const away = t.find(x=>x.homeAway==='away');
+      const state = e.status.type.state;
+      const isLive = state === 'in';
+      const isPre  = state === 'pre';
+      let minute = '';
+      if(isLive)     minute = e.status.type.shortDetail || 'LIVE';
+      else if(isPre) minute = espnTimeToMSK(e.date);
+      else           minute = e.status.type.shortDetail || '';
+      const score  = isLive || state === 'post' ? `${away?.score||0}:${home?.score||0}` : '— : —';
+      const aName  = away?.team?.shortDisplayName || away?.team?.name || '?';
+      const hName  = home?.team?.shortDisplayName || home?.team?.name || '?';
+      return { sport:'🏀', teams:`${aName} — ${hName}`, score, minute, live: isLive };
+    });
+    if(items.length) {
+      lastRefreshData.nba = items;
+      updateTickerWithFresh(items);
+      updateLiveMatchesWithFresh(items.filter(x=>x.live));
+    }
+  } catch(e) { /* silent */ }
+
+  // 2. Update timestamp on refresh btn tooltip
+  const now = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Done
+  setTimeout(() => {
+    btn.classList.remove('spinning');
+    btn.classList.add('done');
+    btn.style.pointerEvents = 'auto';
+    showRefreshToast(`✅ Обновлено в ${now}`);
+    setTimeout(() => btn.classList.remove('done'), 500);
+  }, 900);
+}
+
+function updateTickerWithFresh(items) {
+  const inner = document.getElementById('ticker-inner');
+  if(!inner || !items.length) return;
+  const doubled = [...items, ...items];
+  inner.innerHTML = doubled.map(i =>
+    `<div class="ticker-item">${i.sport} ${i.teams} <span class="t-score">${i.score}</span> <span class="t-live">${i.minute}</span></div>`
+  ).join('');
+}
+
+function updateLiveMatchesWithFresh(items) {
+  const list = document.getElementById('live-matches-list');
+  if(!list || !items.length) return;
+  list.innerHTML = items.map(m => `
+    <div class="live-match-card" onclick="fillMatch('${m.teams}')">
+      <div class="lm-sport">${m.sport}</div>
+      <div class="lm-body">
+        <div class="lm-teams">${m.teams}</div>
+        <div class="lm-minute">${m.minute}</div>
+      </div>
+      <div class="lm-score">${m.score}</div>
+      <div class="lm-live-badge">LIVE</div>
+    </div>
+  `).join('');
+}
+
+// ===== TOAST =====
+function showRefreshToast(msg) {
+  let t = document.getElementById('refresh-toast');
+  if(!t) {
+    t = document.createElement('div');
+    t.id = 'refresh-toast';
+    t.style.cssText = `
+      position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(20px);
+      background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.3);
+      backdrop-filter:blur(20px); border-radius:12px; padding:9px 18px;
+      color:#00E5A0; font-size:12px; font-weight:700; font-family:'Plus Jakarta Sans',sans-serif;
+      z-index:999; opacity:0; transition:all 0.3s; white-space:nowrap;
+      box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    `;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2500);
+}
+
+// ===== HISTORY =====
+let analysisHistory = JSON.parse(localStorage.getItem('sr_history') || '[]');
+
+function saveHistory(match, sport, conf) {
+  const now = new Date();
+  const item = {
+    match, sport, conf,
+    time: now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+    date: now.toLocaleDateString('ru-RU'),
+    verdict: verdictText,
+    analysis: analysisResult
+  };
+  analysisHistory.unshift(item);
+  if(analysisHistory.length > 5) analysisHistory = analysisHistory.slice(0,5);
+  localStorage.setItem('sr_history', JSON.stringify(analysisHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const block = document.getElementById('history-block');
+  if(!list || !block) return;
+  if(analysisHistory.length === 0) { block.style.display='none'; return; }
+  block.style.display = 'block';
+  list.innerHTML = analysisHistory.map((item, idx) => {
+    const confVal = parseInt(item.conf) || 0;
+    const confCls = confVal >= 80 ? 'conf-high' : 'conf-mid';
+    const sport = item.sport ? item.sport.split(' ')[0] : '📊';
+    return `<div class="history-item" onclick="loadHistory(${idx})">
+      <div class="hi-sport">${sport}</div>
+      <div class="hi-body">
+        <div class="hi-match">${item.match}</div>
+        <div class="hi-meta">${item.sport} · ${item.date}</div>
+      </div>
+      <div class="hi-right">
+        ${item.conf ? `<div class="hi-conf pick-conf ${confCls}">🔥 ${item.conf}%</div>` : ''}
+        <div class="hi-time">${item.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadHistory(idx) {
+  const item = analysisHistory[idx];
+  if(!item) return;
+  analysisResult = item.analysis || '';
+  verdictText    = item.verdict  || '';
+  document.getElementById('match-input').value = item.match;
+  updateBtn();
+  if(analysisResult) {
+    document.getElementById('analysis-empty').style.display = 'none';
+    document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
+    document.getElementById('analysis-content').style.display = 'block';
+    document.getElementById('shortcut-block').style.display = 'block';
+  }
+  if(verdictText) {
+    document.getElementById('verdict-empty').style.display = 'none';
+    document.getElementById('verdict-text').innerHTML = renderText(verdictText);
+    document.getElementById('verdict-content').style.display = 'block';
+  }
+  switchTabById('analysis');
+}
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  const days = ['вс','пн','вт','ср','чт','пт','сб'];
+  const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  const d = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+  const t = now.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const t2 = now.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+  const el1 = document.getElementById('hib-date');
+  const el2 = document.getElementById('hib-time');
+  const el3 = document.getElementById('footer-time');
+  if(el1) el1.textContent = d;
+  if(el2) el2.textContent = t;
+  if(el3) el3.textContent = t2;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== LIVE TICKER DATA =====
+const TICKER_ITEMS = [
+  { sport:'⚽', teams:'Реал Мадрид — Барселона', score:'1:2', min:'67\'' },
+  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', min:'3 пер' },
+  { sport:'🏀', teams:'Lakers — Celtics', score:'98:101', min:'Q4 4:32' },
+  { sport:'⚽', teams:'Манчестер Сити — Арсенал', score:'0:0', min:'34\'' },
+  { sport:'🎾', teams:'Джокович — Медведев', score:'6:4 3:3', min:'SET 2' },
+  { sport:'⚽', teams:'ПСЖ — Бавария', score:'1:1', min:'55\'' },
+  { sport:'🏒', teams:'СКА — Динамо', score:'3:2', min:'ОТ' },
+  { sport:'🏀', teams:'Warriors — Nuggets', score:'112:108', min:'ФИНАЛ' },
+];
+
+function buildTicker() {
+  const inner = document.getElementById('ticker-inner');
+  if(!inner) return;
+  const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
+  inner.innerHTML = doubled.map(i =>
+    `<div class="ticker-item">${i.sport} ${i.teams} <span class="t-score">${i.score}</span> <span class="t-live">${i.min}</span></div>`
+  ).join('');
+}
+
+// ===== TOP PICKS DATA =====
+const TOP_PICKS = [
+  { rank:'🥇', match:'Реал Мадрид — Барселона', bet:'П1 (Фора -0.5)', sport:'⚽ Ла Лига', odds:'1.85', conf:'high', confLabel:'87%' },
+  { rank:'🥈', match:'Lakers — Celtics', bet:'Тотал Б 218.5', sport:'🏀 НБА', odds:'1.92', conf:'high', confLabel:'82%' },
+  { rank:'🥉', match:'Джокович — Медведев', bet:'Джокович П1', sport:'🎾 AO 2026', odds:'1.65', conf:'mid', confLabel:'74%' },
+];
+
+function buildTopPicks() {
+  const grid = document.getElementById('top-picks-grid');
+  if(!grid) return;
+  grid.innerHTML = TOP_PICKS.map(p => `
+    <div class="pick-card" onclick="fillMatch('${p.match}')">
+      <div class="pick-rank">${p.rank}</div>
+      <div class="pick-body">
+        <div class="pick-match">${p.match}</div>
+        <div class="pick-meta">${p.sport} · ${p.bet}</div>
+      </div>
+      <div class="pick-right">
+        <div class="pick-odds">🟡 ${p.odds}</div>
+        <div class="pick-conf conf-${p.conf}">🔥 ${p.confLabel}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== LIVE MATCHES DATA =====
+const LIVE_MATCHES = [
+  { sport:'⚽', teams:'Манчестер Сити — Арсенал', score:'0:0', minute:'34\'' },
+  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', minute:'3 пер 08:44' },
+  { sport:'🏀', teams:'Lakers — Celtics', score:'98:101', minute:'Q4 4:32' },
+];
+
+function buildLiveMatches() {
+  const list = document.getElementById('live-matches-list');
+  if(!list) return;
+  list.innerHTML = LIVE_MATCHES.map(m => `
+    <div class="live-match-card" onclick="fillMatch('${m.teams}')">
+      <div class="lm-sport">${m.sport}</div>
+      <div class="lm-body">
+        <div class="lm-teams">${m.teams}</div>
+        <div class="lm-minute">${m.minute}</div>
+      </div>
+      <div class="lm-score">${m.score}</div>
+      <div class="lm-live-badge">LIVE</div>
+    </div>
+  `).join('');
+}
+
+function fillMatch(name) {
+  document.getElementById('match-input').value = name;
+  updateBtn();
+}
+
+// ===== LOGIN =====
+function togglePass() {
+  const inp = document.getElementById('inp-pass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function doLogin() {
+  const l = document.getElementById('inp-login').value.trim().toLowerCase();
+  const p = document.getElementById('inp-pass').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  if(!l || !p) return;
+  btn.innerHTML = '<span class="spinner"></span>ВХОД...';
+  btn.disabled = true;
+  setTimeout(() => {
+    if(l === ACCESS.login && p === ACCESS.password) {
+      document.getElementById('login-screen').style.display = 'none';
+
+      const app = document.getElementById('app-screen');
+      app.style.display = 'flex';
+      initMenuListeners();
+      buildTicker();
+      buildTopPicks();
+      buildLiveMatches();
+      updateReqDots();
+      renderHistory();
+      applyTheme(currentTheme);
+      applyNotifUI();
+      // restore odds format
+      const savedOdds = localStorage.getItem('sr_odds') || 'EU';
+      document.getElementById('odds-' + savedOdds.toLowerCase())?.classList.add('active');
+      // restore theme selection
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+      document.getElementById('theme-' + currentTheme)?.classList.add('active');
+    } else {
+      err.textContent = '⚠️ Неверный логин или пароль';
+      err.style.display = 'block';
+      btn.innerHTML = '🔐 ВОЙТИ';
+      btn.disabled = false;
+    }
+  }, 800);
+}
+function doLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('inp-login').value = '';
+  document.getElementById('inp-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-btn').innerHTML = '🔐 ВОЙТИ';
+  document.getElementById('login-btn').disabled = false;
+}
+
+// ===== SMART SPORT WIDGET =====
+const SPORT_CONFIG = {
+  hockey: {
+    name: '🏒 Хоккей', label: 'Хоккей / КХЛ / НХЛ',
+    color: '#64B5F6', glow: 'rgba(100,181,246,0.4)',
+    bg: 'linear-gradient(135deg,rgba(100,181,246,0.15),rgba(30,100,200,0.08))',
+    shadow: '0 6px 20px rgba(100,181,246,0.2)',
+    svg: `<ellipse cx="14" cy="20" rx="8" ry="2.5" fill="rgba(100,181,246,0.25)" stroke="#64B5F6" stroke-width="1.2"/>
+          <path d="M7 20 L7 10 Q7 7 9 7 L10.5 7 Q12 7 12 9 L12 17" stroke="#64B5F6" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M12 9 L19 9 Q21 9 21 11 Q21 13 19 13 L12 13" stroke="#64B5F6" stroke-width="1.8" fill="none"/>`,
+    keywords: ['хоккей','hockey','нхл','nhl','кхл','khl','ска','ак барс','авангард','металлург','трактор','салават','сибирь','барыс','северсталь','куньлунь','витязь','автомобилист','admiral','адмирал','canadiens','maple leafs','bruins','penguins','blackhawks','red wings','oilers','flames','canucks','senators','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','ducks','sharks','coyotes','golden knights','kraken','devils','islanders','blue jackets','rangers nhl','nhl rangers']
+  },
+  football: {
+    name: '⚽ Футбол', label: 'Футбол',
+    color: '#00C853', glow: 'rgba(0,200,83,0.4)',
+    bg: 'linear-gradient(135deg,rgba(0,200,83,0.15),rgba(0,150,60,0.08))',
+    shadow: '0 6px 20px rgba(0,200,83,0.2)',
+    svgColor: '#00C853',
+    svg: `<circle cx="14" cy="14" r="11" stroke="#00C853" stroke-width="1.5" fill="rgba(0,200,83,0.08)"/>
+          <path d="M14 3 L14 25 M3 14 L25 14" stroke="rgba(0,200,83,0.3)" stroke-width="1"/>
+          <circle cx="14" cy="14" r="4.5" fill="none" stroke="#00C853" stroke-width="1.5"/>
+          <path d="M14 9.5 Q18 11 18 14 Q18 17 14 18.5 Q10 17 10 14 Q10 11 14 9.5Z" fill="rgba(0,200,83,0.3)" stroke="#00C853" stroke-width="1"/>
+          <path d="M9.5 9.5 L14 9.5 M14 18.5 L18.5 18.5 M9.5 18.5 L10 14" stroke="rgba(0,200,83,0.5)" stroke-width="0.8"/>`,
+    keywords: ['футбол','football','soccer','реал мадрид','барсел','манчест','ливерпул','арсенал','челси','псж','байер','ювентус','милан','интер','атлетик','бавари','дортмунд','аякс','порту','бенфика','шахтер','валенсия','севилья','наполи','рома','лацио','вильярреал','боруссия','шальке','лейпциг','лион','марсель','монако','бордо','страсбур','ренн','нант','лилль','ницца','тулуза','анже','клермон','селтик','хиберниан','херт','хетафе','зенит','спартак москва','цска москва','динамо москва','локомотив москва','краснодар','рубин','ростов','урал','уфа','сочи','крылья']
+  },
+  basketball: {
+    name: '🏀 НБА', label: 'Баскетбол / НБА',
+    color: '#FF6B35', glow: 'rgba(255,107,53,0.4)',
+    bg: 'linear-gradient(135deg,rgba(255,107,53,0.15),rgba(200,60,0,0.08))',
+    shadow: '0 6px 20px rgba(255,107,53,0.2)',
+    svg: `<circle cx="14" cy="14" r="11" stroke="#FF6B35" stroke-width="1.5" fill="rgba(255,107,53,0.08)"/>
+          <path d="M3 14 Q8 8 14 14 Q20 20 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
+          <path d="M3 14 Q8 20 14 14 Q20 8 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
+          <line x1="14" y1="3" x2="14" y2="25" stroke="#FF6B35" stroke-width="1.5"/>`,
+    keywords: ['нба','nba','баскетбол','basketball','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','клипперс','clippers','nuggets','jazz','suns','mavs','mavericks','rockets','spurs','pelicans','hawks','bucks','sixers','pistons','cavs','cavaliers','raptors','magic','timberwolves','wolves','grizzlies','blazers','kings','hornets','wizards','pacers']
+  },
+  tennis: {
+    name: '🎾 Теннис', label: 'Теннис / ATP / WTA',
+    color: '#CDDC39', glow: 'rgba(205,220,57,0.4)',
+    bg: 'linear-gradient(135deg,rgba(205,220,57,0.15),rgba(150,170,0,0.08))',
+    shadow: '0 6px 20px rgba(205,220,57,0.2)',
+    svg: `<circle cx="14" cy="14" r="9" stroke="#CDDC39" stroke-width="1.5" fill="rgba(205,220,57,0.08)"/>
+          <path d="M5 14 Q10 10 14 14 Q18 18 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
+          <path d="M5 14 Q10 18 14 14 Q18 10 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
+          <path d="M21 7 L26 4 Q27 3 27 4 Q27 5 26 6 L23 11" stroke="#CDDC39" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <path d="M23 11 L21 7" stroke="#CDDC39" stroke-width="2.5" stroke-linecap="round"/>`,
+    keywords: ['теннис','tennis','джокович','надаль','федерер','медведев','зверев','алькарас','синнер','рублев','циципас','берреттини','wimbledon','уимблдон','ролан гаррос','roland','us open','australian open','открытый','atp','wta','свитолина','соболенко','арына','элина','свентек','swiatek','gauff','рыбакина','касаткина','самсонова','александрова']
+  }
+};
+
+let currentSportKey = 'none';
+
+function detectSport(text) {
+  if(!text || text.length < 2) return 'none';
+  const t = text.toLowerCase();
+  for(const [key, cfg] of Object.entries(SPORT_CONFIG)) {
+    if(cfg.keywords.some(kw => t.includes(kw))) return key;
+  }
+  return 'none';
+}
+
+function updateSportWidget(sportKey, matchText, confidence) {
+  if(sportKey === currentSportKey && !confidence) return;
+  currentSportKey = sportKey;
+
+  const cfg     = SPORT_CONFIG[sportKey];
+  const glowEl  = document.getElementById('sw-glow');
+  const bgEl    = document.getElementById('sw-icon-bg');
+  const svgEl   = document.getElementById('sw-svg');
+  const nameEl  = document.getElementById('sw-sport-name');
+  const subEl   = document.getElementById('sw-sport-sub');
+  const badgeEl = document.getElementById('sw-conf-badge');
+  const valEl   = document.getElementById('sw-conf-val');
+
+  if(!cfg) {
+    if(glowEl) glowEl.style.background = 'rgba(108,99,255,0.3)';
+    if(bgEl)   { bgEl.style.background = 'rgba(108,99,255,0.1)'; bgEl.style.boxShadow = ''; }
+    if(nameEl) { nameEl.textContent = matchText ? 'Определяю...' : 'Введи матч'; nameEl.style.color = 'rgba(240,240,248,0.4)'; }
+    if(subEl)  subEl.textContent = 'Вид спорта определится автоматически';
+    if(svgEl)  svgEl.innerHTML = `<circle cx="14" cy="14" r="11" stroke="rgba(108,99,255,0.6)" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="6" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="2" fill="#6C63FF"/>
+      <line x1="14" y1="3" x2="14" y2="7" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="14" y1="21" x2="14" y2="25" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="3" y1="14" x2="7" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
+      <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>`;
+    if(badgeEl) badgeEl.style.display = 'none';
+    currentSport = '⚽ Футбол';
+    return;
+  }
+
+  if(glowEl) glowEl.style.background = cfg.glow;
+  if(bgEl)   { bgEl.style.background = cfg.bg; bgEl.style.boxShadow = cfg.shadow; }
+  if(svgEl) {
+    svgEl.innerHTML = cfg.svg;
+    svgEl.classList.remove('entering');
+    void svgEl.offsetWidth;
+    svgEl.classList.add('entering');
+  }
+  if(nameEl) { nameEl.textContent = cfg.name; nameEl.style.color = cfg.color; }
+  if(subEl)  subEl.textContent = matchText ? matchText : cfg.label;
+
+  // Confidence badge (показывается только после анализа)
+  if(confidence && badgeEl && valEl) {
+    valEl.textContent = confidence + '%';
+    badgeEl.style.display = 'flex';
+    badgeEl.style.borderColor = cfg.color + '60';
+    badgeEl.style.color = cfg.color;
+    badgeEl.style.background = cfg.color + '18';
+  }
+
+  currentSport = cfg.name;
+}
+
+// ===== SPORT (legacy compat) =====
+function setSport(el, name) {
+  // kept for history/compat but widget replaces visual
+  currentSport = name;
+}
+
+// ===== TABS =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function switchTabById(id) {
+  const tabs = document.querySelectorAll('.tab');
+  const map = {manual:0, analysis:1, verdict:2};
+  switchTab(id, tabs[map[id]]);
+}
+
+// ===== INPUT =====
+function updateBtn() {
+  const v = document.getElementById('match-input').value.trim();
+  document.getElementById('run-btn').disabled = !v;
+  // Auto-detect sport
+  const detected = detectSport(v);
+  updateSportWidget(detected, v.length > 2 ? v : null, null);
+}
+
+// ===== ANALYSIS =====
+async function startAnalysis() {
+  let match = document.getElementById('match-input').value.trim()
+    .replace(/\s*[-–—−‐_vs\.]+\s*/gi, ' ').trim();
+  if(!match) return;
+  switchTabById('analysis');
+
+  const now = new Date();
+  const date = now.toLocaleDateString('ru-RU');
+  const time = now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const emoji = currentSport.split(' ')[0];
+
+  document.getElementById('analysis-loading').style.display = 'block';
+  document.getElementById('analysis-empty').style.display = 'none';
+  document.getElementById('analysis-content').style.display = 'none';
+  document.getElementById('verdict-loading').style.display = 'none';
+  document.getElementById('verdict-empty').style.display = 'block';
+  document.getElementById('verdict-content').style.display = 'none';
+
+  // count request
+  reqUsed = Math.min(reqUsed + 1, REQ_LIMIT);
+  saveReq();
+  updateReqDots();
+
+  const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
+
+Матч: ${match}
+Вид спорта: ${currentSport}
+Дата запроса: ${date} | Время запроса: ${time}
+
+ВАЖНО: Найди точную дату и время начала матча "${match}" в открытых источниках. Анализируй ТОЛЬКО предстоящие матчи (в пределах ближайшего месяца). Укажи дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если матч уже сыгран или не найден в ближайшем расписании — сообщи об этом и не делай анализ. Если время неизвестно — напиши дату и "время уточняется".
+
+ANALYSIS_START
+🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
+${emoji} ${match}
+📅 [дата матча] | ⏰ [время МСК]
+
+📊 АНАЛИЗ 7 ПУНКТОВ
+
+🟦1️⃣ Форма и таблица
+[1-2 строки]
+
+🟦2️⃣ Advanced Stats
+[1-2 строки]
+
+🟦3️⃣ H2H
+[1-2 строки]
+
+🟦4️⃣ Травмы
+[1-2 строки]
+
+🟦5️⃣ Мотивация
+[1-2 строки]
+
+🟦6️⃣ Линия / Умные деньги
+[1-2 строки]
+
+🟦7️⃣ Тоталы
+[1-2 строки]
+ANALYSIS_END
+
+VERDICT_START
+🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
+${emoji} ${match}
+📅 [дата матча] | ⏰ [время МСК]
+
+🏆 ВЕРДИКТ
+
+🟦1️⃣ Исход: 🏆 [П1/X/П2]
+🟦2️⃣ Счёт: 🎯 [X:X]
+🟦3️⃣ Тотал: 📈 [Б/М X.5]
+🟦4️⃣ Фора: ⚖️ [±X.5]
+🟦5️⃣ Уверенность: 🔥 [XX%]
+🟦6️⃣ X-фактор: ⚡ [1 строка]
+🟦7️⃣ Смарт-прогноз: 🧠 [1 строка]
+🟦8️⃣ Профи-сигнал: 🐋 Sharp [направление] | 📊 CLV [+/-] | 🔴 Steam [Да/Нет]
+🟦9️⃣ Движение кефа: 📉 [данные]
+🔟 Размер ставки: 💰 [X% банка]
+
+✅ ТОП-3 СТАВКИ
+🥇 [ставка] — кеф 🟡 X.XX | [причина]
+🥈 [ставка] — кеф 🟡 X.XX | [причина]
+🥉 [ставка] — кеф 🟡 X.XX | [причина]
+VERDICT_END`;
+
+  try {
+    const WORKER_URL = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
+    const payload = {messages:[{role:'user',content:prompt}]};
+
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),
+      signal: AbortSignal.timeout(30000)
+    });
+    const data = await res.json();
+
+    if(data.error) {
+      const errType = data.error.type || '';
+      const errMsg  = data.error.message || '';
+      let userMsg = '';
+      if(errType === 'rate_limit_error' || errMsg.includes('rate') || errMsg.includes('limit')) {
+        userMsg = '⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК — лимиты сбрасываются автоматически.';
+      } else if(errType === 'overloaded_error') {
+        userMsg = '🔄 Сервер перегружен\n\nПопробуй снова через 1-2 минуты.';
+      } else {
+        userMsg = '❌ Ошибка API: ' + errMsg;
+      }
+      document.getElementById('analysis-loading').style.display = 'none';
+      document.getElementById('analysis-text').innerHTML = renderText(userMsg);
+      document.getElementById('analysis-content').style.display = 'block';
+      return;
+    }
+
+    const text = (data.choices && data.choices[0] && data.choices[0].message)
+      ? data.choices[0].message.content
+      : (data.content||[]).map(c=>c.text||'').join('');
+    if(!text) {
+      document.getElementById('analysis-loading').style.display = 'none';
+      document.getElementById('analysis-text').innerHTML = renderText('⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК.');
+      document.getElementById('analysis-content').style.display = 'block';
+      return;
+    }
+
+    const aM = text.match(/ANALYSIS_START([\s\S]*?)ANALYSIS_END/);
+    const vM = text.match(/VERDICT_START([\s\S]*?)VERDICT_END/);
+    analysisResult = aM ? aM[1].trim() : text;
+    verdictText    = vM ? vM[1].trim() : '';
+
+    document.getElementById('analysis-loading').style.display = 'none';
+    document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
+    document.getElementById('analysis-content').style.display = 'block';
+    document.getElementById('shortcut-block').style.display = 'block';
+
+    // extract confidence % from verdict
+    const confMatch = (verdictText || analysisResult).match(/Уверенность[^0-9]*(\d+)%/);
+    const confVal   = confMatch ? confMatch[1] : null;
+
+    // update sport widget with confidence ring
+    const detectedSport = detectSport(match);
+    updateSportWidget(detectedSport, match, confVal ? parseInt(confVal) : null);
+
+    // save to history
+    saveHistory(match, currentSport, confVal);
+
+    // parse sharp money from verdict
+    parseSharpFromVerdict(verdictText || analysisResult);
+
+    // steam alert if detected
+    if((verdictText || analysisResult).match(/Steam\s*(Да|Yes)/i)) {
+      setTimeout(() => showSteamAlert(match), 800);
+    }
+
+    // update run button
+    const runBtn = document.getElementById('run-btn');
+    runBtn.textContent = `✅ Готово${confVal ? ' · ' + confVal + '% уверенность' : ''}`;
+    runBtn.classList.add('btn-ready');
+    setTimeout(() => {
+      runBtn.textContent = '🧠 ЗАПУСТИТЬ АНАЛИЗ 3.0';
+      runBtn.classList.remove('btn-ready');
+    }, 4000);
+
+    if(verdictText) {
+      document.getElementById('verdict-empty').style.display = 'none';
+      document.getElementById('verdict-text').innerHTML = renderText(verdictText);
+      document.getElementById('verdict-content').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('analysis-loading').style.display = 'none';
+    document.getElementById('analysis-text').innerHTML = renderText('❌ Ошибка соединения\n\nПроверь интернет и попробуй снова.');
+    document.getElementById('analysis-content').style.display = 'block';
+  }
+}
+
+function renderText(text) {
+  return text.split('\n').map(line => {
+    if(!line.trim()) return '<div style="margin-bottom:8px">&nbsp;</div>';
+    let cls = 'line-muted';
+    if(line.startsWith('🎯')) cls='line-title';
+    else if(line.startsWith('📊')||line.startsWith('🏆')||line.startsWith('✅')) cls='line-section';
+    else if(/^[⚽🏒🏀🎾]/.test(line)) cls='line-match';
+    else if(line.startsWith('🟦')) cls='line-point';
+    else if(line.startsWith('🥇')) cls='line-top1';
+    else if(line.startsWith('🥈')) cls='line-top2';
+    else if(line.startsWith('🥉')) cls='line-top3';
+    return `<div class="${cls}" style="margin-bottom:5px;line-height:1.7">${line}</div>`;
+  }).join('');
+}
+
+// ===== MENU =====
+function toggleMenu(e) {
+  if(e) { e.stopPropagation(); e.preventDefault(); }
+  var m = document.getElementById('dropdown-menu');
+  var o = document.getElementById('dm-overlay');
+  if(!m) return;
+  if(m.classList.contains('open')) {
+    m.classList.remove('open');
+    if(o) o.classList.remove('open');
+  } else {
+    m.classList.add('open');
+    if(o) o.classList.add('open');
+  }
+}
+function closeMenu() {
+  const m = document.getElementById('dropdown-menu');
+  const o = document.getElementById('dm-overlay');
+  if(m) m.classList.remove('open');
+  if(o) o.classList.remove('open');
+}
+function initMenuListeners() { /* handled by onclick */ }
+
+// ===== MODALS =====
+function openModal(id) {
+  closeMenu();
+  if(id === 'about') {
+    document.getElementById('about-analyses').textContent = analysisHistory.length;
+  }
+  setTimeout(() => {
+    document.getElementById('modal-' + id).classList.add('open');
+  }, 80);
+}
+function closeModal(id) {
+  document.getElementById('modal-' + id).classList.remove('open');
+}
+
+// ===== SETTINGS: ODDS FORMAT =====
+let oddsFormat = localStorage.getItem('sr_odds') || 'EU';
+function setOdds(fmt, btn) {
+  oddsFormat = fmt;
+  localStorage.setItem('sr_odds', fmt);
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const subs = { EU:'EU — десятичные (1.85)', UK:'UK — дробные (17/20)', US:'US — монилайн (+185)' };
+  document.querySelector('#modal-settings .settings-row .settings-row-sub').textContent = subs[fmt];
+}
+
+// ===== SETTINGS: CHANGE PASSWORD =====
+function changePassword() {
+  const old   = document.getElementById('set-old-pass').value;
+  const n1    = document.getElementById('set-new-pass').value;
+  const n2    = document.getElementById('set-new-pass2').value;
+  const msg   = document.getElementById('set-pass-msg');
+  msg.style.display = 'block';
+  if(old !== ACCESS.password) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Текущий пароль неверный'; return;
+  }
+  if(n1.length < 4) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Пароль слишком короткий (мин. 4 символа)'; return;
+  }
+  if(n1 !== n2) {
+    msg.style.color = '#FF4566'; msg.textContent = '❌ Пароли не совпадают'; return;
+  }
+  ACCESS.password = n1;
+  msg.style.color = '#00E5A0'; msg.textContent = '✅ Пароль успешно изменён';
+  document.getElementById('set-old-pass').value = '';
+  document.getElementById('set-new-pass').value = '';
+  document.getElementById('set-new-pass2').value = '';
+  setTimeout(() => { msg.style.display = 'none'; }, 3000);
+}
+
+// ===== THEME =====
+let currentTheme = localStorage.getItem('sr_theme') || 'dark';
+const THEMES = {
+  dark:   { bg:'#080810', bg2:'rgba(12,12,22,0.95)', text:'#F0F0F8', grad1:'rgba(108,99,255,0.18)', grad2:'rgba(0,229,160,0.08)' },
+  amoled: { bg:'#000000', bg2:'rgba(0,0,0,0.98)',    text:'#F0F0F8', grad1:'rgba(108,99,255,0.1)',  grad2:'rgba(0,229,160,0.05)' },
+  light:  { bg:'#F0F0F8', bg2:'rgba(240,240,248,0.97)', text:'#0c0c1a', grad1:'rgba(108,99,255,0.08)', grad2:'rgba(0,229,160,0.05)' }
+};
+function setTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('sr_theme', theme);
+  applyTheme(theme);
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('theme-' + theme).classList.add('active');
+  const names = { dark:'Тёмная', amoled:'AMOLED', light:'Светлая' };
+  document.getElementById('dm-theme-sub').textContent = names[theme];
+}
+function applyTheme(theme) {
+  const t = THEMES[theme] || THEMES.dark;
+  document.body.style.background = t.bg;
+  document.documentElement.style.setProperty('--bg-main', t.bg);
+  if(theme === 'light') {
+    document.querySelectorAll('.app-header,.tabs,.app-footer,.modal-sheet,.dropdown-menu')
+      .forEach(el => { el.style.background = 'rgba(240,240,248,0.97)'; });
+    document.querySelectorAll('.brand-text h1,.tab.active,.modal-head h2')
+      .forEach(el => { el.style.color = '#0c0c1a'; });
+  } else {
+    document.querySelectorAll('.app-header,.tabs,.app-footer,.modal-sheet,.dropdown-menu')
+      .forEach(el => { el.style.background = ''; });
+    document.querySelectorAll('.brand-text h1,.tab.active,.modal-head h2')
+      .forEach(el => { el.style.color = ''; });
+  }
+}
+
+// ===== NOTIFICATIONS =====
+let notifSettings = JSON.parse(localStorage.getItem('sr_notif') || '{"steam":true,"sharp":true,"limit":true}');
+function toggleNotif(key) {
+  notifSettings[key] = !notifSettings[key];
+  localStorage.setItem('sr_notif', JSON.stringify(notifSettings));
+  const el = document.getElementById('notif-' + key);
+  if(el) el.classList.toggle('on', notifSettings[key]);
+}
+function applyNotifUI() {
+  Object.keys(notifSettings).forEach(k => {
+    const el = document.getElementById('notif-' + k);
+    if(el) el.classList.toggle('on', notifSettings[k]);
+  });
+}
+function showSteamAlert(matchName) {
+  if(!notifSettings.steam) return;
+  const el = document.getElementById('steam-alert');
+  if(!el) return;
+  el.querySelector('.steam-alert-text').textContent = `🔴 STEAM: ${matchName || 'движение кефа!'}`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ===== CONFIRM CLEAR =====
+function openConfirm() { closeMenu(); document.getElementById('confirm-clear').classList.add('open'); }
+function closeConfirm() { document.getElementById('confirm-clear').classList.remove('open'); }
+function clearHistory() {
+  analysisHistory = [];
+  localStorage.removeItem('sr_history');
+  renderHistory();
+  closeConfirm();
+  showRefreshToast('🗑️ История очищена');
+}
+
+// ===== ESPN MSK TIME FIX =====
+function espnTimeToMSK(dateStr) {
+  if(!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow' }) + ' МСК';
+  } catch(e) { return dateStr; }
+}
+
+function copyVerdict() {
+  if(!verdictText) return;
+  navigator.clipboard.writeText(verdictText).then(() => {
+    document.getElementById('copy-btn').classList.add('copied');
+    document.getElementById('copy-icon').textContent = '✅';
+    document.getElementById('copy-text').textContent = 'СКОПИРОВАНО!';
+    setTimeout(() => {
+      document.getElementById('copy-btn').classList.remove('copied');
+      document.getElementById('copy-icon').textContent = '📋';
+      document.getElementById('copy-text').textContent = 'СКОПИРОВАТЬ И ПОДЕЛИТЬСЯ';
+    }, 2200);
+  });
+}
+
+// Menu listeners initialized after login (inside doLogin)
+// Also attach directly for safety
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('menu-btn');
+  if(btn) {
+    btn.onclick = function(e) { e.preventDefault(); toggleMenu(e); return false; };
+  }
+  var ov = document.getElementById('dm-overlay');
+  if(ov) { ov.onclick = closeMenu; }
+});
+</script>
+  <!-- DROPDOWN MENU OVERLAY -->
+  <div class="dm-overlay" id="dm-overlay" onclick="closeMenu()"></div>
+
+  <!-- DROPDOWN MENU (bottom sheet) -->
+  <div class="dropdown-menu" id="dropdown-menu">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:14px auto 10px;"></div>
+    <div class="dm-header"><div class="dm-title">Меню</div></div>
+    <div class="dm-item" id="dm-settings" onclick="closeMenu();openModal('settings')">
+      <div class="dm-icon dm-icon-purple">⚙️</div>
+      <div class="dm-body"><div class="dm-item-title">Настройки</div><div class="dm-item-sub">Логин, пароль, коэффициенты</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" id="dm-theme" onclick="closeMenu();openModal('theme')">
+      <div class="dm-icon dm-icon-blue">🎨</div>
+      <div class="dm-body"><div class="dm-item-title">Тема</div><div class="dm-item-sub" id="dm-theme-sub">Тёмная</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" id="dm-notifications" onclick="closeMenu();openModal('notifications')">
+      <div class="dm-icon dm-icon-orange">🔔</div>
+      <div class="dm-body"><div class="dm-item-title">Уведомления</div><div class="dm-item-sub">Steam Move alert</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" id="dm-about" onclick="closeMenu();openModal('about')">
+      <div class="dm-icon dm-icon-green">💎</div>
+      <div class="dm-body"><div class="dm-item-title">О приложении</div><div class="dm-item-sub">SharpRadar v3.0</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" id="dm-clear" onclick="closeMenu();openConfirm()">
+      <div class="dm-icon dm-icon-red">🗑️</div>
+      <div class="dm-body"><div class="dm-item-title">Очистить историю</div><div class="dm-item-sub">Удалить все анализы</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+  </div>
+
+
+
+<div id="menu-fab" ontouchstart="this.style.background='rgba(108,99,255,0.99)';this.style.transform='scale(0.85)';this.style.boxShadow='0 2px 8px rgba(108,99,255,0.9)'" ontouchend="this.style.background='rgba(108,99,255,0.75)';this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(108,99,255,0.6)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:none !important;position:fixed;top:14px;right:84px;width:40px;height:40px;background:rgba(108,99,255,0.75);border:1px solid rgba(108,99,255,0.5);border-radius:12px;align-items:center;justify-content:center;font-size:18px;color:#fff;z-index:2147483647;box-shadow:0 4px 20px rgba(108,99,255,0.6);user-select:none;-webkit-user-select:none;touch-action:manipulation;">···</div>
+</body>
+</html>
