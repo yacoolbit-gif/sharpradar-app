@@ -955,6 +955,156 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   box-shadow: 0 4px 20px rgba(108,99,255,0.3);
 }
 
+/* ===== STATUS BAR ===== */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  height: 34px;
+  background: rgba(6,6,14,0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.status-bar:active { background: rgba(108,99,255,0.08); }
+.status-sources {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.status-chip {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
+}
+.status-chip-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.status-chip-dot.ok      { background: #00E5A0; box-shadow: 0 0 5px rgba(0,229,160,0.7); }
+.status-chip-dot.err     { background: #FF4566; box-shadow: 0 0 5px rgba(255,69,102,0.7); animation: livepulse 1.2s infinite; }
+.status-chip-dot.loading { background: #FFB830; box-shadow: 0 0 5px rgba(255,184,48,0.6); animation: livepulse 0.8s infinite; }
+.status-chip-dot.idle    { background: rgba(240,240,248,0.2); box-shadow: none; }
+.status-chip-label { color: rgba(240,240,248,0.35); }
+.status-chip-label.ok  { color: rgba(0,229,160,0.7); }
+.status-chip-label.err { color: rgba(255,69,102,0.85); }
+.status-bar-right {
+  display: flex; align-items: center; gap: 6px;
+}
+.status-err-badge {
+  background: rgba(255,69,102,0.15);
+  border: 1px solid rgba(255,69,102,0.3);
+  border-radius: 8px;
+  padding: 2px 6px;
+  color: #FF4566; font-size: 9px; font-weight: 800;
+  display: none;
+  animation: livepulse 1.5s infinite;
+}
+.status-err-badge.show { display: inline-block; }
+.status-hint {
+  color: rgba(240,240,248,0.15);
+  font-size: 9px; font-weight: 600;
+}
+
+/* ===== ERROR LOG PANEL ===== */
+.errlog-panel {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  z-index: 200;
+  background: rgba(10,10,20,0.98);
+  border-bottom: 1px solid rgba(255,69,102,0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.errlog-panel.open { max-height: 300px; }
+.errlog-inner {
+  padding: 10px 18px 12px;
+}
+.errlog-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.errlog-title {
+  color: rgba(240,240,248,0.3);
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+}
+.errlog-clear-all {
+  background: none; border: none;
+  color: rgba(240,240,248,0.2); font-size: 9px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer; padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.errlog-clear-all:active { color: rgba(255,69,102,0.8); }
+.errlog-empty {
+  text-align: center; padding: 12px 0;
+  color: rgba(240,240,248,0.2); font-size: 11px; font-weight: 600;
+}
+.errlog-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 220px; overflow-y: auto;
+}
+.errlog-item {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 7px 10px;
+  animation: errSlideIn 0.25s ease;
+}
+.errlog-item.is-err  { border-color: rgba(255,69,102,0.2); background: rgba(255,69,102,0.05); }
+.errlog-item.is-ok   { border-color: rgba(0,229,102,0.15); background: rgba(0,229,160,0.04); }
+@keyframes errSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.errlog-icon { font-size: 13px; flex-shrink: 0; }
+.errlog-body { flex: 1; min-width: 0; }
+.errlog-source { font-size: 10px; font-weight: 800; color: #F0F0F8; }
+.errlog-msg    { font-size: 9px; font-weight: 500; color: rgba(240,240,248,0.4); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.errlog-time   { font-size: 9px; color: rgba(240,240,248,0.2); flex-shrink: 0; }
+.errlog-del {
+  background: none; border: none;
+  color: rgba(240,240,248,0.2); font-size: 13px;
+  cursor: pointer; padding: 2px 4px; flex-shrink: 0;
+  transition: color 0.15s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.errlog-del:active { color: #FF4566; }
+
+/* ===== REFRESH PILL ===== */
+.refresh-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(108,99,255,0.1);
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+.refresh-pill:active { background: rgba(108,99,255,0.25); transform: scale(0.96); }
+.refresh-pill.spinning .rp-icon { animation: spin 0.7s linear infinite; }
+.refresh-pill.done { border-color: rgba(0,229,160,0.4); background: rgba(0,229,160,0.08); }
+.refresh-pill.done .rp-label { color: #00E5A0; }
+.rp-icon  { font-size: 14px; color: #6C63FF; transition: color 0.2s; }
+.rp-body  { display: flex; flex-direction: column; line-height: 1; }
+.rp-label { font-size: 11px; font-weight: 800; color: #a09aff; transition: color 0.2s; }
+.rp-next  { font-size: 9px; font-weight: 600; color: rgba(240,240,248,0.25); margin-top: 2px; }
+
 /* Steam alert toast */
 .steam-alert {
   position: fixed; top: 20px; left: 50%;
@@ -1037,6 +1187,40 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       </div>
     </div>
 
+    <!-- STATUS BAR + ERROR LOG -->
+    <div class="status-bar" id="status-bar" onclick="toggleErrLog()">
+      <div class="status-sources">
+        <div class="status-chip" id="sc-espn">
+          <div class="status-chip-dot idle" id="sc-espn-dot"></div>
+          <span class="status-chip-label" id="sc-espn-lbl">ESPN</span>
+        </div>
+        <div class="status-chip" id="sc-odds">
+          <div class="status-chip-dot idle" id="sc-odds-dot"></div>
+          <span class="status-chip-label" id="sc-odds-lbl">ODDS</span>
+        </div>
+        <div class="status-chip" id="sc-groq">
+          <div class="status-chip-dot idle" id="sc-groq-dot"></div>
+          <span class="status-chip-label" id="sc-groq-lbl">GROQ</span>
+        </div>
+        <span class="status-err-badge" id="err-badge"></span>
+      </div>
+      <div class="status-bar-right">
+        <span class="status-hint">▾ лог</span>
+      </div>
+      <!-- Error log dropdown -->
+      <div class="errlog-panel" id="errlog-panel">
+        <div class="errlog-inner">
+          <div class="errlog-head">
+            <span class="errlog-title">📋 лог событий</span>
+            <button class="errlog-clear-all" onclick="clearErrLog(event)">очистить всё</button>
+          </div>
+          <div id="errlog-list" class="errlog-list">
+            <div class="errlog-empty" id="errlog-empty">✅ Ошибок нет</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- SMART SPORT WIDGET -->
     <div class="sport-widget">
       <div class="sw-icon-wrap">
@@ -1103,8 +1287,14 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="sb-req-dots" id="req-dots"></div>
       </div>
     </div>
-    <!-- REFRESH -->
-    <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="Обновить данные">🔄</button>
+    <!-- REFRESH PILL -->
+    <div class="refresh-pill" id="refresh-pill" onclick="doRefresh()">
+      <span class="rp-icon" id="rp-icon">↺</span>
+      <div class="rp-body">
+        <span class="rp-label" id="rp-label">Обновить</span>
+        <span class="rp-next" id="rp-next">авто через —</span>
+      </div>
+    </div>
   </div>
 
   <!-- TABS -->
@@ -1471,80 +1661,36 @@ function updateReqDots() {
 }
 
 // ===== REFRESH =====
-let lastRefreshData = {};
 
 async function doRefresh() {
-  const btn = document.getElementById('refresh-btn');
-  if(!btn) return;
-  btn.classList.add('spinning');
-  btn.style.pointerEvents = 'none';
+  const pill = document.getElementById('refresh-pill');
+  const icon = document.getElementById('rp-icon');
+  const label = document.getElementById('rp-label');
+  if(!pill) return;
+  pill.classList.add('spinning');
+  pill.style.pointerEvents = 'none';
+  if(icon) icon.textContent = '↺';
+  if(label) label.textContent = 'Обновляю...';
 
-  // 1. Fetch ESPN NBA live scores (free, no key)
-  try {
-    const r = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
-    const d = await r.json();
-    const events = (d.events || []).slice(0, 6);
-    const items = events.map(e => {
-      const comp = e.competitions[0];
-      const t = comp.competitors;
-      const home = t.find(x=>x.homeAway==='home');
-      const away = t.find(x=>x.homeAway==='away');
-      const state = e.status.type.state;
-      const isLive = state === 'in';
-      const isPre  = state === 'pre';
-      let minute = '';
-      if(isLive)     minute = e.status.type.shortDetail || 'LIVE';
-      else if(isPre) minute = espnTimeToMSK(e.date);
-      else           minute = e.status.type.shortDetail || '';
-      const score  = isLive || state === 'post' ? `${away?.score||0}:${home?.score||0}` : '— : —';
-      const aName  = away?.team?.shortDisplayName || away?.team?.name || '?';
-      const hName  = home?.team?.shortDisplayName || home?.team?.name || '?';
-      return { sport:'🏀', teams:`${aName} — ${hName}`, score, minute, live: isLive };
-    });
-    if(items.length) {
-      lastRefreshData.nba = items;
-      updateTickerWithFresh(items);
-      updateLiveMatchesWithFresh(items.filter(x=>x.live));
-    }
-  } catch(e) { /* silent */ }
+  await fetchESPNTicker();
 
-  // 2. Update timestamp on refresh btn tooltip
   const now = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-
-  // Done
+  setNextRefreshIn(60000);
   setTimeout(() => {
-    btn.classList.remove('spinning');
-    btn.classList.add('done');
-    btn.style.pointerEvents = 'auto';
-    showRefreshToast(`✅ Обновлено в ${now}`);
-    setTimeout(() => btn.classList.remove('done'), 500);
-  }, 900);
+    pill.classList.remove('spinning');
+    pill.classList.add('done');
+    pill.style.pointerEvents = 'auto';
+    if(icon)  icon.textContent = '✓';
+    if(label) label.textContent = `${now}`;
+    showRefreshToast(`✅ ESPN обновлён · ${now}`);
+    setTimeout(() => {
+      pill.classList.remove('done');
+      if(icon)  icon.textContent = '↺';
+      if(label) label.textContent = 'Обновить';
+    }, 2500);
+  }, 600);
 }
 
-function updateTickerWithFresh(items) {
-  const inner = document.getElementById('ticker-inner');
-  if(!inner || !items.length) return;
-  const doubled = [...items, ...items];
-  inner.innerHTML = doubled.map(i =>
-    `<div class="ticker-item">${i.sport} ${i.teams} <span class="t-score">${i.score}</span> <span class="t-live">${i.minute}</span></div>`
-  ).join('');
-}
-
-function updateLiveMatchesWithFresh(items) {
-  const list = document.getElementById('live-matches-list');
-  if(!list || !items.length) return;
-  list.innerHTML = items.map(m => `
-    <div class="live-match-card" onclick="fillMatch('${m.teams}')">
-      <div class="lm-sport">${m.sport}</div>
-      <div class="lm-body">
-        <div class="lm-teams">${m.teams}</div>
-        <div class="lm-minute">${m.minute}</div>
-      </div>
-      <div class="lm-score">${m.score}</div>
-      <div class="lm-live-badge">LIVE</div>
-    </div>
-  `).join('');
-}
 
 // ===== TOAST =====
 function showRefreshToast(msg) {
@@ -1653,38 +1799,40 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ===== LIVE TICKER DATA =====
-const TICKER_ITEMS = [
+// ===== LIVE DATA STATE =====
+let tickerItems = [
   { sport:'⚽', teams:'Реал Мадрид — Барселона', score:'1:2', min:'67\'' },
-  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', min:'3 пер' },
   { sport:'🏀', teams:'Lakers — Celtics', score:'98:101', min:'Q4 4:32' },
   { sport:'⚽', teams:'Манчестер Сити — Арсенал', score:'0:0', min:'34\'' },
   { sport:'🎾', teams:'Джокович — Медведев', score:'6:4 3:3', min:'SET 2' },
-  { sport:'⚽', teams:'ПСЖ — Бавария', score:'1:1', min:'55\'' },
-  { sport:'🏒', teams:'СКА — Динамо', score:'3:2', min:'ОТ' },
+  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', min:'3 пер' },
   { sport:'🏀', teams:'Warriors — Nuggets', score:'112:108', min:'ФИНАЛ' },
 ];
-
-function buildTicker() {
-  const inner = document.getElementById('ticker-inner');
-  if(!inner) return;
-  const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
-  inner.innerHTML = doubled.map(i =>
-    `<div class="ticker-item">${i.sport} ${i.teams} <span class="t-score">${i.score}</span> <span class="t-live">${i.min}</span></div>`
-  ).join('');
-}
-
-// ===== TOP PICKS DATA =====
-const TOP_PICKS = [
+let liveMatches = [
+  { sport:'⚽', teams:'Манчестер Сити — Арсенал', score:'0:0', minute:'34\'' },
+  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', minute:'3 пер 08:44' },
+  { sport:'🏀', teams:'Lakers — Celtics', score:'98:101', minute:'Q4 4:32' },
+];
+let topPicks = [
   { rank:'🥇', match:'Реал Мадрид — Барселона', bet:'П1 (Фора -0.5)', sport:'⚽ Ла Лига', odds:'1.85', conf:'high', confLabel:'87%' },
   { rank:'🥈', match:'Lakers — Celtics', bet:'Тотал Б 218.5', sport:'🏀 НБА', odds:'1.92', conf:'high', confLabel:'82%' },
   { rank:'🥉', match:'Джокович — Медведев', bet:'Джокович П1', sport:'🎾 AO 2026', odds:'1.65', conf:'mid', confLabel:'74%' },
 ];
 
+// ===== BUILD FUNCTIONS =====
+function buildTicker() {
+  const inner = document.getElementById('ticker-inner');
+  if(!inner || !tickerItems.length) return;
+  const doubled = [...tickerItems, ...tickerItems];
+  inner.innerHTML = doubled.map(i =>
+    `<div class="ticker-item">${i.sport} ${i.teams} <span class="t-score">${i.score}</span> <span class="t-live">${i.min}</span></div>`
+  ).join('');
+}
+
 function buildTopPicks() {
   const grid = document.getElementById('top-picks-grid');
   if(!grid) return;
-  grid.innerHTML = TOP_PICKS.map(p => `
+  grid.innerHTML = topPicks.map(p => `
     <div class="pick-card" onclick="fillMatch('${p.match}')">
       <div class="pick-rank">${p.rank}</div>
       <div class="pick-body">
@@ -1699,17 +1847,10 @@ function buildTopPicks() {
   `).join('');
 }
 
-// ===== LIVE MATCHES DATA =====
-const LIVE_MATCHES = [
-  { sport:'⚽', teams:'Манчестер Сити — Арсенал', score:'0:0', minute:'34\'' },
-  { sport:'🏒', teams:'Ак Барс — ЦСКА', score:'2:1', minute:'3 пер 08:44' },
-  { sport:'🏀', teams:'Lakers — Celtics', score:'98:101', minute:'Q4 4:32' },
-];
-
 function buildLiveMatches() {
   const list = document.getElementById('live-matches-list');
   if(!list) return;
-  list.innerHTML = LIVE_MATCHES.map(m => `
+  list.innerHTML = liveMatches.map(m => `
     <div class="live-match-card" onclick="fillMatch('${m.teams}')">
       <div class="lm-sport">${m.sport}</div>
       <div class="lm-body">
@@ -1720,6 +1861,312 @@ function buildLiveMatches() {
       <div class="lm-live-badge">LIVE</div>
     </div>
   `).join('');
+}
+
+// ===== STATUS & ERROR LOG SYSTEM =====
+let errLog = [];
+let errLogOpen = false;
+
+function logEvent(source, ok, msg) {
+  const now = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  // keep last 20
+  errLog.unshift({ id: Date.now(), source, ok, msg, time: now });
+  if(errLog.length > 20) errLog = errLog.slice(0,20);
+  renderErrLog();
+  updateStatusChip(source, ok);
+  updateErrBadge();
+}
+
+function updateStatusChip(source, ok) {
+  const map = { ESPN:'espn', 'Odds API':'odds', Groq:'groq' };
+  const key = map[source];
+  if(!key) return;
+  const dot = document.getElementById(`sc-${key}-dot`);
+  const lbl = document.getElementById(`sc-${key}-lbl`);
+  if(!dot || !lbl) return;
+  dot.className = 'status-chip-dot ' + (ok ? 'ok' : 'err');
+  lbl.className = 'status-chip-label ' + (ok ? 'ok' : 'err');
+}
+
+function setChipLoading(source) {
+  const map = { ESPN:'espn', 'Odds API':'odds', Groq:'groq' };
+  const key = map[source];
+  if(!key) return;
+  const dot = document.getElementById(`sc-${key}-dot`);
+  if(dot) dot.className = 'status-chip-dot loading';
+}
+
+function updateErrBadge() {
+  const badge = document.getElementById('err-badge');
+  if(!badge) return;
+  const errCount = errLog.filter(e => !e.ok).length;
+  if(errCount > 0) {
+    badge.textContent = errCount + ' ERR';
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function renderErrLog() {
+  const list = document.getElementById('errlog-list');
+  const empty = document.getElementById('errlog-empty');
+  if(!list) return;
+  if(errLog.length === 0) {
+    list.innerHTML = '<div class="errlog-empty" id="errlog-empty">✅ Ошибок нет</div>';
+    return;
+  }
+  list.innerHTML = errLog.map(e => `
+    <div class="errlog-item ${e.ok ? 'is-ok' : 'is-err'}" id="elog-${e.id}">
+      <span class="errlog-icon">${e.ok ? '✅' : '⚠️'}</span>
+      <div class="errlog-body">
+        <div class="errlog-source">${e.source}</div>
+        <div class="errlog-msg">${e.msg}</div>
+      </div>
+      <span class="errlog-time">${e.time}</span>
+      <button class="errlog-del" onclick="delErrItem(${e.id},event)">✕</button>
+    </div>
+  `).join('');
+}
+
+function delErrItem(id, e) {
+  e.stopPropagation();
+  errLog = errLog.filter(x => x.id !== id);
+  renderErrLog();
+  updateErrBadge();
+  // recalc chips from remaining log
+  ['ESPN','Odds API','Groq'].forEach(src => {
+    const last = errLog.find(x => x.source === src);
+    if(last) updateStatusChip(src, last.ok);
+    else {
+      const map = { ESPN:'espn', 'Odds API':'odds', Groq:'groq' };
+      const k = map[src];
+      const dot = document.getElementById(`sc-${k}-dot`);
+      const lbl = document.getElementById(`sc-${k}-lbl`);
+      if(dot) dot.className = 'status-chip-dot idle';
+      if(lbl) lbl.className = 'status-chip-label';
+    }
+  });
+}
+
+function clearErrLog(e) {
+  e.stopPropagation();
+  errLog = [];
+  renderErrLog();
+  updateErrBadge();
+  ['espn','odds','groq'].forEach(k => {
+    const dot = document.getElementById(`sc-${k}-dot`);
+    const lbl = document.getElementById(`sc-${k}-lbl`);
+    if(dot) dot.className = 'status-chip-dot idle';
+    if(lbl) lbl.className = 'status-chip-label';
+  });
+}
+
+function toggleErrLog() {
+  errLogOpen = !errLogOpen;
+  const panel = document.getElementById('errlog-panel');
+  if(panel) panel.classList.toggle('open', errLogOpen);
+}
+
+// ===== REFRESH PILL TIMER =====
+let _nextRefreshAt = null;
+
+function setNextRefreshIn(ms) {
+  _nextRefreshAt = Date.now() + ms;
+}
+
+function updateRefreshPillTimer() {
+  const el = document.getElementById('rp-next');
+  if(!el || !_nextRefreshAt) return;
+  const diff = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
+  if(diff === 0) { el.textContent = 'обновляю...'; return; }
+  const m = Math.floor(diff / 60);
+  const s = diff % 60;
+  el.textContent = m > 0 ? `авто через ${m}м ${s}с` : `авто через ${s}с`;
+}
+setInterval(updateRefreshPillTimer, 1000);
+
+// ===== ESPN LIVE TICKER (каждые 60 сек) =====
+const ESPN_ENDPOINTS = [
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',   sport:'⚽' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', sport:'🏀' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',     sport:'🏒' },
+];
+
+async function fetchESPNTicker() {
+  setChipLoading('ESPN');
+  const results = [];
+  let anyOk = false;
+  for(const ep of ESPN_ENDPOINTS) {
+    const sport = ep.url.split('/sports/')[1]?.split('/')[0] || 'sport';
+    try {
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) { logEvent('ESPN', false, `${sport} → HTTP ${r.status}`); continue; }
+      const d = await r.json();
+      anyOk = true;
+      const events = (d.events || []).slice(0, 4);
+      for(const e of events) {
+        try {
+          const comp  = e.competitions[0];
+          const t     = comp.competitors;
+          const home  = t.find(x=>x.homeAway==='home');
+          const away  = t.find(x=>x.homeAway==='away');
+          const state = e.status.type.state;
+          const isLive = state === 'in';
+          const isPre  = state === 'pre';
+          let min = '';
+          if(isLive)     min = e.status.type.shortDetail || 'LIVE';
+          else if(isPre) min = espnTimeToMSK(e.date);
+          else           min = e.status.type.shortDetail || 'FT';
+          const score = (isLive || state==='post')
+            ? `${away?.score||0}:${home?.score||0}` : '— : —';
+          const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
+          const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
+          results.push({ sport: ep.sport, teams:`${aName} — ${hName}`, score, min, live: isLive });
+        } catch(_){}
+      }
+    } catch(err) {
+      const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
+      logEvent('ESPN', false, `${sport} — ${isTimeout ? 'timeout 8s' : err.message || 'сеть недоступна'}`);
+    }
+  }
+  if(anyOk) logEvent('ESPN', true, `OK · загружено ${results.length} матчей`);
+  if(results.length >= 2) {
+    tickerItems = results;
+    buildTicker();
+    const live = results.filter(x => x.live).map(x => ({...x, minute: x.min}));
+    if(live.length > 0) { liveMatches = live; buildLiveMatches(); }
+  }
+}
+
+// ===== THE-ODDS-API ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
+const ODDS_API_KEY = '6a6e97c0ac5e0892af5d7ba1c10e31aa';
+const ODDS_SPORTS = ['soccer_epl','basketball_nba','icehockey_nhl','tennis_atp_french_open'];
+
+async function fetchOddsHotMatches() {
+  setChipLoading('Odds API');
+  const allEvents = [];
+  let anyOk = false;
+  for(const sport of ODDS_SPORTS) {
+    try {
+      const r = await fetch(
+        `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&oddsFormat=decimal&dateFormat=iso`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if(!r.ok) {
+        const errBody = await r.json().catch(()=>({}));
+        const detail = errBody.message || `HTTP ${r.status}`;
+        if(r.status === 401) logEvent('Odds API', false, `${sport} → 401 Неверный API ключ`);
+        else if(r.status === 422) logEvent('Odds API', false, `${sport} → 422 ${detail}`);
+        else if(r.status === 429) logEvent('Odds API', false, `${sport} → 429 Лимит запросов исчерпан`);
+        else logEvent('Odds API', false, `${sport} → ${detail}`);
+        continue;
+      }
+      anyOk = true;
+      const events = await r.json();
+      const sportEmoji = sport.includes('soccer')?'⚽':sport.includes('basketball')?'🏀':sport.includes('hockey')?'🏒':'🎾';
+      for(const ev of (events||[]).slice(0,2)) {
+        try {
+          const bm = ev.bookmakers?.[0];
+          const mkt = bm?.markets?.[0];
+          const outcomes = mkt?.outcomes || [];
+          const h1 = outcomes.find(o=>o.name===ev.home_team);
+          const h2 = outcomes.find(o=>o.name===ev.away_team);
+          const bestOdds = h1 && h2 ? Math.max(h1.price, h2.price).toFixed(2) : '—';
+          allEvents.push({
+            sport: sportEmoji,
+            teams: `${ev.away_team} — ${ev.home_team}`,
+            score: '— : —',
+            minute: espnTimeToMSK(ev.commence_time),
+            odds: bestOdds
+          });
+        } catch(_){}
+      }
+    } catch(err) {
+      const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
+      logEvent('Odds API', false, `${sport} — ${isTimeout ? 'timeout 10s' : err.message || 'сеть'}`);
+    }
+  }
+  if(anyOk) logEvent('Odds API', true, `OK · загружено ${allEvents.length} матчей`);
+  if(allEvents.length >= 2) {
+    liveMatches = allEvents;
+    buildLiveMatches();
+  }
+}
+
+// ===== GROQ ТОП ПРОГНОЗЫ (каждые 2 часа) =====
+const WORKER_URL_GROQ = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
+
+async function fetchGroqTopPicks() {
+  setChipLoading('Groq');
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ru-RU');
+  try {
+    const prompt = `Сегодня ${dateStr}. Ты профессиональный аналитик ставок SharpRadar.
+Найди 3 реальных матча которые состоятся СЕГОДНЯ или ЗАВТРА и дай топ-прогнозы.
+Отвечай ТОЛЬКО JSON, без текста вокруг, без markdown:
+[
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"mid","confLabel":"XX%"}
+]
+conf = "high" если уверенность >75%, иначе "mid". Используй реальные матчи из топ-лиг.`;
+
+    const res = await fetch(WORKER_URL_GROQ, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages:[{role:'user',content:prompt}] }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(!res.ok) {
+      logEvent('Groq', false, `Worker → HTTP ${res.status}`);
+      return;
+    }
+    const data = await res.json();
+    if(data.error) {
+      const msg = data.error.message || JSON.stringify(data.error);
+      if(msg.includes('rate') || msg.includes('limit')) logEvent('Groq', false, 'Rate limit — повтор позже');
+      else logEvent('Groq', false, msg.slice(0,60));
+      return;
+    }
+    const text = (data.choices?.[0]?.message?.content || '').trim();
+    if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    if(Array.isArray(parsed) && parsed.length >= 2) {
+      const ranks = ['🥇','🥈','🥉'];
+      topPicks = parsed.slice(0,3).map((p,i) => ({...p, rank: ranks[i]}));
+      buildTopPicks();
+      logEvent('Groq', true, `OK · топ-${parsed.length} прогнозов обновлены`);
+    } else {
+      logEvent('Groq', false, 'Неверный формат JSON ответа');
+    }
+  } catch(err) {
+    const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
+    logEvent('Groq', false, isTimeout ? 'Timeout 20s — нет ответа от Worker' : err.message || 'Ошибка соединения');
+  }
+}
+
+// ===== AUTO-REFRESH INTERVALS =====
+let _tickerTimer = null;
+let _mainTimer   = null;
+
+function startAutoRefresh() {
+  // ESPN — каждые 60 сек
+  fetchESPNTicker();
+  setNextRefreshIn(60000);
+  _tickerTimer = setInterval(() => {
+    fetchESPNTicker();
+    setNextRefreshIn(60000);
+  }, 60000);
+
+  // Горячие матчи (Odds) + Топ прогнозы (Groq) — каждые 2 часа
+  fetchOddsHotMatches();
+  fetchGroqTopPicks();
+  _mainTimer = setInterval(() => {
+    fetchOddsHotMatches();
+    fetchGroqTopPicks();
+  }, 7200000);
 }
 
 function fillMatch(name) {
@@ -1751,6 +2198,7 @@ function doLogin() {
       buildTopPicks();
       buildLiveMatches();
       updateReqDots();
+      startAutoRefresh();
       renderHistory();
       applyTheme(currentTheme);
       applyNotifUI();
