@@ -1527,7 +1527,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="glass-card">
           <div id="analysis-text" class="analysis-text"></div>
         </div>
-        <button class="btn-green" onclick="switchTabById('verdict')">🏆 Смотреть Вердикт →</button>
+        <button class="btn-green" id="verdict-btn" onclick="switchTabById('verdict')" style="display:none">🏆 Смотреть Вердикт →</button>
       </div>
     </div>
 
@@ -2872,7 +2872,7 @@ async function startAnalysis() {
 Вид спорта: ${currentSport}
 Дата запроса: ${date} | Время запроса: ${time}
 
-ВАЖНО: Найди точную дату и время начала матча "${match}" в открытых источниках. Анализируй ТОЛЬКО предстоящие матчи (в пределах ближайшего месяца). Укажи дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если матч уже сыгран или не найден в ближайшем расписании — сообщи об этом и не делай анализ. Если время неизвестно — напиши дату и "время уточняется".
+ВАЖНО: Этот матч реальный и актуальный — он получен из ESPN. Делай анализ безусловно. Укажи примерную дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если точное время неизвестно — напиши "время уточняется". Никогда не отказывайся от анализа.
 
 ANALYSIS_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
@@ -3030,6 +3030,9 @@ VERDICT_END`;
       document.getElementById('verdict-empty').style.display = 'none';
       document.getElementById('verdict-text').innerHTML = renderText(verdictText);
       document.getElementById('verdict-content').style.display = 'block';
+      document.getElementById('verdict-btn').style.display = 'block';
+    } else {
+      document.getElementById('verdict-btn').style.display = 'none';
     }
   } catch(e) {
     document.getElementById('analysis-loading').style.display = 'none';
