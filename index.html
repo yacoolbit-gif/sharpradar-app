@@ -2338,7 +2338,8 @@ async function fetchESPNTicker() {
             ? `${away?.score||0}:${home?.score||0}` : '— : —';
           const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
           const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
-          results.push({ sport: ep.sport, teams:`${aName} — ${hName}`, score, min, live: isLive });
+          const datetime = isLive ? 'LIVE · идёт' : espnTimeToMSK(e.date || '');
+          results.push({ sport: ep.sport, teams:`${aName} — ${hName}`, score, min, live: isLive, datetime });
         } catch(_){}
       }
     } catch(err) {
@@ -3240,7 +3241,9 @@ function updateBtn() {
 // ===== ANALYSIS =====
 async function startAnalysis() {
   let match = document.getElementById('match-input').value.trim()
-    .replace(/\s*[-–—−‐_vs\.]+\s*/gi, ' ').trim();
+    .replace(/\s*[–—−‐]+\s*/g, ' — ')   // нормализуем тире к " — "
+    .replace(/\s+vs\.?\s+/gi, ' — ')    // vs → тире
+    .replace(/\s+/g, ' ').trim();
   if(!match) return;
   switchTabById('analysis');
 
@@ -3264,7 +3267,7 @@ async function startAnalysis() {
   // Используем реальную дату из ESPN если есть
   const matchDt = currentMatchDatetime || lookupDatetime(match, globalDatetimeMap);
   const matchDateLine = matchDt
-    ? (matchDt.startsWith('LIVE') ? '🔴 LIVE · идёт сейчас' : `📅 ${matchDt.replace(' · ', ' | ⏰ ')}`)
+    ? (matchDt.startsWith('LIVE') ? '🔴 LIVE · идёт сейчас' : `📅 ${matchDt}`)
     : `📅 ${date} | ⏰ время уточняется`;
 
   const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
