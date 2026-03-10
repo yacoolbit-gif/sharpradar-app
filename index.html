@@ -2486,16 +2486,22 @@ async function fetchOddsHotMatches() {
 
   if(allEvents.length >= 1) {
     // Балансируем по спортам: сначала LIVE всех видов, потом upcoming с квотой
-    const sports = ['⚽','🏀','🏒','🎾'];
     const byLive = allEvents.filter(e => e.live);
     const byPre  = allEvents.filter(e => !e.live);
     const balanced = [...byLive];
-    const perSport = Math.max(4, Math.floor((24 - Math.min(byLive.length, 12)) / sports.length));
-    for(const sp of sports) {
+    // Теннису гарантировано 6 слотов, остальные делят оставшееся место
+    const TOTAL_LIMIT = 30;
+    const TENNIS_QUOTA = 6;
+    const tennisPre = byPre.filter(e => e.sport === '🎾').slice(0, TENNIS_QUOTA);
+    balanced.push(...tennisPre);
+    const remaining = TOTAL_LIMIT - balanced.length;
+    const otherSports = ['⚽','🏀','🏒'];
+    const perSport = Math.max(3, Math.floor(remaining / otherSports.length));
+    for(const sp of otherSports) {
       const picks = byPre.filter(e => e.sport === sp).slice(0, perSport);
       balanced.push(...picks);
     }
-    liveMatches = balanced.slice(0, 24);
+    liveMatches = balanced.slice(0, TOTAL_LIMIT);
     buildLiveMatches();
     logEvent('Odds API', true, `Горячих матчей: ${allEvents.length} (⚽${allEvents.filter(e=>e.sport=="⚽").length} 🏀${allEvents.filter(e=>e.sport=="🏀").length} 🏒${allEvents.filter(e=>e.sport=="🏒").length} 🎾${allEvents.filter(e=>e.sport=="🎾").length})`);
   }
@@ -2526,7 +2532,9 @@ async function fetchESPNMatchesForGroq() {
     // 🏒 Хоккей
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
-    // 🎾 Теннис — ESPN не поддерживает, пропускаем
+    // 🎾 Теннис — ESPN
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA' },
   ];
   for(const ep of ALL_EP) {
     try {
