@@ -2460,12 +2460,13 @@ async function fetchESPNEndpointEvents(ep) {
           for(const grp of (tournament.groupings || [])) {
             for(const comp of (grp.competitions || [])) {
               const state = comp.status?.type?.state;
-              if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+              // Принимаем in/pre/post/scheduled/upcoming — любой живой статус
+              if(state === 'final' || state === 'postponed' || state === 'cancelled') continue;
               matches.push({
                 _isTennisMatch: true,
                 name: comp.name || tournament.name || '',
                 date: comp.date || tournament.date || '',
-                status: comp.status,
+                status: comp.status || { type: { state: 'pre', shortDetail: '' } },
                 competitions: [comp],
               });
             }
@@ -2646,7 +2647,7 @@ async function fetchESPNMatchesForGroq() {
           for(const grp of (tournament.groupings || [])) {
             for(const comp of (grp.competitions || [])) {
               const state = comp.status?.type?.state;
-              if(state !== 'in' && state !== 'pre') continue;
+              if(state === 'final' || state === 'postponed' || state === 'cancelled') continue;
               rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
             }
           }
