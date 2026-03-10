@@ -2127,6 +2127,11 @@ let topPicks = [
   { rank:'8', match:'Синнер — Алькарас', bet:'Синнер П1', sport:'🎾 ATP', odds:'2.05', conf:'mid', confLabel:'64%' },
   { rank:'9', match:'Rangers — Capitals', bet:'П1', sport:'🏒 НХЛ', odds:'1.82', conf:'mid', confLabel:'62%' },
   { rank:'10', match:'Atletico — Villarreal', bet:'ТМ 2.5', sport:'⚽ Ла Лига', odds:'2.30', conf:'mid', confLabel:'60%' },
+  { rank:'11', match:'Medvedev — Zverev', bet:'Медведев П1', sport:'🎾 ATP', odds:'1.95', conf:'mid', confLabel:'58%' },
+  { rank:'12', match:'Inter — Fiorentina', bet:'П1', sport:'⚽ Серия А', odds:'1.70', conf:'mid', confLabel:'57%' },
+  { rank:'13', match:'Cavaliers — Celtics', bet:'Тотал Б 214.5', sport:'🏀 НБА', odds:'1.90', conf:'mid', confLabel:'56%' },
+  { rank:'14', match:'Flames — Jets', bet:'П2', sport:'🏒 НХЛ', odds:'2.05', conf:'mid', confLabel:'55%' },
+  { rank:'15', match:'Sabalenka — Gauff', bet:'Тотал геймов Б 20.5', sport:'🎾 WTA', odds:'1.85', conf:'mid', confLabel:'53%' },
 ];
 
 // ===== BUILD FUNCTIONS =====
@@ -2618,7 +2623,7 @@ async function fetchGroqTopPicks() {
 
   let matchContext = '';
   if(espnMatches.length > 0) {
-    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${espnMatches.slice(0,30).join('\n')}`;
+    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${espnMatches.slice(0,50).join('\n')}`;
     logEvent('Groq', true, `ESPN дал ${espnMatches.length} матчей для анализа`);
   } else {
     logEvent('Groq', false, 'ESPN не вернул матчи — Groq пропущен');
@@ -2630,16 +2635,24 @@ async function fetchGroqTopPicks() {
 
 ${matchContext}
 
-ЗАДАЧА: Выбери ТОП-10 матчей из списка выше наиболее интересных для ставок (LIVE или предстоящие). Включай разные виды спорта (футбол, НБА, НХЛ, теннис). Дай прогноз по каждому.
+ЗАДАЧА: Выбери ТОП-15 матчей из списка выше наиболее интересных для ставок (LIVE или предстоящие). Включай все виды спорта: футбол, НБА, НХЛ, теннис.
+
+ПРИОРИТЕТ при отборе (от высшего к низшему):
+1. LIVE матчи любого вида спорта
+2. Матчи топ-турниров: Лига Чемпионов, Лига Европы, плей-офф НБА/НХЛ, турниры ATP/WTA 1000 и выше, Гранд-Слэм
+3. Топ лиги: АПЛ, Ла Лига, Серия А, Бундеслига, НБА, НХЛ, ATP/WTA
+4. Остальные лиги и турниры
+Места 1-3 занимают лучшие матчи независимо от вида спорта.
 
 ВАЖНО:
 - Используй ТОЛЬКО матчи из списка выше
 - Не придумывай матчи которых нет в списке
 - Предпочитай LIVE матчи и матчи в ближайшие часы
-- Включай разные виды спорта если есть в списке
+- Обязательно включай теннис если есть в списке — минимум 2-3 теннисных матча
+- Включай минимум по 2-3 матча каждого вида спорта если доступны
 - В поле match используй ТОЧНО те же названия команд что в списке выше
 
-Отвечай ТОЛЬКО JSON массив из 10 объектов без текста и без markdown:
+Отвечай ТОЛЬКО JSON массив из 15 объектов без текста и без markdown:
 [
   {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
   ...
@@ -2667,16 +2680,16 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
     const clean = text.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
-    if(Array.isArray(parsed) && parsed.length >= 2) {
+    if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = parsed.slice(0,10).map((p,i) => {
+      topPicks = parsed.slice(0,15).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
       });
       buildTopPicks();
-      logEvent('Groq', true, `OK · топ-${parsed.length} прогнозов обновлены`);
+      logEvent('Groq', true, `OK · топ-${Math.min(parsed.length,15)} прогнозов обновлены`);
     } else {
       logEvent('Groq', false, 'Неверный формат JSON ответа');
     }
