@@ -390,7 +390,11 @@ body::before {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 18px;
+  max-height: 420px;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
+.top-picks-grid::-webkit-scrollbar { display: none; }
 .pick-card {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.07);
@@ -438,6 +442,11 @@ body::before {
   background: linear-gradient(145deg,#9a6035 0%,#6b3a18 55%,#42210a 100%);
   box-shadow: 0 4px 14px rgba(110,55,15,0.45), 0 1px 0 rgba(210,155,90,0.2) inset, 0 -2px 0 rgba(0,0,0,0.45) inset;
   color: #e8b07a;
+}
+.medal-rank {
+  background: linear-gradient(145deg,#2a1f4a 0%,#1a1230 55%,#0e0a1e 100%);
+  box-shadow: 0 4px 14px rgba(108,99,255,0.3), 0 1px 0 rgba(160,154,255,0.18) inset, 0 -2px 0 rgba(0,0,0,0.45) inset;
+  color: #a09aff;
 }
 .pick-body { flex: 1; min-width: 0; }
 .pick-match {
@@ -2109,6 +2118,13 @@ let topPicks = [
   { rank:'🥇', match:'Реал Мадрид — Барселона', bet:'П1 (Фора -0.5)', sport:'⚽ Ла Лига', odds:'1.85', conf:'high', confLabel:'87%' },
   { rank:'🥈', match:'Lakers — Celtics', bet:'Тотал Б 218.5', sport:'🏀 НБА', odds:'1.92', conf:'high', confLabel:'82%' },
   { rank:'🥉', match:'Джокович — Медведев', bet:'Джокович П1', sport:'🎾 AO 2026', odds:'1.65', conf:'mid', confLabel:'74%' },
+  { rank:'4', match:'Bayern Munich — Dortmund', bet:'П1', sport:'⚽ Бундеслига', odds:'1.75', conf:'high', confLabel:'78%' },
+  { rank:'5', match:'Maple Leafs — Bruins', bet:'Тотал Б 5.5', sport:'🏒 НХЛ', odds:'1.88', conf:'mid', confLabel:'71%' },
+  { rank:'6', match:'Liverpool — Arsenal', bet:'ТМ 2.5', sport:'⚽ АПЛ', odds:'2.10', conf:'mid', confLabel:'68%' },
+  { rank:'7', match:'Thunder — Nuggets', bet:'Фора -3.5', sport:'🏀 НБА', odds:'1.95', conf:'mid', confLabel:'66%' },
+  { rank:'8', match:'Синнер — Алькарас', bet:'Синнер П1', sport:'🎾 ATP', odds:'2.05', conf:'mid', confLabel:'64%' },
+  { rank:'9', match:'Rangers — Capitals', bet:'П1', sport:'🏒 НХЛ', odds:'1.82', conf:'mid', confLabel:'62%' },
+  { rank:'10', match:'Atletico — Villarreal', bet:'ТМ 2.5', sport:'⚽ Ла Лига', odds:'2.30', conf:'mid', confLabel:'60%' },
 ];
 
 // ===== BUILD FUNCTIONS =====
@@ -2121,16 +2137,18 @@ function buildTicker() {
   ).join('');
 }
 
+function getMedalClass(rank) {
+  if(rank === '🥇' || rank === '1') return { cls:'medal-gold',   label:'1' };
+  if(rank === '🥈' || rank === '2') return { cls:'medal-silver', label:'2' };
+  if(rank === '🥉' || rank === '3') return { cls:'medal-bronze', label:'3' };
+  return { cls:'medal-rank', label: String(rank) };
+}
+
 function buildTopPicks() {
   const grid = document.getElementById('top-picks-grid');
   if(!grid) return;
-  const medalMap = {
-    '🥇': { cls: 'medal-gold',   label: '1' },
-    '🥈': { cls: 'medal-silver', label: '2' },
-    '🥉': { cls: 'medal-bronze', label: '3' },
-  };
   grid.innerHTML = topPicks.map(p => {
-    const med = medalMap[p.rank] || { cls:'medal-gold', label:'?' };
+    const med = getMedalClass(p.rank);
     return `
     <div class="pick-card" onclick="fillMatch('${p.match}')">
       <div class="pick-rank"><div class="medal-badge ${med.cls}">${med.label}</div></div>
@@ -2353,16 +2371,29 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',     sport:'🏒', league:'НХЛ' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',     sport:'🎾', league:'ATP' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',     sport:'🎾', league:'WTA' },
+  { url:'https://site.api.espn.com/apis/v2/sports/tennis/scoreboard',              sport:'🎾', league:'Теннис' },
 ];
+
+// Возвращает строку дат YYYYMMDD-YYYYMMDD для диапазона сегодня + N дней
+function espnDateRange(days) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  const end = new Date(now); end.setDate(end.getDate() + days);
+  return `${fmt(now)}-${fmt(end)}`;
+}
 
 async function fetchOddsHotMatches() {
   setChipLoading('Odds API');
   const allEvents = [];
   let anyOk = false;
+  const dateRange = espnDateRange(7); // берём матчи на 7 дней вперёд
 
   for(const ep of HOT_ENDPOINTS) {
     try {
-      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      const sep = ep.url.includes('?') ? '&' : '?';
+      const url = `${ep.url}${sep}dates=${dateRange}&limit=20`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if(!r.ok) { logEvent('Odds API', false, `${ep.league} → HTTP ${r.status}`); continue; }
       const d = await r.json();
       anyOk = true;
@@ -2499,7 +2530,7 @@ async function fetchGroqTopPicks() {
 
   let matchContext = '';
   if(espnMatches.length > 0) {
-    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${espnMatches.slice(0,20).join('\n')}`;
+    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${espnMatches.slice(0,30).join('\n')}`;
     logEvent('Groq', true, `ESPN дал ${espnMatches.length} матчей для анализа`);
   } else {
     logEvent('Groq', false, 'ESPN не вернул матчи — Groq пропущен');
@@ -2511,19 +2542,19 @@ async function fetchGroqTopPicks() {
 
 ${matchContext}
 
-ЗАДАЧА: Выбери ТОП-3 матча из списка выше которые наиболее интересны для ставок (LIVE или предстоящие). Дай прогноз по каждому.
+ЗАДАЧА: Выбери ТОП-10 матчей из списка выше наиболее интересных для ставок (LIVE или предстоящие). Включай разные виды спорта (футбол, НБА, НХЛ, теннис). Дай прогноз по каждому.
 
 ВАЖНО:
 - Используй ТОЛЬКО матчи из списка выше
 - Не придумывай матчи которых нет в списке
-- Предпочитай LIVE матчи и матчи которые начнутся в ближайшие часы
+- Предпочитай LIVE матчи и матчи в ближайшие часы
+- Включай разные виды спорта если есть в списке
 - В поле match используй ТОЧНО те же названия команд что в списке выше
 
-Отвечай ТОЛЬКО JSON без текста вокруг и без markdown:
+Отвечай ТОЛЬКО JSON массив из 10 объектов без текста и без markdown:
 [
   {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
-  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
-  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"mid","confLabel":"XX%"}
+  ...
 ]
 conf = "high" если уверенность >75%, иначе "mid".`;
 
@@ -2549,11 +2580,12 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const clean = text.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
     if(Array.isArray(parsed) && parsed.length >= 2) {
-      const ranks = ['🥇','🥈','🥉'];
+      const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = parsed.slice(0,3).map((p,i) => {
+      topPicks = parsed.slice(0,10).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
-        return { ...p, rank: ranks[i], datetime: realDatetime || p.datetime || '—' };
+        const rankLabel = i < 3 ? ranks[i] : String(i+1);
+        return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
       });
       buildTopPicks();
       logEvent('Groq', true, `OK · топ-${parsed.length} прогнозов обновлены`);
@@ -2677,7 +2709,7 @@ function buildTopPicks() {
       : '';
     return `
     <div class="pick-card" onclick="fillMatch('${p.match}')">
-      <div class="pick-rank"><div class="medal-badge ${p.rank==='🥇'?'medal-gold':p.rank==='🥈'?'medal-silver':'medal-bronze'}">${p.rank==='🥇'?'1':p.rank==='🥈'?'2':'3'}</div></div>
+      <div class="pick-rank"><div class="medal-badge ${getMedalClass(p.rank).cls}">${getMedalClass(p.rank).label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
         <div class="pick-meta">${p.datetime || p.sport || '—'} · ${p.bet}</div>
