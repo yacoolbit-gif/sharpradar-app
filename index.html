@@ -2435,25 +2435,10 @@ async function fetchESPNEndpointEvents(ep) {
         if(!r.ok) { logEvent('Odds API', false, `🎾 ${ep.league} HTTP ${r.status}`); continue; }
         const data = await r.json();
 
-        // === ДИАГНОСТИКА ===
-        const hasLeagues = !!(data.leagues && data.leagues.length > 0);
-        const hasEvents  = !!(data.events  && data.events.length  > 0);
-        const leaguesLen = hasLeagues ? data.leagues.length : 0;
-        const eventsLen  = hasEvents  ? data.events.length  : 0;
-        logEvent('Odds API', hasLeagues||hasEvents,
-          `🎾 ${ep.league} off=${offset===null?'now':offset}: leagues=${leaguesLen} events=${eventsLen}`);
-
-        // ESPN tennis: data.leagues[] → league.events[] = турниры → tournament.competitions[] = матчи
+        // ESPN tennis: data.events[] = турниры → tournament.groupings[].competitions[] = матчи
         const allTournaments = [];
-        if(hasLeagues) {
-          for(const league of data.leagues) {
-            const lgEvents = league.events || [];
-            logEvent('Odds API', lgEvents.length>0, `🎾 league="${league.name||league.slug||'?'}" events=${lgEvents.length}`);
-            for(const t of lgEvents) allTournaments.push(t);
-          }
-        }
+        if(data.leagues) { for(const lg of data.leagues) for(const t of (lg.events||[])) allTournaments.push(t); }
         for(const t of (data.events || [])) allTournaments.push(t);
-        logEvent('Odds API', allTournaments.length>0, `🎾 allTournaments=${allTournaments.length}`);
 
         for(const tournament of allTournaments) {
           // ESPN tennis: матчи в groupings[].competitions[]
