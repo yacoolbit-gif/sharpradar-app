@@ -2466,9 +2466,18 @@ async function fetchOddsHotMatches() {
           const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status.type.shortDetail || 'LIVE') : (e.status.type.shortDetail || 'FT'));
           const score = (isLive || state === 'post')
             ? (comp.status?.type?.shortDetail || `${away?.score||0}:${home?.score||0}`) : '— : —';
-          const aName = away?.athlete?.displayName || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '?';
-          const hName = home?.athlete?.displayName || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '?';
-          if(aName === '?' && hName === '?') continue;
+          // Теннис: ESPN может хранить имя в competitors[x].athlete или в e.name
+          let aName = away?.athlete?.displayName || away?.athlete?.fullName
+                   || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '';
+          let hName = home?.athlete?.displayName || home?.athlete?.fullName
+                   || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '';
+          // Если через competitors имена не получены — парсим из e.name (формат "A vs B")
+          if((!aName || !hName) && e.name) {
+            const parts = e.name.split(/\s+(?:vs\.?|@)\s+/i);
+            if(parts.length >= 2) { aName = aName || parts[0].trim(); hName = hName || parts[1].trim(); }
+          }
+          if(!aName && !hName) continue;
+          aName = aName || '?'; hName = hName || '?';
           allEvents.push({
             sport: ep.sport,
             league: ep.league,
@@ -2546,11 +2555,17 @@ async function fetchESPNMatchesForGroq() {
           const state = e.status?.type?.state;
           if(state !== 'in' && state !== 'pre') continue;
           const comp = e.competitions[0];
-          const t    = comp.competitors;
-          const home = t.find(x => x.homeAway === 'home');
-          const away = t.find(x => x.homeAway === 'away');
-          const aName = away?.team?.displayName || away?.team?.shortDisplayName || '?';
-          const hName = home?.team?.displayName  || home?.team?.shortDisplayName || '?';
+          const t    = comp.competitors || [];
+          const home = t.find(x => x.homeAway === 'home') || t[1] || t[0];
+          const away = t.find(x => x.homeAway === 'away') || t[0];
+          let aName = away?.athlete?.displayName || away?.athlete?.fullName || away?.team?.displayName || away?.team?.shortDisplayName || '';
+          let hName = home?.athlete?.displayName || home?.athlete?.fullName || home?.team?.displayName  || home?.team?.shortDisplayName || '';
+          if((!aName || !hName) && e.name) {
+            const parts = e.name.split(/\s+(?:vs\.?|@)\s+/i);
+            if(parts.length >= 2) { aName = aName || parts[0].trim(); hName = hName || parts[1].trim(); }
+          }
+          if(!aName && !hName) continue;
+          aName = aName || '?'; hName = hName || '?';
           const timeStr = espnTimeToMSK(e.date);
           const isLive = state === 'in';
           const datetime = isLive
