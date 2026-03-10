@@ -2390,7 +2390,7 @@ async function fetchOddsHotMatches() {
             sport: ep.sport,
             teams: `${aName} — ${hName}`,
             score,
-            minute: `${ep.league} · ${minute}`,
+            minute: minute,
             live: isLive
           });
         } catch(_){}
@@ -2484,12 +2484,12 @@ ${matchContext}
 
 Отвечай ТОЛЬКО JSON без текста вокруг и без markdown:
 [
-  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%","datetime":"10 мар · 17:00"},
-  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%","datetime":"10 мар · 19:45"},
-  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"mid","confLabel":"XX%","datetime":"10 мар · 21:00"}
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%","datetime":"10 мар · 18:00"},
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%","datetime":"10 мар · 20:30"},
+  {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"mid","confLabel":"XX%","datetime":"LIVE · идёт"}
 ]
 conf = "high" если уверенность >75%, иначе "mid".
-datetime — реальная дата и время начала матча в формате "ДД мес · ЧЧ:ММ" (UTC+3), например "10 мар · 19:30". Если матч LIVE пиши "LIVE · идёт".`;
+datetime — реальная дата и время матча в формате "ДД мес · ЧЧ:ММ" (МСК), например "10 мар · 19:30". Если матч LIVE — пиши "LIVE · идёт".`;
 
     const res = await fetch(WORKER_URL_GROQ, {
       method:'POST',
@@ -2637,10 +2637,10 @@ function buildTopPicks() {
       : '';
     return `
     <div class="pick-card" onclick="fillMatch('${p.match}')">
-      <div class="pick-rank">${p.rank}</div>
+      <div class="pick-rank"><div class="medal-badge ${p.rank==='🥇'?'medal-gold':p.rank==='🥈'?'medal-silver':'medal-bronze'}">${p.rank==='🥇'?'1':p.rank==='🥈'?'2':'3'}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
-        <div class="pick-meta">${p.sport} · ${p.bet}</div>
+        <div class="pick-meta">${p.datetime || p.sport || '—'} · ${p.bet}</div>
         ${liveHtml}
       </div>
       <div class="pick-right">
@@ -3339,7 +3339,10 @@ function espnTimeToMSK(dateStr) {
   if(!dateStr) return '';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow' }) + ' МСК';
+    const day = d.toLocaleDateString('ru-RU', { day:'numeric', month:'short', timeZone:'Europe/Moscow' })
+      .replace('.','').replace(' г','');
+    const time = d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow' });
+    return `${day} · ${time}`;
   } catch(e) { return dateStr; }
 }
 
