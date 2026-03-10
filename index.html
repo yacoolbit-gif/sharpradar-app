@@ -2391,8 +2391,9 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
 
-  // 🎾 ТЕННИС — через RapidAPI Tennis Live Scores (публичный, без ключа)
-  { url:'https://tennis-live-data.p.rapidapi.com/matches/today', sport:'🎾', league:'ATP/WTA', isTennisAlt: true },
+  // 🎾 ТЕННИС — ESPN (бесплатно, без ключа)
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA' },
 ];
 
 // Форматирует дату в YYYYMMDD для ESPN
@@ -2403,38 +2404,8 @@ function fmtESPNDate(d) {
 
 // Получает события из ESPN для одного эндпоинта
 async function fetchESPNEndpointEvents(ep) {
-  const isTennis = ep.sport === '🎾';
 
-  // --- Теннис: allsportsapi.com (бесплатный ключ) ---
-  if(ep.isTennisAlt) {
-    try {
-      const today = fmtESPNDate(new Date());
-      const yy = today.slice(0,4), mm = today.slice(4,6), dd = today.slice(6,8);
-      // Используем публичный allsports API demo key
-      const url = `https://allsportsapi.com/api/tennis/?met=Fixtures&APIkey=demo&from=${yy}-${mm}-${dd}&to=${yy}-${mm}-${dd}`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) { logEvent('Odds API', false, `Теннис → HTTP ${r.status}`); return []; }
-      const data = await r.json();
-      const result = data.result || [];
-      const events = result.slice(0, 6).map(m => ({
-        _tennis: true,
-        home: m.event_home_team,
-        away: m.event_away_team,
-        time: m.event_date + 'T' + (m.event_time || '12:00') + ':00Z',
-        live: m.event_live === '1',
-        score: m.event_final_result && m.event_final_result !== '' ? m.event_final_result : '— : —',
-        league: m.league_name || 'ATP/WTA'
-      }));
-      if(events.length > 0) logEvent('Odds API', true, `Теннис: ${events.length} матчей`);
-      else logEvent('Odds API', false, 'Теннис — нет матчей сегодня');
-      return events;
-    } catch(err) {
-      logEvent('Odds API', false, `Теннис — ${err.message || 'err'}`);
-      return [];
-    }
-  }
-
-  // --- Остальные виды: сначала без даты, потом перебираем дни ---
+  // --- Все виды спорта через ESPN: сначала без даты, потом перебираем дни ---
   const now = new Date();
   const attempts = [null, 0, 1, 2, 3, 4, 5, 6, 7]; // null = без параметра dates
   for(const offset of attempts) {
@@ -2480,18 +2451,6 @@ async function fetchOddsHotMatches() {
 
       for(const e of pick) {
         try {
-          // Теннис через api-tennis.com имеет другой формат
-          if(e._tennis) {
-            allEvents.push({
-              sport: '🎾',
-              league: e.league || 'ATP/WTA',
-              teams: `${e.away || '?'} — ${e.home || '?'}`,
-              score: e.score || '— : —',
-              minute: e.live ? 'LIVE' : (e.time ? espnTimeToMSK(e.time) : '—'),
-              live: e.live || false
-            });
-            continue;
-          }
           const comp  = e.competitions[0];
           const t     = comp.competitors || [];
           // homeAway может отсутствовать — берём просто [0] и [1]
