@@ -570,7 +570,7 @@ input[type=text], input[type=password] {
 input:focus { border-color: rgba(255,255,255,0.18); box-shadow: 0 0 0 3px rgba(108,99,255,0.3); }
 input::placeholder { color: rgba(240,240,248,0.2); }
 .btn-primary {
-  width: 100%; padding: 15px;
+  width: 100%; padding: 11px;
   background: linear-gradient(135deg,#6C63FF,#9B59F5);
   border: none; border-radius: 16px;
   cursor: pointer; color: #FFF;
@@ -596,12 +596,12 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   margin-top: 10px;
 }
 .btn-copy {
-  width: 100%; padding: 14px;
+  width: 100%; padding: 9px;
   background: linear-gradient(135deg,rgba(255,184,48,0.12),rgba(255,100,50,0.08));
   border: 1px solid rgba(255,184,48,0.3);
-  border-radius: 16px; cursor: pointer;
+  border-radius: 12px; cursor: pointer;
   color: #FFB830;
-  font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.4px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   margin-bottom: 12px;
   transition: all 0.3s;
@@ -1528,6 +1528,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div id="analysis-text" class="analysis-text"></div>
         </div>
         <button class="btn-green" id="verdict-btn" onclick="switchTabById('verdict')" style="display:none">🏆 Смотреть Вердикт →</button>
+        <button class="btn-green" id="share-analysis-btn" onclick="shareAnalysis()" style="display:none;background:rgba(0,229,160,0.06);border-color:rgba(0,229,160,0.18)">📤 Поделиться анализом</button>
       </div>
     </div>
 
@@ -3031,8 +3032,10 @@ VERDICT_END`;
       document.getElementById('verdict-text').innerHTML = renderText(verdictText);
       document.getElementById('verdict-content').style.display = 'block';
       document.getElementById('verdict-btn').style.display = 'block';
+      document.getElementById('share-analysis-btn').style.display = 'block';
     } else {
       document.getElementById('verdict-btn').style.display = 'none';
+      document.getElementById('share-analysis-btn').style.display = 'none';
     }
   } catch(e) {
     document.getElementById('analysis-loading').style.display = 'none';
@@ -3045,7 +3048,7 @@ function renderText(text) {
   // Убираем служебные маркеры если они вдруг попали в текст
   const clean = text.replace(/ANALYSIS_START|ANALYSIS_END|VERDICT_START|VERDICT_END/g, '').trim();
   return clean.split('\n').map(line => {
-    if(!line.trim()) return '<div style="margin-bottom:8px">&nbsp;</div>';
+    if(!line.trim()) return '<div style="margin-bottom:3px"></div>';
     let cls = 'line-muted';
     if(line.startsWith('🎯')) cls='line-title';
     else if(line.startsWith('📊')||line.startsWith('🏆')||line.startsWith('✅')) cls='line-section';
@@ -3054,7 +3057,7 @@ function renderText(text) {
     else if(line.startsWith('🥇')) cls='line-top1';
     else if(line.startsWith('🥈')) cls='line-top2';
     else if(line.startsWith('🥉')) cls='line-top3';
-    return `<div class="${cls}" style="margin-bottom:5px;line-height:1.7">${line}</div>`;
+    return `<div class="${cls}" style="margin-bottom:2px;line-height:1.5">${line}</div>`;
   }).join('');
 }
 
@@ -3219,6 +3222,24 @@ function copyVerdict() {
   });
 }
 
+function shareAnalysis() {
+  if(!analysisResult) return;
+  const btn = document.getElementById('share-analysis-btn');
+  if(navigator.share) {
+    navigator.share({
+      title: '🎯 SharpRadar — Аналитик 3.0',
+      text: analysisResult
+    }).then(() => {
+      btn.textContent = '✅ Отправлено';
+      setTimeout(() => { btn.textContent = '📤 Поделиться анализом'; }, 2200);
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(analysisResult).then(() => {
+      btn.textContent = '✅ Скопировано';
+      setTimeout(() => { btn.textContent = '📤 Поделиться анализом'; }, 2200);
+    });
+  }
+}
 function shareVerdict() {
   if(!verdictText) return;
   const shareText = verdictText;
