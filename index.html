@@ -331,24 +331,34 @@ body::before {
 /* ===== TABS ===== */
 .tabs {
   display: flex;
-  padding: 0 18px;
+  padding: 10px 18px;
   background: rgba(12,12,22,0.95);
   border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
   position: relative; z-index: 5;
+  gap: 8px;
 }
 .tab {
-  flex: 1; padding: 11px 0;
+  flex: 1; padding: 9px 6px;
   font-size: 11px;
-  background: none; border: none;
+  background: linear-gradient(145deg,#1a1a2e 0%,#0f0f1e 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
   cursor: pointer;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 500; letter-spacing: 0.3px;
-  transition: all 0.25s;
-  border-bottom: 2px solid transparent;
-  color: rgba(240,240,248,0.2);
+  font-weight: 600; letter-spacing: 0.2px;
+  transition: all 0.2s;
+  color: rgba(240,240,248,0.3);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -2px 0 rgba(0,0,0,0.3) inset;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
 }
-.tab.active { color: #6C63FF; border-bottom-color: #6C63FF; font-weight: 700; }
+.tab.active {
+  color: #c8c4ff;
+  background: linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);
+  border-color: rgba(108,99,255,0.45);
+  box-shadow: 0 3px 10px rgba(108,99,255,0.35), 0 1px 0 rgba(255,255,255,0.12) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  font-weight: 700;
+}
 
 /* ===== CONTENT ===== */
 .content {
@@ -396,6 +406,37 @@ body::before {
 .pick-rank {
   font-size: 18px;
   flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.medal-badge {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 900;
+  position: relative;
+  flex-shrink: 0;
+}
+.medal-badge::after {
+  content: '';
+  position: absolute; top: 3px; left: 4px; right: 4px; height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+.medal-gold {
+  background: linear-gradient(145deg,#c8a84b 0%,#9a7420 55%,#6b4f10 100%);
+  box-shadow: 0 4px 12px rgba(160,120,30,0.45), 0 1px 0 rgba(255,220,100,0.3) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  color: #ffe8a0;
+}
+.medal-silver {
+  background: linear-gradient(145deg,#9ba3ae 0%,#6e7880 55%,#454d55 100%);
+  box-shadow: 0 4px 12px rgba(100,120,140,0.4), 0 1px 0 rgba(220,230,240,0.25) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  color: #dde4ea;
+}
+.medal-bronze {
+  background: linear-gradient(145deg,#b87a4a 0%,#8a5228 55%,#5e3310 100%);
+  box-shadow: 0 4px 12px rgba(140,80,30,0.4), 0 1px 0 rgba(230,180,120,0.25) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  color: #f0c89a;
 }
 .pick-body { flex: 1; min-width: 0; }
 .pick-match {
@@ -490,7 +531,16 @@ body::before {
 .live-match-card.swipe-hint-left  .swipe-delete-icon.left  { opacity: 1; }
 .live-match-card.swipe-hint-right .swipe-delete-icon.right { opacity: 1; }
 .live-match-card:active { transform: scale(0.98); }
-.lm-sport { font-size: 16px; flex-shrink: 0; }
+.lm-sport {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg,#1e1e32 0%,#12121f 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.07) inset, 0 -2px 0 rgba(0,0,0,0.35) inset;
+}
 .lm-body { flex: 1; min-width: 0; }
 .lm-teams {
   color: #F0F0F8;
@@ -1181,40 +1231,43 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 /* ===== SPORT FILTER ===== */
 .sport-filter {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
 .sf-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 5px 11px;
-  background: rgba(255,255,255,0.04);
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 12px;
+  background: linear-gradient(145deg,#1a1a2e 0%,#0f0f1e 100%);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  font-size: 12px; font-weight: 700;
+  border-radius: 12px;
+  font-size: 11px; font-weight: 700;
   color: rgba(240,240,248,0.35);
   cursor: pointer;
   font-family: 'Plus Jakarta Sans', sans-serif;
   transition: all 0.18s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06) inset, 0 -2px 0 rgba(0,0,0,0.3) inset;
 }
-.sf-btn:active { transform: scale(0.94); }
+.sf-btn:active { transform: scale(0.93); }
 .sf-btn.active {
-  background: rgba(108,99,255,0.15);
-  border-color: rgba(108,99,255,0.4);
-  color: #a09aff;
+  background: linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);
+  border-color: rgba(108,99,255,0.45);
+  color: #c8c4ff;
+  box-shadow: 0 3px 10px rgba(108,99,255,0.35), 0 1px 0 rgba(255,255,255,0.12) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
 }
-.sf-btn.sf-football.active  { background: rgba(0,200,83,0.12);  border-color: rgba(0,200,83,0.4);  color: #00C853; }
-.sf-btn.sf-basketball.active{ background: rgba(255,107,53,0.12); border-color: rgba(255,107,53,0.4); color: #FF6B35; }
-.sf-btn.sf-hockey.active    { background: rgba(100,181,246,0.12);border-color: rgba(100,181,246,0.4);color: #64B5F6; }
+.sf-btn.sf-football.active  { background: linear-gradient(145deg,#0e2a18,#071510); border-color: rgba(0,200,83,0.4); color: #5de898; box-shadow: 0 3px 10px rgba(0,200,83,0.25), 0 1px 0 rgba(255,255,255,0.1) inset, 0 -2px 0 rgba(0,0,0,0.4) inset; }
+.sf-btn.sf-basketball.active{ background: linear-gradient(145deg,#2a1a0e,#1a0e07); border-color: rgba(255,107,53,0.4); color: #ff9a6c; box-shadow: 0 3px 10px rgba(255,107,53,0.25), 0 1px 0 rgba(255,255,255,0.1) inset, 0 -2px 0 rgba(0,0,0,0.4) inset; }
+.sf-btn.sf-hockey.active    { background: linear-gradient(145deg,#0e1e2a,#07111a); border-color: rgba(100,181,246,0.4); color: #8fd0ff; box-shadow: 0 3px 10px rgba(100,181,246,0.25), 0 1px 0 rgba(255,255,255,0.1) inset, 0 -2px 0 rgba(0,0,0,0.4) inset; }
+.sf-btn.sf-tennis.active    { background: linear-gradient(145deg,#2a260e,#1a1807); border-color: rgba(200,220,0,0.4); color: #d8e860; box-shadow: 0 3px 10px rgba(200,220,0,0.2), 0 1px 0 rgba(255,255,255,0.1) inset, 0 -2px 0 rgba(0,0,0,0.4) inset; }
 .sf-count {
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
   padding: 1px 5px;
   font-size: 9px;
 }
-.sf-btn.active .sf-count { background: rgba(255,255,255,0.15); }
+.sf-btn.active .sf-count { background: rgba(255,255,255,0.18); }
 
 /* Live score badge in pick card */
 .pick-live-score {
@@ -1484,9 +1537,18 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('manual',this)">✏️ Матч</button>
-    <button class="tab" onclick="switchTab('analysis',this)">📊 Анализ</button>
-    <button class="tab" onclick="switchTab('verdict',this)">🏆 Вердикт</button>
+    <button class="tab active" onclick="switchTab('manual',this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Матч
+    </button>
+    <button class="tab" onclick="switchTab('analysis',this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Анализ
+    </button>
+    <button class="tab" onclick="switchTab('verdict',this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 0 0 5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 1 0 5H18"/><path d="M8 9h8"/><path d="M8 15h8"/><path d="M8 12h8"/><path d="M9 3h6"/><path d="M9 21h6"/><line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/></svg>
+      Вердикт
+    </button>
   </div>
 
   <!-- CONTENT -->
@@ -1513,10 +1575,14 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       <div class="section-title">🔥 Горячие матчи сейчас</div>
       <!-- SPORT FILTER -->
       <div class="sport-filter" id="sport-filter">
-        <button class="sf-btn active" id="sf-all" onclick="filterSport('all',this)">Все <span class="sf-count" id="sf-count-all">0</span></button>
-        <button class="sf-btn sf-football"   id="sf-football"   onclick="filterSport('football',this)">⚽ <span class="sf-count" id="sf-count-football">0</span></button>
+        <button class="sf-btn active" id="sf-all" onclick="filterSport('all',this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Все <span class="sf-count" id="sf-count-all">0</span>
+        </button>
+        <button class="sf-btn sf-football" id="sf-football" onclick="filterSport('football',this)">⚽ <span class="sf-count" id="sf-count-football">0</span></button>
         <button class="sf-btn sf-basketball" id="sf-basketball" onclick="filterSport('basketball',this)">🏀 <span class="sf-count" id="sf-count-basketball">0</span></button>
-        <button class="sf-btn sf-hockey"     id="sf-hockey"     onclick="filterSport('hockey',this)">🏒 <span class="sf-count" id="sf-count-hockey">0</span></button>
+        <button class="sf-btn sf-hockey" id="sf-hockey" onclick="filterSport('hockey',this)">🏒 <span class="sf-count" id="sf-count-hockey">0</span></button>
+        <button class="sf-btn sf-tennis" id="sf-tennis" onclick="filterSport('tennis',this)">🎾 <span class="sf-count" id="sf-count-tennis">0</span></button>
       </div>
       <div class="live-matches" id="live-matches-list"></div>
 
@@ -2068,9 +2134,16 @@ function buildTicker() {
 function buildTopPicks() {
   const grid = document.getElementById('top-picks-grid');
   if(!grid) return;
-  grid.innerHTML = topPicks.map(p => `
+  const medalMap = {
+    '🥇': { cls: 'medal-gold',   label: '1' },
+    '🥈': { cls: 'medal-silver', label: '2' },
+    '🥉': { cls: 'medal-bronze', label: '3' },
+  };
+  grid.innerHTML = topPicks.map(p => {
+    const med = medalMap[p.rank] || { cls:'medal-gold', label:'?' };
+    return `
     <div class="pick-card" onclick="fillMatch('${p.match}')">
-      <div class="pick-rank">${p.rank}</div>
+      <div class="pick-rank"><div class="medal-badge ${med.cls}">${med.label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
         <div class="pick-meta">${p.sport} · ${p.bet}</div>
@@ -2079,8 +2152,8 @@ function buildTopPicks() {
         <div class="pick-odds">🟡 ${p.odds}</div>
         <div class="pick-conf conf-${p.conf}">🔥 ${p.confLabel}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function buildLiveMatches() {
@@ -2489,16 +2562,17 @@ function getSportKey(emoji) {
   if(emoji === '⚽') return 'football';
   if(emoji === '🏀') return 'basketball';
   if(emoji === '🏒') return 'hockey';
+  if(emoji === '🎾') return 'tennis';
   return 'other';
 }
 
 function updateFilterCounts() {
-  const counts = { all: liveMatches.length, football:0, basketball:0, hockey:0 };
+  const counts = { all: liveMatches.length, football:0, basketball:0, hockey:0, tennis:0 };
   liveMatches.forEach(m => {
     const k = getSportKey(m.sport);
     if(counts[k] !== undefined) counts[k]++;
   });
-  ['all','football','basketball','hockey'].forEach(k => {
+  ['all','football','basketball','hockey','tennis'].forEach(k => {
     const el = document.getElementById(`sf-count-${k}`);
     if(el) el.textContent = counts[k];
   });
