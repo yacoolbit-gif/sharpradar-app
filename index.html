@@ -2362,43 +2362,55 @@ async function fetchESPNTicker() {
 // ===== THE-ODDS-API ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
 // ===== ESPN ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
 const HOT_ENDPOINTS = [
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',   sport:'⚽', league:'АПЛ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',   sport:'⚽', league:'Ла Лига' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',   sport:'⚽', league:'Бундеслига' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',   sport:'⚽', league:'Серия А' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',          sport:'⚽', league:'АПЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',          sport:'⚽', league:'Ла Лига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',          sport:'⚽', league:'Бундеслига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',          sport:'⚽', league:'Серия А' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', sport:'🏀', league:'НБА' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',     sport:'🏒', league:'НХЛ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',     sport:'🎾', league:'ATP' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',     sport:'🎾', league:'WTA' },
-  { url:'https://site.api.espn.com/apis/v2/sports/tennis/scoreboard',              sport:'🎾', league:'Теннис' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',        sport:'🏀', league:'НБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp-tennis/scoreboard',     sport:'🎾', league:'ATP' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta-tennis/scoreboard',     sport:'🎾', league:'WTA' },
 ];
 
-// Возвращает строку дат YYYYMMDD-YYYYMMDD для диапазона сегодня + N дней
-function espnDateRange(days) {
-  const now = new Date();
+// Форматирует дату в YYYYMMDD для ESPN
+function fmtESPNDate(d) {
   const pad = n => String(n).padStart(2,'0');
-  const fmt = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-  const end = new Date(now); end.setDate(end.getDate() + days);
-  return `${fmt(now)}-${fmt(end)}`;
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+}
+
+// Получает события из ESPN для одного эндпоинта — пробует сегодня + до 7 дней вперёд
+async function fetchESPNEndpointEvents(ep) {
+  const now = new Date();
+  for(let i = 0; i <= 7; i++) {
+    const d = new Date(now); d.setDate(d.getDate() + i);
+    const dateStr = fmtESPNDate(d);
+    try {
+      const sep = ep.url.includes('?') ? '&' : '?';
+      const url = `${ep.url}${sep}dates=${dateStr}`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if(!r.ok) continue;
+      const data = await r.json();
+      const events = (data.events || []).filter(e =>
+        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
+      );
+      if(events.length > 0) return events; // нашли — возвращаем
+    } catch(_){}
+  }
+  return [];
 }
 
 async function fetchOddsHotMatches() {
   setChipLoading('Odds API');
   const allEvents = [];
   let anyOk = false;
-  const dateRange = espnDateRange(7); // берём матчи на 7 дней вперёд
 
   for(const ep of HOT_ENDPOINTS) {
     try {
-      const sep = ep.url.includes('?') ? '&' : '?';
-      const url = `${ep.url}${sep}dates=${dateRange}&limit=20`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) { logEvent('Odds API', false, `${ep.league} → HTTP ${r.status}`); continue; }
-      const d = await r.json();
+      const events = await fetchESPNEndpointEvents(ep);
+      if(events.length === 0) continue;
       anyOk = true;
-      const events = (d.events || []);
-      // Сначала берём LIVE, потом upcoming
+      // Сначала LIVE, потом upcoming
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
       const pick     = [...live, ...upcoming].slice(0, 3);
@@ -2433,8 +2445,7 @@ async function fetchOddsHotMatches() {
         } catch(_){}
       }
     } catch(err) {
-      const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
-      logEvent('Odds API', false, `${ep.league} — ${isTimeout ? 'timeout 8s' : err.message || 'сеть'}`);
+      logEvent('Odds API', false, `${ep.league} — ${err.message || 'сеть'}`);
     }
   }
 
