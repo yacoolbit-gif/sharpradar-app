@@ -2402,36 +2402,54 @@ function fmtESPNDate(d) {
   return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
 }
 
-// Получает события из ESPN для одного эндпоинта — пробует сегодня + до 7 дней вперёд
+// Получает события из ESPN для одного эндпоинта
 async function fetchESPNEndpointEvents(ep) {
-  const now = new Date();
-  for(let i = 0; i <= 7; i++) {
-    const d = new Date(now); d.setDate(d.getDate() + i);
-    const dateStr = fmtESPNDate(d);
+  const isTennis = ep.sport === '🎾';
+
+  // --- Теннис: dates= не поддерживается, только прямой запрос ---
+  if(isTennis) {
     try {
-      const sep = ep.url.includes('?') ? '&' : '?';
-      const url = `${ep.url}${sep}dates=${dateStr}`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) {
-        logEvent('Odds API', false, `${ep.league} d+${i} → HTTP ${r.status}`);
-        continue;
-      }
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) { logEvent('Odds API', false, `${ep.league} → HTTP ${r.status}`); return []; }
       const data = await r.json();
-      // ESPN может вернуть events напрямую или внутри scoreboard
+      const events = (data.events || []).filter(e =>
+        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
+      );
+      if(events.length > 0) logEvent('Odds API', true, `${ep.league}: ${events.length} матчей`);
+      return events;
+    } catch(err) {
+      logEvent('Odds API', false, `${ep.league} — ${err.message || 'err'}`);
+      return [];
+    }
+  }
+
+  // --- Остальные виды: сначала без даты, потом перебираем дни ---
+  const now = new Date();
+  const attempts = [null, 0, 1, 2, 3, 4, 5, 6, 7]; // null = без параметра dates
+  for(const offset of attempts) {
+    try {
+      let url;
+      if(offset === null) {
+        url = ep.url; // без dates — ESPN отдаёт текущий день сам
+      } else {
+        const d = new Date(now); d.setDate(d.getDate() + offset);
+        const sep = ep.url.includes('?') ? '&' : '?';
+        url = `${ep.url}${sep}dates=${fmtESPNDate(d)}`;
+      }
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) continue; // тихо, без лога чтобы не спамить
+      const data = await r.json();
       const rawEvents = data.events || data.scoreboard?.events || [];
       const events = rawEvents.filter(e =>
         e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
       );
       if(events.length > 0) {
-        logEvent('Odds API', true, `${ep.league} d+${i}: ${events.length} матчей`);
+        logEvent('Odds API', true, `${ep.league}: ${events.length} матчей`);
         return events;
       }
-    } catch(err) {
-      logEvent('Odds API', false, `${ep.league} d+${i} — ${err.message || 'err'}`);
-    }
+    } catch(_){}
   }
-  logEvent('Odds API', false, `${ep.league} — нет матчей за 7 дней`);
-  return [];
+  return []; // тихо если нет матчей — не спамить лог
 }
 
 async function fetchOddsHotMatches() {
@@ -2481,10 +2499,10 @@ async function fetchOddsHotMatches() {
     }
   }
 
-  if(anyOk) logEvent('Odds API', true, `OK · горячих матчей: ${allEvents.length}`);
   if(allEvents.length >= 1) {
     liveMatches = allEvents.slice(0, 12);
     buildLiveMatches();
+    logEvent('Odds API', true, `Горячих матчей: ${allEvents.length} (⚽${allEvents.filter(e=>e.sport=="⚽").length} 🏀${allEvents.filter(e=>e.sport=="🏀").length} 🏒${allEvents.filter(e=>e.sport=="🏒").length} 🎾${allEvents.filter(e=>e.sport=="🎾").length})`);
   }
 }
 
