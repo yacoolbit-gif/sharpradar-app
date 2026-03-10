@@ -2455,17 +2455,26 @@ async function fetchESPNEndpointEvents(ep) {
         for(const t of (data.events || [])) allTournaments.push(t);
         logEvent('Odds API', allTournaments.length>0, `🎾 allTournaments=${allTournaments.length}`);
 
-        // ДИАГНОСТИКА: console.log полного JSON турнира
+        // ДИАГНОСТИКА СТРУКТУРЫ ТУРНИРА
         if(allTournaments.length > 0) {
-          console.log('TENNIS_T0_FULL:', JSON.stringify(allTournaments[0], null, 2));
           const t0 = allTournaments[0];
-          const t0keys = Object.keys(t0).join(',');
-          logEvent('Odds API', true, `🎾 T0_KEYS=[${t0keys}]`);
+          // Строка 1: все ключи турнира
+          logEvent('Odds API', true, `🎾 T0_KEYS=[${Object.keys(t0).join(',')}]`);
+          // Строка 2-N: все массивы + их вложенные массивы
           for(const k of Object.keys(t0)) {
             const v = t0[k];
             if(!Array.isArray(v)) continue;
-            const s0 = v.length>0 && typeof v[0]==='object' ? Object.keys(v[0]).join(',') : (v.length>0 ? String(v[0]) : 'empty');
-            logEvent('Odds API', v.length>0, `🎾 T0.${k}[${v.length}]${v.length>0?' {'+s0+'}':''}`);
+            if(v.length === 0) { logEvent('Odds API', false, `🎾 .${k}=[]`); continue; }
+            const sub = typeof v[0]==='object' ? Object.keys(v[0]).join(',') : typeof v[0];
+            logEvent('Odds API', true, `🎾 .${k}[${v.length}]={${sub}}`);
+            if(typeof v[0] === 'object') {
+              for(const k2 of Object.keys(v[0])) {
+                const v2 = v[0][k2];
+                if(!Array.isArray(v2) || v2.length===0) continue;
+                const sub2 = typeof v2[0]==='object' ? Object.keys(v2[0]).join(',') : typeof v2[0];
+                logEvent('Odds API', true, `🎾 .${k}[0].${k2}[${v2.length}]={${sub2}}`);
+              }
+            }
           }
         }
 
