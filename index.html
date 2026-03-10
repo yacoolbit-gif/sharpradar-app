@@ -2362,13 +2362,36 @@ async function fetchESPNTicker() {
 // ===== THE-ODDS-API ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
 // ===== ESPN ГОРЯЧИЕ МАТЧИ (каждые 2 часа) =====
 const HOT_ENDPOINTS = [
+  // ⚽ ФУТБОЛ (7 лиг — от топ к менее популярным)
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',          sport:'⚽', league:'АПЛ' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',          sport:'⚽', league:'Ла Лига' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',          sport:'⚽', league:'Бундеслига' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',          sport:'⚽', league:'Серия А' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',          sport:'⚽', league:'Лига 1' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',    sport:'⚽', league:'ЛЕ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard',sport:'⚽', league:'ЛК УЕФА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard',          sport:'⚽', league:'Примейра' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard',          sport:'⚽', league:'Эредивизие' },
+
+  // 🏀 БАСКЕТБОЛ (7 лиг)
   { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',        sport:'🏀', league:'НБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard', sport:'🏀', league:'NCAA' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard',       sport:'🏀', league:'ВНБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/scoreboard',        sport:'🏀', league:'НБЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard', sport:'🏀', league:'Евролига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/g-league/scoreboard',   sport:'🏀', league:'G-League' },
+
+  // 🏒 ХОККЕЙ (7 лиг)
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/scoreboard', sport:'🏒', league:'NCAA Хоккей' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/echl/scoreboard',           sport:'🏒', league:'ECHL' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/liiga/scoreboard',          sport:'🏒', league:'Liiga' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
+
+  // 🎾 ТЕННИС (ATP + WTA туры)
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp-tennis/scoreboard',     sport:'🎾', league:'ATP' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta-tennis/scoreboard',     sport:'🎾', league:'WTA' },
 ];
@@ -2388,15 +2411,26 @@ async function fetchESPNEndpointEvents(ep) {
     try {
       const sep = ep.url.includes('?') ? '&' : '?';
       const url = `${ep.url}${sep}dates=${dateStr}`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-      if(!r.ok) continue;
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) {
+        logEvent('Odds API', false, `${ep.league} d+${i} → HTTP ${r.status}`);
+        continue;
+      }
       const data = await r.json();
-      const events = (data.events || []).filter(e =>
+      // ESPN может вернуть events напрямую или внутри scoreboard
+      const rawEvents = data.events || data.scoreboard?.events || [];
+      const events = rawEvents.filter(e =>
         e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
       );
-      if(events.length > 0) return events; // нашли — возвращаем
-    } catch(_){}
+      if(events.length > 0) {
+        logEvent('Odds API', true, `${ep.league} d+${i}: ${events.length} матчей`);
+        return events;
+      }
+    } catch(err) {
+      logEvent('Odds API', false, `${ep.league} d+${i} — ${err.message || 'err'}`);
+    }
   }
+  logEvent('Odds API', false, `${ep.league} — нет матчей за 7 дней`);
   return [];
 }
 
@@ -2463,14 +2497,25 @@ async function fetchESPNMatchesForGroq() {
   const matches = [];
   const datetimeMap = new Map(); // ключ: нормализованное имя матча → datetime строка
   const ALL_EP = [
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',        sport:'⚽', league:'АПЛ' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',        sport:'⚽', league:'Ла Лига' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',        sport:'⚽', league:'Бундеслига' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',        sport:'⚽', league:'Серия А' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',        sport:'⚽', league:'Лига 1' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',sport:'⚽', league:'ЛЧ' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',      sport:'🏀', league:'НБА' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',          sport:'🏒', league:'НХЛ' },
+    // ⚽ Футбол
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',          sport:'⚽', league:'АПЛ' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',          sport:'⚽', league:'Ла Лига' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',          sport:'⚽', league:'Бундеслига' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',          sport:'⚽', league:'Серия А' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',          sport:'⚽', league:'Лига 1' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',    sport:'⚽', league:'ЛЕ' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard',          sport:'⚽', league:'Примейра' },
+    // 🏀 Баскетбол
+    { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',        sport:'🏀', league:'НБА' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard', sport:'🏀', league:'NCAA' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard', sport:'🏀', league:'Евролига' },
+    // 🏒 Хоккей
+    { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
+    // 🎾 Теннис
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp-tennis/scoreboard',     sport:'🎾', league:'ATP' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta-tennis/scoreboard',     sport:'🎾', league:'WTA' },
   ];
   for(const ep of ALL_EP) {
     try {
