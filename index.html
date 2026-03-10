@@ -2401,9 +2401,9 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
 
-  // 🎾 ТЕННИС — ESPN (бесплатно, без ключа)
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA' },
+  // 🎾 ТЕННИС — ESPN events (матчи внутри турниров)
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP', tennisEvents:true },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA', tennisEvents:true },
 ];
 
 // Форматирует дату в YYYYMMDD для ESPN
@@ -2414,22 +2414,67 @@ function fmtESPNDate(d) {
 
 // Получает события из ESPN для одного эндпоинта
 async function fetchESPNEndpointEvents(ep) {
-
-  // --- Все виды спорта через ESPN: сначала без даты, потом перебираем дни ---
   const now = new Date();
-  const attempts = [null, 0, 1, 2, 3, 4, 5, 6, 7]; // null = без параметра dates
+  const attempts = [null, 0, 1, 2, 3, 4, 5, 6, 7];
+
+  // ===== ТЕННИС: особая обработка =====
+  // ESPN теннис /scoreboard возвращает ТУРНИРЫ (events[]), а не матчи.
+  // Матчи (competitions) лежат ВНУТРИ каждого турнира.
+  if(ep.tennisEvents) {
+    const matches = [];
+    for(const offset of attempts) {
+      try {
+        let url;
+        if(offset === null) { url = ep.url; }
+        else {
+          const d = new Date(now); d.setDate(d.getDate() + offset);
+          const sep = ep.url.includes('?') ? '&' : '?';
+          url = `${ep.url}${sep}dates=${fmtESPNDate(d)}`;
+        }
+        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if(!r.ok) continue;
+        const data = await r.json();
+        const tournaments = data.events || [];
+        for(const tournament of tournaments) {
+          // Матчи внутри турнира — это competitions[]
+          const comps = tournament.competitions || [];
+          for(const comp of comps) {
+            const state = comp.status?.type?.state;
+            if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+            // Оборачиваем comp как pseudo-event для совместимости с остальным кодом
+            matches.push({
+              _isTennisMatch: true,
+              name: comp.name || tournament.name || '',
+              date: comp.date || tournament.date || '',
+              status: comp.status,
+              competitions: [comp],
+            });
+          }
+        }
+        if(matches.length > 0) {
+          logEvent('Odds API', true, `${ep.league}: ${matches.length} матчей`);
+          return matches;
+        }
+      } catch(err) {
+        logEvent('Odds API', false, `🎾 fetchErr [\${ep.league}]: \${err.message}`);
+      }
+    }
+    return [];
+  }
+
+  // ===== ОСТАЛЬНЫЕ ВИДЫ СПОРТА =====
   for(const offset of attempts) {
     try {
       let url;
       if(offset === null) {
-        url = ep.url; // без dates — ESPN отдаёт текущий день сам
+        url = ep.url;
       } else {
         const d = new Date(now); d.setDate(d.getDate() + offset);
         const sep = ep.url.includes('?') ? '&' : '?';
         url = `${ep.url}${sep}dates=${fmtESPNDate(d)}`;
       }
       const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) continue; // тихо, без лога чтобы не спамить
+      if(!r.ok) continue;
       const data = await r.json();
       const rawEvents = data.events || data.scoreboard?.events || [];
       const events = rawEvents.filter(e =>
@@ -2441,8 +2486,9 @@ async function fetchESPNEndpointEvents(ep) {
       }
     } catch(_){}
   }
-  return []; // тихо если нет матчей — не спамить лог
+  return [];
 }
+
 
 async function fetchOddsHotMatches() {
   setChipLoading('Odds API');
@@ -2464,85 +2510,32 @@ async function fetchOddsHotMatches() {
 
       for(const e of pick) {
         try {
-          // ===== ТЕННИС DEBUG =====
-          const isTennis = ep.sport === '🎾';
-          if(isTennis) {
-            const hasComp = !!e.competitions;
-            const compLen = e.competitions?.length || 0;
-            const topKeys = Object.keys(e).join(',');
-            logEvent('Odds API', hasComp && compLen > 0, `🎾 [${ep.league}] e.keys=${topKeys} | competitions=${compLen} | name="${e.name||''}"`);
-            if(!hasComp || compLen === 0) {
-              // Попробуем альтернативные поля
-              const altKeys = ['competitors','athletes','players','competitors','match'];
-              const found = altKeys.find(k => e[k]);
-              logEvent('Odds API', false, `🎾 SKIP no competitions. Alt field: ${found||'нет'} | e.status=${e.status?.type?.state}`);
-              continue;
-            }
-          }
-
           const comp  = e.competitions[0];
           const t     = comp.competitors || [];
-
-          if(isTennis) {
-            const compKeys = Object.keys(comp).join(',');
-            const t0keys = t[0] ? Object.keys(t[0]).join(',') : 'нет';
-            logEvent('Odds API', true, `🎾 comp.keys=${compKeys} | t.length=${t.length} | t[0].keys=${t0keys}`);
-            if(t[0]) logEvent('Odds API', true, `🎾 t[0]: athlete=${JSON.stringify(t[0].athlete||null)} team=${JSON.stringify(t[0].team||null)} id=${t[0].id||'?'}`);
-          }
-
+          if(t.length < 1) continue;
+          const isTennis = ep.sport === '🎾';
           let home, away;
-          if(isTennis) {
-            away = t[0];
-            home = t[1] || t[0];
-          } else {
-            home = t.find(x => x.homeAway === 'home') || t[1] || t[0];
-            away = t.find(x => x.homeAway === 'away') || t[0];
-          }
-          if(!home || !away) {
-            if(isTennis) logEvent('Odds API', false, `🎾 SKIP: home/away null`);
-            continue;
-          }
-
+          if(isTennis) { away = t[0]; home = t[1] || t[0]; }
+          else { home = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away = t.find(x => x.homeAway === 'away') || t[0]; }
+          if(!home || !away) continue;
           const state = e.status?.type?.state || 'pre';
           const isLive = state === 'in';
           const isPre  = state === 'pre';
           const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status?.type?.shortDetail || 'LIVE') : (e.status?.type?.shortDetail || 'FT'));
           const score = (isLive || state === 'post')
             ? (comp.status?.type?.shortDetail || `${away?.score||0}:${home?.score||0}`) : '— : —';
-
           let aName = away?.athlete?.displayName || away?.athlete?.fullName
                    || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '';
           let hName = home?.athlete?.displayName || home?.athlete?.fullName
                    || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '';
-
-          if(isTennis) {
-            logEvent('Odds API', true, `🎾 NAMES: aName="${aName}" hName="${hName}" athlete0="${t[0]?.athlete?.displayName}" athlete1="${t[1]?.athlete?.displayName}"`);
-          }
-
           if((!aName || !hName) && e.name) {
             const parts = e.name.split(/\s+(?:vs\.?|@)\s+/i);
             if(parts.length >= 2) { aName = aName || parts[0].trim(); hName = hName || parts[1].trim(); }
           }
-          if(!aName && !hName) {
-            if(isTennis) logEvent('Odds API', false, `🎾 SKIP: имена пустые, e.name="${e.name}"`);
-            continue;
-          }
+          if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
-          if(t.length === 1) { hName = '?'; }
-
-          if(isTennis) logEvent('Odds API', true, `🎾 ДОБАВЛЕН: ${aName} — ${hName}`);
-
-          allEvents.push({
-            sport: ep.sport,
-            league: ep.league,
-            teams: `${aName} — ${hName}`,
-            score,
-            minute: displayTime,
-            live: isLive
-          });
-        } catch(err) {
-          if(ep.sport === '🎾') logEvent('Odds API', false, `🎾 EXCEPTION: ${err.message}`);
-        }
+          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive });
+        } catch(_){}
       }
     } catch(err) {
       logEvent('Odds API', false, `${ep.league} — ${err.message || 'сеть'}`);
@@ -2598,48 +2591,61 @@ async function fetchESPNMatchesForGroq() {
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
     // 🎾 Теннис — ESPN
-    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA' },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP', tennisEvents:true },
+    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA', tennisEvents:true },
   ];
   for(const ep of ALL_EP) {
     try {
       const r = await fetch(ep.url, { signal: AbortSignal.timeout(6000) });
       if(!r.ok) continue;
       const d = await r.json();
-      for(const e of (d.events || [])) {
-        try {
+
+      // Теннис: events[] = турниры, матчи внутри в tournament.competitions[]
+      const rawItems = [];
+      if(ep.tennisEvents) {
+        for(const tournament of (d.events || [])) {
+          for(const comp of (tournament.competitions || [])) {
+            const state = comp.status?.type?.state;
+            if(state !== 'in' && state !== 'pre') continue;
+            rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+          }
+        }
+      } else {
+        for(const e of (d.events || [])) {
           const state = e.status?.type?.state;
           if(state !== 'in' && state !== 'pre') continue;
-          const comp = e.competitions[0];
-          const t    = comp.competitors || [];
+          rawItems.push({ _comp: e.competitions?.[0], _date: e.date || '', _name: e.name || '', _status: e.status });
+        }
+      }
+
+      for(const item of rawItems) {
+        try {
+          const comp = item._comp;
+          if(!comp) continue;
+          const t = comp.competitors || [];
           if(t.length < 1) continue;
-          const isTennisMG = ep.sport === '🎾';
+          const isTennis = ep.sport === '🎾';
           let home, away;
-          if(isTennisMG) { away = t[0]; home = t[1] || t[0]; }
+          if(isTennis) { away = t[0]; home = t[1] || t[0]; }
           else { home = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away = t.find(x => x.homeAway === 'away') || t[0]; }
           let aName = away?.athlete?.displayName || away?.athlete?.fullName || away?.team?.displayName || away?.team?.shortDisplayName || '';
           let hName = home?.athlete?.displayName || home?.athlete?.fullName || home?.team?.displayName  || home?.team?.shortDisplayName || '';
-          if((!aName || !hName) && e.name) {
-            const parts = e.name.split(/\s+(?:vs\.?|@)\s+/i);
+          if((!aName || !hName) && item._name) {
+            const parts = item._name.split(/\s+(?:vs\.?|@)\s+/i);
             if(parts.length >= 2) { aName = aName || parts[0].trim(); hName = hName || parts[1].trim(); }
           }
           if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
-          const timeStr = espnTimeToMSK(e.date);
-          const isLive = state === 'in';
-          const datetime = isLive
-            ? `LIVE · идёт`
-            : timeStr;
-          const status = isLive
-            ? `🔴 LIVE (${e.status.type.shortDetail || 'идёт'})`
-            : `⏰ ${timeStr}`;
+          const compState = comp.status?.type?.state || 'pre';
+          const isLive = compState === 'in';
+          const timeStr = espnTimeToMSK(item._date);
+          const datetime = isLive ? 'LIVE · идёт' : timeStr;
+          const shortDetail = comp.status?.type?.shortDetail || (isLive ? 'идёт' : '');
+          const status = isLive ? `🔴 LIVE (${shortDetail})` : `⏰ ${timeStr}`;
           const matchLine = `${ep.sport} ${aName} — ${hName} | ${ep.league} | ${status}`;
           matches.push(matchLine);
-          // Сохраняем datetime по нормализованному ключу (оба варианта имён)
           const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
-          const normKeyAlt = `${away?.team?.shortDisplayName||''} — ${home?.team?.shortDisplayName||''}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, datetime);
-          if(normKeyAlt && normKeyAlt !== normKey) datetimeMap.set(normKeyAlt, datetime);
         } catch(_){}
       }
     } catch(_){}
