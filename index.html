@@ -2418,22 +2418,20 @@ async function fetchOddsHotMatches() {
       for(const e of pick) {
         try {
           const comp  = e.competitions[0];
-          const t     = comp.competitors;
-          const home  = t.find(x => x.homeAway === 'home');
-          const away  = t.find(x => x.homeAway === 'away');
-          const state = e.status.type.state;
+          const t     = comp.competitors || [];
+          // homeAway может отсутствовать (теннис) — берём просто [0] и [1]
+          const home  = t.find(x => x.homeAway === 'home') || t[1] || t[0];
+          const away  = t.find(x => x.homeAway === 'away') || t[0];
+          if(!home || !away) continue; // нет участников — пропускаем
+          const state = e.status?.type?.state || 'pre';
           const isLive = state === 'in';
           const isPre  = state === 'pre';
-          let minute = '';
-          if(isLive)     minute = e.status.type.shortDetail || 'LIVE';
-          else if(isPre) minute = espnTimeToMSK(e.date);
-          else           minute = e.status.type.shortDetail || 'FT';
+          const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status.type.shortDetail || 'LIVE') : (e.status.type.shortDetail || 'FT'));
           const score = (isLive || state === 'post')
             ? `${away?.score||0}:${home?.score||0}` : '— : —';
-          const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
-          const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
-          // Для карточки: дата/время всегда через espnTimeToMSK, LIVE минута отдельно
-          const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status.type.shortDetail || 'LIVE') : (e.status.type.shortDetail || 'FT'));
+          const aName = away?.athlete?.displayName || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '?';
+          const hName = home?.athlete?.displayName || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '?';
+          if(aName === '?' && hName === '?') continue;
           allEvents.push({
             sport: ep.sport,
             league: ep.league,
@@ -2897,7 +2895,7 @@ const SPORT_CONFIG = {
     svg: `<ellipse cx="14" cy="20" rx="8" ry="2.5" fill="rgba(100,181,246,0.25)" stroke="#64B5F6" stroke-width="1.2"/>
           <path d="M7 20 L7 10 Q7 7 9 7 L10.5 7 Q12 7 12 9 L12 17" stroke="#64B5F6" stroke-width="2" fill="none" stroke-linecap="round"/>
           <path d="M12 9 L19 9 Q21 9 21 11 Q21 13 19 13 L12 13" stroke="#64B5F6" stroke-width="1.8" fill="none"/>`,
-    keywords: ['хоккей','hockey','нхл','nhl','кхл','khl','ска','ак барс','авангард','металлург','трактор','салават','сибирь','барыс','северсталь','куньлунь','витязь','автомобилист','admiral','адмирал','canadiens','maple leafs','bruins','penguins','blackhawks','red wings','oilers','flames','canucks','senators','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','ducks','sharks','coyotes','golden knights','kraken','devils','islanders','blue jackets','rangers nhl','nhl rangers']
+    keywords: ['хоккей','hockey','нхл','nhl','кхл','khl','ска','ак барс','авангард','металлург','трактор','салават','сибирь','барыс','северсталь','куньлунь','витязь','автомобилист','нефтехимик','admiral','адмирал','canadiens','maple leafs','bruins','penguins','blackhawks','red wings','oilers','flames','canucks','senators','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','ducks','sharks','coyotes','golden knights','kraken','devils','islanders','blue jackets','rangers nhl','nhl rangers','jets','winnipeg','kings','los angeles kings','seattle','nashville','columbus','minnesota wild','st. louis','colorado','anaheim','san jose','new jersey','new york rangers','new york islanders','buffalo','ottawa','montreal','toronto maple','vancouver','edmonton','calgary','arizona']
   },
   football: {
     name: '⚽ Футбол', label: 'Футбол',
@@ -2921,7 +2919,7 @@ const SPORT_CONFIG = {
           <path d="M3 14 Q8 8 14 14 Q20 20 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <path d="M3 14 Q8 20 14 14 Q20 8 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <line x1="14" y1="3" x2="14" y2="25" stroke="#FF6B35" stroke-width="1.5"/>`,
-    keywords: ['нба','nba','баскетбол','basketball','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','клипперс','clippers','nuggets','jazz','suns','mavs','mavericks','rockets','spurs','pelicans','hawks','bucks','sixers','pistons','cavs','cavaliers','raptors','magic','timberwolves','wolves','grizzlies','blazers','kings','hornets','wizards','pacers']
+    keywords: ['нба','nba','баскетбол','basketball','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','golden state','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','oklahoma','клипперс','clippers','nuggets','denver','jazz','utah','suns','phoenix','mavs','mavericks','dallas','rockets','houston','spurs','san antonio','pelicans','new orleans','hawks','atlanta','bucks','milwaukee','sixers','philadelphia','pistons','detroit','cavs','cavaliers','cleveland','raptors','toronto','magic','orlando','timberwolves','minnesota','wolves','grizzlies','memphis','blazers','portland','kings','sacramento','hornets','charlotte','wizards','washington','pacers','indiana']
   },
   tennis: {
     name: '🎾 Теннис', label: 'Теннис / ATP / WTA',
@@ -2933,7 +2931,7 @@ const SPORT_CONFIG = {
           <path d="M5 14 Q10 18 14 14 Q18 10 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
           <path d="M21 7 L26 4 Q27 3 27 4 Q27 5 26 6 L23 11" stroke="#CDDC39" stroke-width="1.8" stroke-linecap="round" fill="none"/>
           <path d="M23 11 L21 7" stroke="#CDDC39" stroke-width="2.5" stroke-linecap="round"/>`,
-    keywords: ['теннис','tennis','джокович','надаль','федерер','медведев','зверев','алькарас','синнер','рублев','циципас','берреттини','wimbledon','уимблдон','ролан гаррос','roland','us open','australian open','открытый','atp','wta','свитолина','соболенко','арына','элина','свентек','swiatek','gauff','рыбакина','касаткина','самсонова','александрова']
+    keywords: ['теннис','tennis','джокович','djokovic','надаль','nadal','федерер','federer','медведев','medvedev','зверев','zverev','алькарас','alcaraz','синнер','sinner','рублев','rublev','циципас','tsitsipas','берреттини','berrettini','wimbledon','уимблдон','ролан гаррос','roland','us open','australian open','открытый','atp','wta','свитолина','svitolina','соболенко','sabalenka','арына','элина','свентек','swiatek','gauff','рыбакина','rybakina','касаткина','самсонова','александрова','бертран','bertrand','лангмо','langmo','ксилас','рыбаков','нейбур','шварцлер','challenger','хард','грунт','трава']
   }
 };
 
