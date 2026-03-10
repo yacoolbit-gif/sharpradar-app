@@ -1883,17 +1883,19 @@ function updateSharpBar(direction, clv, steam) {
 
 function parseSharpFromVerdict(text) {
   if(!text) return;
-  // Extract Sharp direction
-  const sharpMatch = text.match(/Sharp\s+([^\|]+)/i);
-  const direction  = sharpMatch ? sharpMatch[1].trim() : null;
-  // Extract CLV
-  const clvMatch   = text.match(/CLV\s*([+\-]?\d+\.?\d*)/i);
+  // Extract Sharp direction — stop at pipe, comma, emoji or newline
+  const sharpMatch = text.match(/Sharp[\s:]+([^|,\n\u{1F4CA}\u{1F534}\u{1F7E6}]+)/iu);
+  const direction  = sharpMatch ? sharpMatch[1].trim().replace(/[:\s]+$/, '') : null;
+  // Extract CLV number
+  const clvMatch   = text.match(/CLV[\s:]*([+\-]?\d+\.?\d*)/i);
   const clv        = clvMatch ? parseFloat(clvMatch[1]) : null;
+  // CLV keyword present but no number -> show dash explicitly
+  const clvPresent = /CLV/i.test(text);
   // Extract Steam
-  const steamMatch = text.match(/Steam\s*(Да|Нет|Yes|No)/i);
+  const steamMatch = text.match(/Steam[\s:]*(Да|Нет|Yes|No)/i);
   const steam      = steamMatch ? (steamMatch[1].toLowerCase() === 'да' || steamMatch[1].toLowerCase() === 'yes') : null;
 
-  if(direction || clv !== null || steam !== null) {
+  if(direction || clv !== null || steam !== null || clvPresent) {
     updateSharpBar(direction, clv, steam);
   }
 }
@@ -2962,7 +2964,7 @@ const SPORT_CONFIG = {
           <circle cx="14" cy="14" r="4.5" fill="none" stroke="#00C853" stroke-width="1.5"/>
           <path d="M14 9.5 Q18 11 18 14 Q18 17 14 18.5 Q10 17 10 14 Q10 11 14 9.5Z" fill="rgba(0,200,83,0.3)" stroke="#00C853" stroke-width="1"/>
           <path d="M9.5 9.5 L14 9.5 M14 18.5 L18.5 18.5 M9.5 18.5 L10 14" stroke="rgba(0,200,83,0.5)" stroke-width="0.8"/>`,
-    keywords: ['футбол','football','soccer','реал мадрид','барсел','манчест','ливерпул','арсенал','челси','псж','байер','ювентус','милан','интер','атлетик','бавари','дортмунд','аякс','порту','бенфика','шахтер','валенсия','севилья','наполи','рома','лацио','вильярреал','боруссия','шальке','лейпциг','лион','марсель','монако','бордо','страсбур','ренн','нант','лилль','ницца','тулуза','анже','клермон','селтик','хиберниан','херт','хетафе','зенит','спартак москва','цска москва','динамо москва','локомотив москва','краснодар','рубин','ростов','урал','уфа','сочи','крылья']
+    keywords: ['футбол','football','soccer','реал мадрид','барсел','манчест','ливерпул','арсенал','челси','псж','байер','ювентус','милан','интер','атлетик','бавари','дортмунд','аякс','порту','бенфика','шахтер','валенсия','севилья','наполи','рома','лацио','вильярреал','боруссия','шальке','лейпциг','лион','марсель','монако','бордо','страсбур','ренн','нант','лилль','ницца','тулуза','анже','клермон','селтик','хиберниан','херт','хетафе','зенит','спартак москва','цска москва','динамо москва','локомотив москва','краснодар','рубин','ростов','урал','уфа','сочи','крылья','liverpool','arsenal','chelsea','manchester','everton','brighton','sunderland','bournemouth','burnley','newcastle','tottenham','spurs','fulham','brentford','wolves','wolverhampton','crystal palace','west ham','nottingham','leicester','ipswich','southampton','aston villa','real madrid','barcelona','atletico','sevilla','villarreal','valencia','osasuna','betis','girona','mallorca','getafe','celta','alaves','rayo','cadiz','las palmas','juventus','milan','inter','napoli','roma','lazio','fiorentina','atalanta','bologna','torino','udinese','empoli','lecce','monza','genoa','cagliari','verona','como','venezia','parma','bayern','dortmund','leverkusen','stuttgart','frankfurt','leipzig','freiburg','hoffenheim','werder','bochum','mainz','augsburg','union berlin','heidenheim','holstein kiel','st. pauli','psg','marseille','lyon','monaco','nice','lens','lille','rennes','reims','brest','strasbourg','nantes','le havre','toulouse','montpellier','angers','porto','benfica','sporting','braga','ajax','psv','feyenoord','galatasaray','fenerbahce','besiktas','genk','club brugge','anderlecht','celtic','rangers fc','shakhtar','dynamo kyiv','red bull salzburg','lch','апл','серия а','бундеслига','ла лига','лига 1','лч','лига чемпионов','лига европы','лк уефа']
   },
   basketball: {
     name: '🏀 НБА', label: 'Баскетбол / НБА',
