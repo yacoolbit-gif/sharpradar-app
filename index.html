@@ -253,15 +253,7 @@ body::before {
   color: rgba(240,240,248,0.2);
   font-size: 10px; font-weight: 600;
 }
-.sb-req-block {
-  display: flex; align-items: center; gap: 3px;
-  padding: 8px 10px 8px 8px;
-  flex-shrink: 0;
-}
-.sb-req-dots { display: flex; gap: 2px; flex-wrap: wrap; max-width: 44px; }
-.sb-req-dot { width: 5px; height: 5px; border-radius: 50%; }
-.sb-req-dot.used  { background: rgba(255,255,255,0.1); }
-.sb-req-dot.avail { background: #6C63FF; box-shadow: 0 0 4px rgba(108,99,255,0.7); }
+
 
 /* ===== REFRESH BUTTON ===== */
 .refresh-btn {
@@ -1444,10 +1436,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div id="sb-steam"><span class="sb-steam-no">—</span></div>
         </div>
       </div>
-      <!-- REQUESTS -->
-      <div class="sb-req-block">
-        <div class="sb-req-dots" id="req-dots"></div>
-      </div>
+
     </div>
     <!-- REFRESH PILL -->
     <div class="refresh-pill" id="refresh-pill" onclick="doRefresh()">
@@ -3046,7 +3035,7 @@ function renderText(text, mode) {
   let titleInjected = false;
   let verdictHeaderInjected = false;
   return lines.map(line => {
-    if(!line.trim()) return '<div style="margin-bottom:8px">&nbsp;</div>';
+    if(!line.trim()) return '<div style="margin-bottom:3px">&nbsp;</div>';
     let cls = 'line-muted';
     let extra = '';
     if(line.startsWith('🎯')) {
@@ -3058,10 +3047,8 @@ function renderText(text, mode) {
         const copyId = mode==='verdict' ? 'v-copy-btn' : 'a-copy-btn';
         const shareId = mode==='verdict' ? 'v-share-btn' : 'a-share-btn';
         extra = `<span style="margin-left:auto;display:inline-flex;gap:6px;vertical-align:middle">
-          <button id="${copyId}" class="action-icon-btn copy-3d" onclick="${copyFn}" title="Скопировать">📋</button>
-          <button id="${shareId}" class="action-icon-btn share-3d" onclick="${shareFn}" title="Поделиться">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
+          <button id="${copyId}" class="action-icon-btn copy-3d" onclick="${copyFn}" title="Скопировать"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button id="${shareId}" class="action-icon-btn share-3d" onclick="${shareFn}" title="Поделиться"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         </span>`;
         return `<div class="${cls}" style="margin-bottom:2px;line-height:1.5;display:flex;align-items:center">${line}${extra}</div>`;
       }
@@ -3072,7 +3059,7 @@ function renderText(text, mode) {
     else if(line.startsWith('🥇')) cls='line-top1';
     else if(line.startsWith('🥈')) cls='line-top2';
     else if(line.startsWith('🥉')) cls='line-top3';
-    return `<div class="${cls}" style="margin-bottom:2px;line-height:1.5">${line}</div>`;
+    return `<div class="${cls}" style="margin-bottom:1px;line-height:1.5">${line}</div>`;
   }).join('');
 }
 
