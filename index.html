@@ -1561,16 +1561,6 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       <div class="section-title">🏆 Топ прогнозы дня</div>
       <div class="top-picks-grid" id="top-picks-grid"></div>
 
-      <!-- PUSH BANNER -->
-      <div class="push-banner" id="push-banner" onclick="requestPushPermission()" style="display:none">
-        <div class="push-banner-icon">🔔</div>
-        <div class="push-banner-body">
-          <div class="push-banner-title">Steam Move уведомления</div>
-          <div class="push-banner-sub">Получай push когда резкое движение линии</div>
-        </div>
-        <button class="push-banner-btn">Включить</button>
-      </div>
-
       <!-- LIVE NOW -->
       <div class="section-title">🔥 Горячие матчи сейчас</div>
       <!-- SPORT FILTER -->
@@ -2335,8 +2325,19 @@ async function fetchESPNTicker() {
     tickerItems = results;
     buildTicker();
     buildTopPicks(); // обновляем live score в топ прогнозах
-    const live = results.filter(x => x.live).map(x => ({...x, minute: x.min}));
-    if(live.length > 0) { liveMatches = live; buildLiveMatches(); }
+    // Обновляем счёт в уже существующих liveMatches, не перезаписываем список
+    if(liveMatches.length > 0) {
+      liveMatches = liveMatches.map(m => {
+        const upd = results.find(r => r.teams === m.teams);
+        if(upd) return { ...m, score: upd.score, live: upd.live, minute: upd.live ? (upd.min || 'LIVE') : m.minute };
+        return m;
+      });
+      buildLiveMatches();
+    } else {
+      // Если горячие матчи ещё не загружены — показываем текущие матчи из ESPN
+      const mapped = results.map(x => ({...x, minute: x.min}));
+      if(mapped.length > 0) { liveMatches = mapped; buildLiveMatches(); }
+    }
   }
 }
 
@@ -2350,6 +2351,8 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', sport:'🏀', league:'НБА' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',     sport:'🏒', league:'НХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',     sport:'🎾', league:'ATP' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',     sport:'🎾', league:'WTA' },
 ];
 
 async function fetchOddsHotMatches() {
@@ -2367,7 +2370,7 @@ async function fetchOddsHotMatches() {
       // Сначала берём LIVE, потом upcoming
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
-      const pick     = [...live, ...upcoming].slice(0, 2);
+      const pick     = [...live, ...upcoming].slice(0, 3);
 
       for(const e of pick) {
         try {
@@ -2386,11 +2389,14 @@ async function fetchOddsHotMatches() {
             ? `${away?.score||0}:${home?.score||0}` : '— : —';
           const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
           const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
+          // Для карточки: дата/время всегда через espnTimeToMSK, LIVE минута отдельно
+          const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status.type.shortDetail || 'LIVE') : (e.status.type.shortDetail || 'FT'));
           allEvents.push({
             sport: ep.sport,
+            league: ep.league,
             teams: `${aName} — ${hName}`,
             score,
-            minute: minute,
+            minute: displayTime,
             live: isLive
           });
         } catch(_){}
@@ -2403,7 +2409,7 @@ async function fetchOddsHotMatches() {
 
   if(anyOk) logEvent('Odds API', true, `OK · горячих матчей: ${allEvents.length}`);
   if(allEvents.length >= 1) {
-    liveMatches = allEvents.slice(0, 8);
+    liveMatches = allEvents.slice(0, 12);
     buildLiveMatches();
   }
 }
@@ -2631,7 +2637,7 @@ function renderFilteredMatches() {
       <div class="lm-sport">${m.sport}</div>
       <div class="lm-body">
         <div class="lm-teams">${m.teams}</div>
-        <div class="lm-minute">${m.minute}</div>
+        <div class="lm-minute">${m.league ? m.league + ' · ' : ''}${m.minute}</div>
       </div>
       <div class="lm-score">${m.score || ''}</div>
       ${m.live ? '<div class="lm-live-badge">LIVE</div>' : ''}
@@ -2691,16 +2697,19 @@ let _steamCheckTimer = null;
 // Хранит предыдущие счета для детекции резкого изменения
 let prevScores = {};
 
+function updatePushMenuSub() {
+  const sub = document.getElementById('dm-push-sub');
+  if(!sub) return;
+  if(!('Notification' in window)) { sub.textContent = 'Не поддерживается браузером'; return; }
+  if(Notification.permission === 'granted') { sub.textContent = '✅ Включены'; return; }
+  if(Notification.permission === 'denied')  { sub.textContent = '❌ Заблокированы в браузере'; return; }
+  sub.textContent = 'Включить Steam Move push';
+}
+
 function initPushBanner() {
   if(!('Notification' in window)) return;
-  if(Notification.permission === 'granted') {
-    pushGranted = true;
-    return; // уже есть — не показываем баннер
-  }
-  if(Notification.permission !== 'denied') {
-    const banner = document.getElementById('push-banner');
-    if(banner) banner.style.display = 'flex';
-  }
+  if(Notification.permission === 'granted') { pushGranted = true; }
+  updatePushMenuSub();
 }
 
 async function requestPushPermission() {
@@ -2708,17 +2717,24 @@ async function requestPushPermission() {
     showRefreshToast('⚠️ Браузер не поддерживает уведомления');
     return;
   }
+  if(Notification.permission === 'granted') {
+    showRefreshToast('🔔 Push уже включены!');
+    updatePushMenuSub();
+    return;
+  }
+  if(Notification.permission === 'denied') {
+    showRefreshToast('❌ Push заблокированы — разрешите в настройках браузера');
+    return;
+  }
   const perm = await Notification.requestPermission();
-  const banner = document.getElementById('push-banner');
   if(perm === 'granted') {
     pushGranted = true;
-    if(banner) banner.style.display = 'none';
     showRefreshToast('🔔 Уведомления включены!');
     logEvent('Groq', true, 'Push уведомления разрешены');
   } else {
-    if(banner) banner.style.display = 'none';
     showRefreshToast('❌ Уведомления отклонены');
   }
+  updatePushMenuSub();
 }
 
 function fireSteamPush(matchName, detail) {
@@ -3475,6 +3491,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="dm-item" id="dm-notifications" onclick="closeMenu();openModal('notifications')">
       <div class="dm-icon dm-icon-orange">🔔</div>
       <div class="dm-body"><div class="dm-item-title">Уведомления</div><div class="dm-item-sub">Steam Move alert</div></div>
+      <div class="dm-chevron">›</div>
+    </div>
+    <div class="dm-item" id="dm-push" onclick="closeMenu();requestPushPermission()">
+      <div class="dm-icon dm-icon-orange">📲</div>
+      <div class="dm-body"><div class="dm-item-title">Push уведомления</div><div class="dm-item-sub" id="dm-push-sub">Включить Steam Move push</div></div>
       <div class="dm-chevron">›</div>
     </div>
     <div class="dm-item" id="dm-about" onclick="closeMenu();openModal('about')">
