@@ -2476,7 +2476,7 @@ async function fetchOddsHotMatches() {
       // Сначала LIVE, потом upcoming
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
-      const pick     = [...live, ...upcoming].slice(0, 3);
+      const pick     = [...live, ...upcoming].slice(0, 6);
 
       for(const e of pick) {
         try {
@@ -2523,7 +2523,17 @@ async function fetchOddsHotMatches() {
   }
 
   if(allEvents.length >= 1) {
-    liveMatches = allEvents.slice(0, 12);
+    // Балансируем по спортам: сначала LIVE всех видов, потом upcoming с квотой
+    const sports = ['⚽','🏀','🏒','🎾'];
+    const byLive = allEvents.filter(e => e.live);
+    const byPre  = allEvents.filter(e => !e.live);
+    const balanced = [...byLive];
+    const perSport = Math.max(4, Math.floor((24 - Math.min(byLive.length, 12)) / sports.length));
+    for(const sp of sports) {
+      const picks = byPre.filter(e => e.sport === sp).slice(0, perSport);
+      balanced.push(...picks);
+    }
+    liveMatches = balanced.slice(0, 24);
     buildLiveMatches();
     logEvent('Odds API', true, `Горячих матчей: ${allEvents.length} (⚽${allEvents.filter(e=>e.sport=="⚽").length} 🏀${allEvents.filter(e=>e.sport=="🏀").length} 🏒${allEvents.filter(e=>e.sport=="🏒").length} 🎾${allEvents.filter(e=>e.sport=="🎾").length})`);
   }
