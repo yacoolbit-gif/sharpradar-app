@@ -570,7 +570,7 @@ input[type=text], input[type=password] {
 input:focus { border-color: rgba(255,255,255,0.18); box-shadow: 0 0 0 3px rgba(108,99,255,0.3); }
 input::placeholder { color: rgba(240,240,248,0.2); }
 .btn-primary {
-  width: 100%; padding: 11px;
+  width: 100%; padding: 15px;
   background: linear-gradient(135deg,#6C63FF,#9B59F5);
   border: none; border-radius: 16px;
   cursor: pointer; color: #FFF;
@@ -595,22 +595,28 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   font-family: 'Plus Jakarta Sans', sans-serif;
   margin-top: 10px;
 }
-.btn-copy {
-  width: 100%; padding: 9px;
-  background: linear-gradient(135deg,rgba(255,184,48,0.12),rgba(255,100,50,0.08));
-  border: 1px solid rgba(255,184,48,0.3);
-  border-radius: 12px; cursor: pointer;
-  color: #FFB830;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.4px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  margin-bottom: 12px;
-  transition: all 0.3s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+/* 3D action icon buttons */
+.action-icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
-.btn-copy.copied {
-  background: linear-gradient(135deg,rgba(0,229,160,0.12),rgba(0,229,160,0.04));
-  border-color: rgba(0,229,160,0.35); color: #00E5A0;
+.action-icon-btn.copy-3d {
+  background: linear-gradient(160deg, #3a3a4a 0%, #1a1a28 60%, #0e0e1a 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  color: #e0e0f0;
 }
+.action-icon-btn.share-3d {
+  background: linear-gradient(160deg, #1a2a3a 0%, #0d1d2e 60%, #070f1a 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -2px 0 rgba(0,0,0,0.4) inset;
+  color: #a8c8f0;
+}
+.action-icon-btn:active { transform: translateY(1px) scale(0.94); box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+.action-icon-btn.success { background: linear-gradient(160deg,#1a3a2a,#071510); color: #00E5A0; }
 .glass-card {
   background: rgba(255,255,255,0.04);
   backdrop-filter: blur(20px);
@@ -1528,7 +1534,6 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <div id="analysis-text" class="analysis-text"></div>
         </div>
         <button class="btn-green" id="verdict-btn" onclick="switchTabById('verdict')" style="display:none">🏆 Смотреть Вердикт →</button>
-        <button class="btn-green" id="share-analysis-btn" onclick="shareAnalysis()" style="display:none;background:rgba(0,229,160,0.06);border-color:rgba(0,229,160,0.18)">📤 Поделиться анализом</button>
       </div>
     </div>
 
@@ -1543,16 +1548,6 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <p>Вердикт появится после анализа</p>
       </div>
       <div id="verdict-content" style="display:none">
-        <div style="display:flex;gap:10px">
-          <button class="btn-copy" id="copy-btn" onclick="copyVerdict()" style="flex:1">
-            <span id="copy-icon">📋</span>
-            <span id="copy-text">СКОПИРОВАТЬ</span>
-          </button>
-          <button class="btn-copy" id="share-btn" onclick="shareVerdict()" style="flex:1;background:linear-gradient(135deg,#1a9e6e,#0d7a54)">
-            <span id="share-icon">📤</span>
-            <span id="share-text">ПОДЕЛИТЬСЯ</span>
-          </button>
-        </div>
         <div class="verdict-card">
           <div id="verdict-text" class="analysis-text"></div>
         </div>
@@ -1943,13 +1938,13 @@ function loadHistory(idx) {
   updateBtn();
   if(analysisResult) {
     document.getElementById('analysis-empty').style.display = 'none';
-    document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
+    document.getElementById('analysis-text').innerHTML = renderText(analysisResult,'analysis');
     document.getElementById('analysis-content').style.display = 'block';
     document.getElementById('shortcut-block').style.display = 'block';
   }
   if(verdictText) {
     document.getElementById('verdict-empty').style.display = 'none';
-    document.getElementById('verdict-text').innerHTML = renderText(verdictText);
+    document.getElementById('verdict-text').innerHTML = renderText(verdictText,'verdict');
     document.getElementById('verdict-content').style.display = 'block';
   }
   switchTabById('analysis');
@@ -2952,7 +2947,7 @@ VERDICT_END`;
         userMsg = '❌ Ошибка API: ' + errMsg;
       }
       document.getElementById('analysis-loading').style.display = 'none';
-      document.getElementById('analysis-text').innerHTML = renderText(userMsg);
+      document.getElementById('analysis-text').innerHTML = renderText(userMsg,'analysis');
       document.getElementById('analysis-content').style.display = 'block';
       return;
     }
@@ -2962,7 +2957,7 @@ VERDICT_END`;
       : (data.content||[]).map(c=>c.text||'').join('');
     if(!text) {
       document.getElementById('analysis-loading').style.display = 'none';
-      document.getElementById('analysis-text').innerHTML = renderText('⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК.');
+      document.getElementById('analysis-text').innerHTML = renderText('⏳ Лимит запросов исчерпан\n\nПопробуй снова через несколько минут или завтра после 3:00 МСК.','analysis');
       document.getElementById('analysis-content').style.display = 'block';
       return;
     }
@@ -2995,7 +2990,7 @@ VERDICT_END`;
     }
 
     document.getElementById('analysis-loading').style.display = 'none';
-    document.getElementById('analysis-text').innerHTML = renderText(analysisResult);
+    document.getElementById('analysis-text').innerHTML = renderText(analysisResult,'analysis');
     document.getElementById('analysis-content').style.display = 'block';
     document.getElementById('shortcut-block').style.display = 'block';
 
@@ -3029,31 +3024,51 @@ VERDICT_END`;
 
     if(verdictText) {
       document.getElementById('verdict-empty').style.display = 'none';
-      document.getElementById('verdict-text').innerHTML = renderText(verdictText);
+      document.getElementById('verdict-text').innerHTML = renderText(verdictText,'verdict');
       document.getElementById('verdict-content').style.display = 'block';
       document.getElementById('verdict-btn').style.display = 'block';
-      document.getElementById('share-analysis-btn').style.display = 'block';
     } else {
       document.getElementById('verdict-btn').style.display = 'none';
-      document.getElementById('share-analysis-btn').style.display = 'none';
     }
   } catch(e) {
     document.getElementById('analysis-loading').style.display = 'none';
-    document.getElementById('analysis-text').innerHTML = renderText('❌ Ошибка соединения\n\nПроверь интернет и попробуй снова.');
+    document.getElementById('analysis-text').innerHTML = renderText('❌ Ошибка соединения\n\nПроверь интернет и попробуй снова.','analysis');
     document.getElementById('analysis-content').style.display = 'block';
   }
 }
 
-function renderText(text) {
+function renderText(text, mode) {
+  // mode: 'analysis' or 'verdict'
   // Убираем служебные маркеры если они вдруг попали в текст
   const clean = text.replace(/ANALYSIS_START|ANALYSIS_END|VERDICT_START|VERDICT_END/g, '').trim();
-  return clean.split('\n').map(line => {
-    if(!line.trim()) return '<div style="margin-bottom:3px"></div>';
+  const lines = clean.split('\n');
+  // Find first line-title index for icon injection
+  let titleInjected = false;
+  let verdictHeaderInjected = false;
+  return lines.map(line => {
+    if(!line.trim()) return '<div style="margin-bottom:8px">&nbsp;</div>';
     let cls = 'line-muted';
-    if(line.startsWith('🎯')) cls='line-title';
+    let extra = '';
+    if(line.startsWith('🎯')) {
+      cls='line-title';
+      if(!titleInjected) {
+        titleInjected = true;
+        const copyFn = mode==='verdict' ? 'copyVerdict()' : 'copyAnalysis()';
+        const shareFn = mode==='verdict' ? 'shareVerdict()' : 'shareAnalysis()';
+        const copyId = mode==='verdict' ? 'v-copy-btn' : 'a-copy-btn';
+        const shareId = mode==='verdict' ? 'v-share-btn' : 'a-share-btn';
+        extra = `<span style="margin-left:auto;display:inline-flex;gap:6px;vertical-align:middle">
+          <button id="${copyId}" class="action-icon-btn copy-3d" onclick="${copyFn}" title="Скопировать">📋</button>
+          <button id="${shareId}" class="action-icon-btn share-3d" onclick="${shareFn}" title="Поделиться">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </span>`;
+        return `<div class="${cls}" style="margin-bottom:2px;line-height:1.5;display:flex;align-items:center">${line}${extra}</div>`;
+      }
+    }
     else if(line.startsWith('📊')||line.startsWith('🏆')||line.startsWith('✅')) cls='line-section';
     else if(/^[⚽🏒🏀🎾]/.test(line)) cls='line-match';
-    else if(line.startsWith('🟦')) cls='line-point';
+    else if(line.startsWith('🟦')||/^[❶❷❸❹❺❻❼❽❾❿]/.test(line)) cls='line-point';
     else if(line.startsWith('🥇')) cls='line-top1';
     else if(line.startsWith('🥈')) cls='line-top2';
     else if(line.startsWith('🥉')) cls='line-top3';
@@ -3211,60 +3226,54 @@ function espnTimeToMSK(dateStr) {
 function copyVerdict() {
   if(!verdictText) return;
   navigator.clipboard.writeText(verdictText).then(() => {
-    document.getElementById('copy-btn').classList.add('copied');
-    document.getElementById('copy-icon').textContent = '✅';
-    document.getElementById('copy-text').textContent = 'СКОПИРОВАНО!';
+    const btn = document.getElementById('v-copy-btn');
+    if(btn) { btn.textContent='✅'; btn.classList.add('success'); }
     setTimeout(() => {
-      document.getElementById('copy-btn').classList.remove('copied');
-      document.getElementById('copy-icon').textContent = '📋';
-      document.getElementById('copy-text').textContent = 'СКОПИРОВАТЬ';
+      if(btn) { btn.textContent='📋'; btn.classList.remove('success'); }
+    }, 2200);
+  });
+}
+
+function shareVerdict() {
+  if(!verdictText) return;
+  const btn = document.getElementById('v-share-btn');
+  const doShare = () => {
+    if(btn) { btn.innerHTML='✅'; btn.classList.add('success'); }
+    setTimeout(() => {
+      if(btn) { btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'; btn.classList.remove('success'); }
+    }, 2200);
+  };
+  if(navigator.share) {
+    navigator.share({ title: '🎯 SharpRadar — Аналитик 3.0', text: verdictText }).then(doShare).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(verdictText).then(doShare);
+  }
+}
+
+function copyAnalysis() {
+  if(!analysisResult) return;
+  navigator.clipboard.writeText(analysisResult).then(() => {
+    const btn = document.getElementById('a-copy-btn');
+    if(btn) { btn.textContent='✅'; btn.classList.add('success'); }
+    setTimeout(() => {
+      if(btn) { btn.textContent='📋'; btn.classList.remove('success'); }
     }, 2200);
   });
 }
 
 function shareAnalysis() {
   if(!analysisResult) return;
-  const btn = document.getElementById('share-analysis-btn');
+  const btn = document.getElementById('a-share-btn');
+  const doShare = () => {
+    if(btn) { btn.innerHTML='✅'; btn.classList.add('success'); }
+    setTimeout(() => {
+      if(btn) { btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'; btn.classList.remove('success'); }
+    }, 2200);
+  };
   if(navigator.share) {
-    navigator.share({
-      title: '🎯 SharpRadar — Аналитик 3.0',
-      text: analysisResult
-    }).then(() => {
-      btn.textContent = '✅ Отправлено';
-      setTimeout(() => { btn.textContent = '📤 Поделиться анализом'; }, 2200);
-    }).catch(() => {});
+    navigator.share({ title: '🎯 SharpRadar — Аналитик 3.0', text: analysisResult }).then(doShare).catch(()=>{});
   } else {
-    navigator.clipboard.writeText(analysisResult).then(() => {
-      btn.textContent = '✅ Скопировано';
-      setTimeout(() => { btn.textContent = '📤 Поделиться анализом'; }, 2200);
-    });
-  }
-}
-function shareVerdict() {
-  if(!verdictText) return;
-  const shareText = verdictText;
-  if(navigator.share) {
-    navigator.share({
-      title: '🎯 SharpRadar — Аналитик 3.0',
-      text: shareText
-    }).then(() => {
-      document.getElementById('share-icon').textContent = '✅';
-      document.getElementById('share-text').textContent = 'ОТПРАВЛЕНО';
-      setTimeout(() => {
-        document.getElementById('share-icon').textContent = '📤';
-        document.getElementById('share-text').textContent = 'ПОДЕЛИТЬСЯ';
-      }, 2200);
-    }).catch(() => {});
-  } else {
-    // fallback — копируем если Web Share недоступен
-    navigator.clipboard.writeText(shareText).then(() => {
-      document.getElementById('share-icon').textContent = '✅';
-      document.getElementById('share-text').textContent = 'СКОПИРОВАНО';
-      setTimeout(() => {
-        document.getElementById('share-icon').textContent = '📤';
-        document.getElementById('share-text').textContent = 'ПОДЕЛИТЬСЯ';
-      }, 2200);
-    });
+    navigator.clipboard.writeText(analysisResult).then(doShare);
   }
 }
 
