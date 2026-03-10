@@ -2455,6 +2455,29 @@ async function fetchESPNEndpointEvents(ep) {
         for(const t of (data.events || [])) allTournaments.push(t);
         logEvent('Odds API', allTournaments.length>0, `🎾 allTournaments=${allTournaments.length}`);
 
+        // ПОЛНАЯ ДИАГНОСТИКА первого турнира
+        if(allTournaments.length > 0 && offset === null) {
+          const t0 = allTournaments[0];
+          const t0keys = Object.keys(t0).join(',');
+          logEvent('Odds API', true, `🎾 T0_KEYS: ${t0keys}`);
+          // Все массивы внутри турнира
+          for(const k of Object.keys(t0)) {
+            const v = t0[k];
+            if(Array.isArray(v)) {
+              logEvent('Odds API', v.length>0, `🎾 T0.${k}[${v.length}]${v.length>0?' s0keys='+Object.keys(v[0]).join(','):''}`);
+              // Второй уровень
+              if(v.length > 0 && typeof v[0] === 'object') {
+                for(const k2 of Object.keys(v[0])) {
+                  const v2 = v[0][k2];
+                  if(Array.isArray(v2) && v2.length > 0) {
+                    logEvent('Odds API', true, `🎾 T0.${k}[0].${k2}[${v2.length}] s0=${typeof v2[0]==='object'?Object.keys(v2[0]).join(','):v2[0]}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+
         for(const tournament of allTournaments) {
           // ESPN tennis: матчи в draws[].events[] (сетки турнира)
           const draws = tournament.draws || [];
