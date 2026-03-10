@@ -2423,7 +2423,7 @@ async function fetchESPNEndpointEvents(ep) {
       const data = await r.json();
       const rawEvents = data.events || data.scoreboard?.events || [];
       const events = rawEvents.filter(e =>
-        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
+        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre' || e.status?.type?.state === 'post'
       );
       if(events.length > 0) {
         logEvent('Odds API', true, `${ep.league}: ${events.length} матчей`);
@@ -2444,10 +2444,11 @@ async function fetchOddsHotMatches() {
       const events = await fetchESPNEndpointEvents(ep);
       if(events.length === 0) continue;
       anyOk = true;
-      // Сначала LIVE, потом upcoming
+      // Сначала LIVE, потом upcoming, потом завершённые как fallback
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
-      const pick     = [...live, ...upcoming].slice(0, 6);
+      const finished = events.filter(e => e.status?.type?.state === 'post');
+      const pick     = [...live, ...upcoming, ...finished].slice(0, 6);
 
       for(const e of pick) {
         try {
@@ -2462,7 +2463,7 @@ async function fetchOddsHotMatches() {
           const isPre  = state === 'pre';
           const displayTime = isPre ? espnTimeToMSK(e.date) : (isLive ? (e.status.type.shortDetail || 'LIVE') : (e.status.type.shortDetail || 'FT'));
           const score = (isLive || state === 'post')
-            ? `${away?.score||0}:${home?.score||0}` : '— : —';
+            ? (comp.status?.type?.shortDetail || `${away?.score||0}:${home?.score||0}`) : '— : —';
           const aName = away?.athlete?.displayName || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '?';
           const hName = home?.athlete?.displayName || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '?';
           if(aName === '?' && hName === '?') continue;
