@@ -2455,56 +2455,33 @@ async function fetchESPNEndpointEvents(ep) {
         for(const t of (data.events || [])) allTournaments.push(t);
         logEvent('Odds API', allTournaments.length>0, `🎾 allTournaments=${allTournaments.length}`);
 
-        // ДИАГНОСТИКА СТРУКТУРЫ ТУРНИРА
-        if(allTournaments.length > 0) {
-          const t0 = allTournaments[0];
-          // Строка 1: все ключи турнира
-          logEvent('Odds API', true, `🎾 T0_KEYS=[${Object.keys(t0).join(',')}]`);
-          // Строка 2-N: все массивы + их вложенные массивы
-          for(const k of Object.keys(t0)) {
-            const v = t0[k];
-            if(!Array.isArray(v)) continue;
-            if(v.length === 0) { logEvent('Odds API', false, `🎾 .${k}=[]`); continue; }
-            const sub = typeof v[0]==='object' ? Object.keys(v[0]).join(',') : typeof v[0];
-            logEvent('Odds API', true, `🎾 .${k}[${v.length}]={${sub}}`);
-            if(typeof v[0] === 'object') {
-              for(const k2 of Object.keys(v[0])) {
-                const v2 = v[0][k2];
-                if(!Array.isArray(v2) || v2.length===0) continue;
-                const sub2 = typeof v2[0]==='object' ? Object.keys(v2[0]).join(',') : typeof v2[0];
-                logEvent('Odds API', true, `🎾 .${k}[0].${k2}[${v2.length}]={${sub2}}`);
-              }
-            }
-          }
-        }
-
         for(const tournament of allTournaments) {
-          // ESPN tennis: матчи в draws[].events[] (сетки турнира)
-          const draws = tournament.draws || [];
-          for(const draw of draws) {
-            for(const match of (draw.events || draw.competitions || [])) {
-              const state = match.status?.type?.state;
+          // ESPN tennis: матчи в groupings[].competitions[]
+          for(const grp of (tournament.groupings || [])) {
+            for(const comp of (grp.competitions || [])) {
+              const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
               matches.push({
                 _isTennisMatch: true,
-                name: match.name || draw.name || tournament.name || '',
-                date: match.date || tournament.date || '',
-                status: match.status,
-                competitions: [match],
+                name: comp.name || tournament.name || '',
+                date: comp.date || tournament.date || '',
+                status: comp.status,
+                competitions: [comp],
               });
             }
           }
-          // Fallback: competitions[] напрямую
+          // Fallback: competitions[] и draws[] напрямую
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
-            matches.push({
-              _isTennisMatch: true,
-              name: comp.name || tournament.name || '',
-              date: comp.date || tournament.date || '',
-              status: comp.status,
-              competitions: [comp],
-            });
+            matches.push({ _isTennisMatch: true, name: comp.name || tournament.name || '', date: comp.date || tournament.date || '', status: comp.status, competitions: [comp] });
+          }
+          for(const draw of (tournament.draws || [])) {
+            for(const comp of (draw.events || draw.competitions || [])) {
+              const state = comp.status?.type?.state;
+              if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+              matches.push({ _isTennisMatch: true, name: comp.name || tournament.name || '', date: comp.date || tournament.date || '', status: comp.status, competitions: [comp] });
+            }
           }
         }
         if(matches.length > 0) {
@@ -2666,17 +2643,24 @@ async function fetchESPNMatchesForGroq() {
         if(d.leagues) { for(const lg of d.leagues) for(const t of (lg.events||[])) allT.push(t); }
         for(const t of (d.events||[])) allT.push(t);
         for(const tournament of allT) {
-          for(const draw of (tournament.draws || [])) {
-            for(const match of (draw.events || draw.competitions || [])) {
-              const state = match.status?.type?.state;
+          for(const grp of (tournament.groupings || [])) {
+            for(const comp of (grp.competitions || [])) {
+              const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre') continue;
-              rawItems.push({ _comp: match, _date: match.date || tournament.date || '', _name: match.name || tournament.name || '' });
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
             }
           }
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre') continue;
             rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+          }
+          for(const draw of (tournament.draws || [])) {
+            for(const comp of (draw.events || draw.competitions || [])) {
+              const state = comp.status?.type?.state;
+              if(state !== 'in' && state !== 'pre') continue;
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+            }
           }
         }
       } else {
