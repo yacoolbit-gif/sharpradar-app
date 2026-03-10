@@ -2160,7 +2160,7 @@ function buildTopPicks() {
   grid.innerHTML = topPicks.map(p => {
     const med = getMedalClass(p.rank);
     return `
-    <div class="pick-card" onclick="fillMatch('${p.match}')">
+    <div class="pick-card" onclick="fillMatch('${p.match}', '${(p.datetime||'').replace(/'/g,'')}')">
       <div class="pick-rank"><div class="medal-badge ${med.cls}">${med.label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
@@ -2586,6 +2586,8 @@ async function fetchOddsHotMatches() {
 
 // ===== GROQ ТОП ПРОГНОЗЫ (каждые 2 часа) =====
 const WORKER_URL_GROQ = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
+let globalDatetimeMap = new Map(); // глобальная карта дат матчей из ESPN
+let currentMatchDatetime = null;  // дата текущего выбранного матча
 
 // Собирает актуальные матчи из ESPN для передачи в Groq
 // Возвращает { matches: string[], datetimeMap: Map<normKey, datetime> }
@@ -2686,6 +2688,7 @@ async function fetchESPNMatchesForGroq() {
       }
     } catch(_){}
   }
+  globalDatetimeMap = datetimeMap; // сохраняем глобально
   return { matches, datetimeMap };
 }
 
@@ -2877,7 +2880,7 @@ function renderFilteredMatches() {
     return;
   }
   list.innerHTML = filtered.map((m, idx) => `
-    <div class="live-match-card" id="lmc-${idx}" onclick="fillMatch('${m.teams}')">
+    <div class="live-match-card" id="lmc-${idx}" onclick="fillMatch('${m.teams}', '${(m.datetime||'').replace(/'/g,'')}')">
       <span class="swipe-delete-icon left">🗑</span>
       <span class="swipe-delete-icon right">🗑</span>
       <div class="lm-sport">${m.sport}</div>
@@ -2922,7 +2925,7 @@ function buildTopPicks() {
       ? `<div style="font-size:10px;color:rgba(240,240,248,0.3);margin-top:3px;">FT ${liveScore.score}</div>`
       : '';
     return `
-    <div class="pick-card" onclick="fillMatch('${p.match}')">
+    <div class="pick-card" onclick="fillMatch('${p.match}', '${(p.datetime||'').replace(/'/g,'')}')">
       <div class="pick-rank"><div class="medal-badge ${getMedalClass(p.rank).cls}">${getMedalClass(p.rank).label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
@@ -3033,8 +3036,10 @@ function checkSteamFromVerdict(text, matchName) {
   }
 }
 
-function fillMatch(name) {
+function fillMatch(name, datetime) {
   document.getElementById('match-input').value = name;
+  // Если дата передана явно — используем, иначе ищем в глобальной карте
+  currentMatchDatetime = datetime || lookupDatetime(name, globalDatetimeMap) || null;
   updateBtn();
 }
 
@@ -3256,18 +3261,24 @@ async function startAnalysis() {
   saveReq();
   updateReqDots();
 
+  // Используем реальную дату из ESPN если есть
+  const matchDt = currentMatchDatetime || lookupDatetime(match, globalDatetimeMap);
+  const matchDateLine = matchDt
+    ? (matchDt.startsWith('LIVE') ? '🔴 LIVE · идёт сейчас' : `📅 ${matchDt.replace(' · ', ' | ⏰ ')}`)
+    : `📅 ${date} | ⏰ время уточняется`;
+
   const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
 
 Матч: ${match}
 Вид спорта: ${currentSport}
-Дата запроса: ${date} | Время запроса: ${time}
+Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
 
-ВАЖНО: Этот матч реальный и актуальный — он получен из ESPN. Делай анализ безусловно. Укажи примерную дату и время в шапке в формате 📅 ДД.ММ.ГГГГ | ⏰ ЧЧ:ММ МСК. Если точное время неизвестно — напиши "время уточняется". Никогда не отказывайся от анализа.
+ВАЖНО: Этот матч реальный — получен из ESPN. Делай анализ безусловно. НЕ придумывай дату — используй ТОЛЬКО ту что указана выше в поле "Дата и время матча". Никогда не отказывайся от анализа.
 
 ANALYSIS_START
 🎯 АНАЛИТИК 3.0 | ${currentSport.toUpperCase()}
 ${emoji} ${match}
-📅 [дата матча] | ⏰ [время МСК]
+${matchDateLine}
 
 📊 АНАЛИЗ 7 ПУНКТОВ
 
