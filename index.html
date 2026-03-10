@@ -2525,7 +2525,7 @@ async function fetchOddsHotMatches() {
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
       const finished = events.filter(e => e.status?.type?.state === 'post');
       // Для тенниса берём больше матчей с каждого эндпоинта
-      const pickLimit = ep.sport === '🎾' ? 15 : 6;
+      const pickLimit = ep.sport === '🎾' ? 8 : 6;
       const pick     = [...live, ...upcoming, ...finished].slice(0, pickLimit);
 
       for(const e of pick) {
@@ -2565,22 +2565,19 @@ async function fetchOddsHotMatches() {
   }
 
   if(allEvents.length >= 1) {
-    // Балансируем по спортам: сначала LIVE всех видов, потом upcoming с квотой
+    // Балансируем по спортам: сначала LIVE всех видов, потом по 6 на спорт
     const byLive = allEvents.filter(e => e.live);
     const byPre  = allEvents.filter(e => !e.live);
     const balanced = [...byLive];
-    // Теннису гарантировано 6 слотов, остальные делят оставшееся место
     const TOTAL_LIMIT = 30;
-    const TENNIS_QUOTA = 10;
-    const tennisPre = byPre.filter(e => e.sport === '🎾').slice(0, TENNIS_QUOTA);
-    balanced.push(...tennisPre);
-    const remaining = TOTAL_LIMIT - balanced.length;
+    const SPORTS = ['⚽','🏀','🏒','🎾'];
+    const PER_SPORT = 6;
     const otherSports = ['⚽','🏀','🏒'];
-    const perSport = Math.max(3, Math.floor(remaining / otherSports.length));
-    for(const sp of otherSports) {
-      const picks = byPre.filter(e => e.sport === sp).slice(0, perSport);
+    for(const sp of SPORTS) {
+      const picks = byPre.filter(e => e.sport === sp).slice(0, PER_SPORT);
       balanced.push(...picks);
     }
+
     liveMatches = balanced.slice(0, TOTAL_LIMIT);
     buildLiveMatches();
     logEvent('Odds API', true, `Горячих матчей: ${allEvents.length} (⚽${allEvents.filter(e=>e.sport=="⚽").length} 🏀${allEvents.filter(e=>e.sport=="🏀").length} 🏒${allEvents.filter(e=>e.sport=="🏒").length} 🎾${allEvents.filter(e=>e.sport=="🎾").length})`);
@@ -2632,7 +2629,7 @@ async function fetchESPNMatchesForGroq() {
           for(const grp of (tournament.groupings || [])) {
             for(const comp of (grp.competitions || [])) {
               const state = comp.status?.type?.state;
-              if(state === 'final' || state === 'postponed' || state === 'cancelled') continue;
+              if(state !== 'in' && state !== 'pre') continue;
               rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
             }
           }
@@ -2720,10 +2717,24 @@ async function fetchGroqTopPicks() {
   // 1. Получаем реальные матчи из ESPN + карту datetime
   const { matches: espnMatches, datetimeMap } = await fetchESPNMatchesForGroq();
 
+  // Балансируем матчи по видам спорта для Groq — по 10 на вид
+  const groqBalanced = [];
+  const groqSports = ['⚽','🏀','🏒','🎾'];
+  const GROQ_PER_SPORT = 10;
+  // Сначала LIVE всех видов
+  const groqLive = espnMatches.filter(m => m.includes('LIVE'));
+  groqBalanced.push(...groqLive.slice(0, 20));
+  // Потом по лимиту на каждый вид спорта
+  for(const sp of groqSports) {
+    const spMatches = espnMatches.filter(m => m.startsWith(sp) && !m.includes('LIVE'));
+    groqBalanced.push(...spMatches.slice(0, GROQ_PER_SPORT));
+  }
+  const groqList = [...new Set(groqBalanced)].slice(0, 60);
+
   let matchContext = '';
-  if(espnMatches.length > 0) {
-    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${espnMatches.slice(0,50).join('\n')}`;
-    logEvent('Groq', true, `ESPN дал ${espnMatches.length} матчей для анализа`);
+  if(groqList.length > 0) {
+    matchContext = `РЕАЛЬНЫЕ МАТЧИ ИЗ ESPN (только их используй):\n${groqList.join('\n')}`;
+    logEvent('Groq', true, `ESPN дал ${espnMatches.length} матчей → Groq получил ${groqList.length} (⚽${groqList.filter(m=>m.startsWith('⚽')).length} 🏀${groqList.filter(m=>m.startsWith('🏀')).length} 🏒${groqList.filter(m=>m.startsWith('🏒')).length} 🎾${groqList.filter(m=>m.startsWith('🎾')).length})`);
   } else {
     logEvent('Groq', false, 'ESPN не вернул матчи — Groq пропущен');
     return;
@@ -2734,22 +2745,25 @@ async function fetchGroqTopPicks() {
 
 ${matchContext}
 
-ЗАДАЧА: Выбери ТОП-15 матчей из списка выше наиболее интересных для ставок (LIVE или предстоящие). Включай все виды спорта: футбол, НБА, НХЛ, теннис.
+ЗАДАЧА: Выбери РОВНО 15 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра.
 
-ПРИОРИТЕТ при отборе (от высшего к низшему):
-1. LIVE матчи любого вида спорта
-2. Матчи топ-турниров: Лига Чемпионов, Лига Европы, плей-офф НБА/НХЛ, турниры ATP/WTA 1000 и выше, Гранд-Слэм
-3. Топ лиги: АПЛ, Ла Лига, Серия А, Бундеслига, НБА, НХЛ, ATP/WTA
-4. Остальные лиги и турниры
-Места 1-3 занимают лучшие матчи независимо от вида спорта.
+ОБЯЗАТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ (строго соблюдай):
+- ⚽ Футбол: 4-5 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
+- 🏀 Баскетбол: 3-4 матча (приоритет: НБА, плей-офф)
+- 🏒 Хоккей: 3-4 матча (приоритет: НХЛ, плей-офф)
+- 🎾 Теннис: 3-4 матча (приоритет: ATP/WTA 1000, Гранд-Слэм, LIVE)
 
-ВАЖНО:
-- Используй ТОЛЬКО матчи из списка выше
-- Не придумывай матчи которых нет в списке
-- Предпочитай LIVE матчи и матчи в ближайшие часы
-- Обязательно включай теннис если есть в списке — минимум 2-3 теннисных матча
-- Включай минимум по 2-3 матча каждого вида спорта если доступны
-- В поле match используй ТОЧНО те же названия команд что в списке выше
+ПРИОРИТЕТ внутри каждого вида:
+1. LIVE матчи (идут прямо сейчас)
+2. Матчи в ближайшие 6 часов
+3. Топовые турниры
+
+КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО:
+- Матчи которых НЕТ в списке выше
+- Матчи уже завершённые (со статусом FT, finished, итоговым счётом)
+- Матчи старше сегодняшней даты
+
+В поле match используй ТОЧНО те же названия как в списке выше.
 
 Отвечай ТОЛЬКО JSON массив из 15 объектов без текста и без markdown:
 [
