@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>SharpRadar | Аналитик 3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -1597,7 +1597,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       <!-- INPUT -->
       <div class="section-title">🧠 Свой анализ</div>
       <div class="label">Введи матч:</div>
-      <input type="text" id="match-input" placeholder="Например: Real Madrid — Barcelona" oninput="updateBtn()" onkeydown="if(event.key==='Enter')startAnalysis()">
+      <input type="text" id="match-input" placeholder="Например: Real Madrid — Barcelona" oninput="updateBtn()" onkeydown="if(event.key==='Enter')startAnalysis()" onfocus="setTimeout(()=>this.scrollIntoView({behavior:'smooth',block:'center'}),300)">
       <button class="btn-primary" id="run-btn" onclick="startAnalysis()" disabled>🧠 ЗАПУСТИТЬ АНАЛИЗ 3.0</button>
       <div id="shortcut-block" style="display:none" class="glass-card" style="margin-top:10px">
         <div class="label">Последний анализ готов</div>
@@ -3042,6 +3042,16 @@ function fillMatch(name, datetime) {
   // Если дата передана явно — используем, иначе ищем в глобальной карте
   currentMatchDatetime = datetime || lookupDatetime(name, globalDatetimeMap) || null;
   updateBtn();
+}
+
+// ===== KEYBOARD SCROLL FIX =====
+if(window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    const focused = document.activeElement;
+    if(focused && focused.id === 'match-input') {
+      setTimeout(() => focused.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+    }
+  });
 }
 
 // ===== LOGIN =====
