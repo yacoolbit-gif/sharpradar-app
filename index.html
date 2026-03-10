@@ -2458,8 +2458,20 @@ async function fetchESPNEndpointEvents(ep) {
         if(allTournaments.length > 0) {
           const t0 = allTournaments[0];
           const compsLen = (t0.competitions||[]).length;
+          const t0keys = Object.keys(t0).join(',');
           logEvent('Odds API', compsLen>0,
-            `🎾 t0="${t0.name||'?'}" competitions=${compsLen}`);
+            `🎾 t0="${t0.name||'?'}" comps=${compsLen} keys=[${t0keys}]`);
+          // Если competitions пустые — ищем матчи рекурсивно по всем ключам
+          if(compsLen === 0) {
+            for(const key of Object.keys(t0)) {
+              const val = t0[key];
+              if(Array.isArray(val) && val.length > 0) {
+                const sample = val[0];
+                const sampleKeys = typeof sample === 'object' ? Object.keys(sample).join(',') : typeof sample;
+                logEvent('Odds API', true, `🎾 t0.${key}[${val.length}] sample_keys=[${sampleKeys}]`);
+              }
+            }
+          }
         }
 
         for(const tournament of allTournaments) {
