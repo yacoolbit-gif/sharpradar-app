@@ -2455,28 +2455,24 @@ async function fetchESPNEndpointEvents(ep) {
         for(const t of (data.events || [])) allTournaments.push(t);
         logEvent('Odds API', allTournaments.length>0, `🎾 allTournaments=${allTournaments.length}`);
 
-        if(allTournaments.length > 0) {
-          const t0 = allTournaments[0];
-          const compsLen = (t0.competitions||[]).length;
-          const t0keys = Object.keys(t0).join(',');
-          logEvent('Odds API', compsLen>0,
-            `🎾 t0="${t0.name||'?'}" comps=${compsLen} keys=[${t0keys}]`);
-          // Если competitions пустые — ищем матчи рекурсивно по всем ключам
-          if(compsLen === 0) {
-            for(const key of Object.keys(t0)) {
-              const val = t0[key];
-              if(Array.isArray(val) && val.length > 0) {
-                const sample = val[0];
-                const sampleKeys = typeof sample === 'object' ? Object.keys(sample).join(',') : typeof sample;
-                logEvent('Odds API', true, `🎾 t0.${key}[${val.length}] sample_keys=[${sampleKeys}]`);
-              }
+        for(const tournament of allTournaments) {
+          // ESPN tennis: матчи в draws[].events[] (сетки турнира)
+          const draws = tournament.draws || [];
+          for(const draw of draws) {
+            for(const match of (draw.events || draw.competitions || [])) {
+              const state = match.status?.type?.state;
+              if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+              matches.push({
+                _isTennisMatch: true,
+                name: match.name || draw.name || tournament.name || '',
+                date: match.date || tournament.date || '',
+                status: match.status,
+                competitions: [match],
+              });
             }
           }
-        }
-
-        for(const tournament of allTournaments) {
-          const comps = tournament.competitions || [];
-          for(const comp of comps) {
+          // Fallback: competitions[] напрямую
+          for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
             matches.push({
@@ -2640,13 +2636,20 @@ async function fetchESPNMatchesForGroq() {
       if(!r.ok) continue;
       const d = await r.json();
 
-      // Теннис: data.leagues[] → league.events[] = турниры → tournament.competitions[] = матчи
+      // Теннис: data.events[] = турниры → tournament.draws[].events[] = матчи
       const rawItems = [];
       if(ep.tennisEvents) {
         const allT = [];
         if(d.leagues) { for(const lg of d.leagues) for(const t of (lg.events||[])) allT.push(t); }
         for(const t of (d.events||[])) allT.push(t);
         for(const tournament of allT) {
+          for(const draw of (tournament.draws || [])) {
+            for(const match of (draw.events || draw.competitions || [])) {
+              const state = match.status?.type?.state;
+              if(state !== 'in' && state !== 'pre') continue;
+              rawItems.push({ _comp: match, _date: match.date || tournament.date || '', _name: match.name || tournament.name || '' });
+            }
+          }
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre') continue;
