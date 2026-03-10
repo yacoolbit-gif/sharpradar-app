@@ -2464,18 +2464,30 @@ async function fetchOddsHotMatches() {
 
       for(const e of pick) {
         try {
-          const comp  = e.competitions[0];
-          const t     = comp.competitors || [];
-          const isTennis = ep.sport === '🎾';
-
           // ===== ТЕННИС DEBUG =====
+          const isTennis = ep.sport === '🎾';
           if(isTennis) {
-            logEvent('Odds API', true, `🎾 DEBUG [${ep.league}] e.name="${e.name}" t.length=${t.length} state=${e.status?.type?.state} t[0].keys=${t[0]?Object.keys(t[0]).join(','):'нет'}`);
+            const hasComp = !!e.competitions;
+            const compLen = e.competitions?.length || 0;
+            const topKeys = Object.keys(e).join(',');
+            logEvent('Odds API', hasComp && compLen > 0, `🎾 [${ep.league}] e.keys=${topKeys} | competitions=${compLen} | name="${e.name||''}"`);
+            if(!hasComp || compLen === 0) {
+              // Попробуем альтернативные поля
+              const altKeys = ['competitors','athletes','players','competitors','match'];
+              const found = altKeys.find(k => e[k]);
+              logEvent('Odds API', false, `🎾 SKIP no competitions. Alt field: ${found||'нет'} | e.status=${e.status?.type?.state}`);
+              continue;
+            }
           }
 
-          if(t.length < 1) {
-            if(isTennis) logEvent('Odds API', false, `🎾 SKIP: t.length=0, e.name="${e.name}"`);
-            continue;
+          const comp  = e.competitions[0];
+          const t     = comp.competitors || [];
+
+          if(isTennis) {
+            const compKeys = Object.keys(comp).join(',');
+            const t0keys = t[0] ? Object.keys(t[0]).join(',') : 'нет';
+            logEvent('Odds API', true, `🎾 comp.keys=${compKeys} | t.length=${t.length} | t[0].keys=${t0keys}`);
+            if(t[0]) logEvent('Odds API', true, `🎾 t[0]: athlete=${JSON.stringify(t[0].athlete||null)} team=${JSON.stringify(t[0].team||null)} id=${t[0].id||'?'}`);
           }
 
           let home, away;
