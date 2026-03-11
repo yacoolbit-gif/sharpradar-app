@@ -1752,10 +1752,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       </div>
       <!-- SEARCH BUTTON -->
       <div style="margin-left:auto;display:inline-flex;align-items:center;gap:8px;">
-        <div class="search-btn" id="search-btn"
-          ontouchstart="this.style.background='rgba(0,220,130,0.2)';this.style.transform='scale(0.93)'"
-          ontouchend="this.style.background='';this.style.transform='scale(1)';toggleSearchMenu()"
-          onclick="toggleSearchMenu()">
+        <div class="search-btn" id="search-btn" onclick="toggleSearchMenu()">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="10.5" cy="10.5" r="6.5" stroke="rgba(0,220,130,0.85)" stroke-width="1.9"/>
             <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="rgba(0,220,130,0.85)" stroke-width="1.9" stroke-linecap="round"/>
@@ -1763,10 +1760,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         </div>
       <!-- PREDICTIONS BUTTON -->
       <div class="pred-btn-wrap">
-        <div class="pred-btn" id="pred-btn"
-          ontouchstart="this.style.background='rgba(0,180,255,0.2)';this.style.transform='scale(0.93)'"
-          ontouchend="this.style.background='';this.style.transform='scale(1)';togglePredMenu()"
-          onclick="togglePredMenu()">
+        <div class="pred-btn" id="pred-btn" onclick="togglePredMenu()">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="3" y="3" width="18" height="18" rx="3" stroke="rgba(0,200,255,0.8)" stroke-width="1.8"/>
             <line x1="7" y1="8" x2="17" y2="8" stroke="rgba(0,200,255,0.8)" stroke-width="1.6" stroke-linecap="round"/>
@@ -1779,7 +1773,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         </div>
       </div>
       <!-- MENU BUTTON moved here -->
-      <div ontouchstart="this.style.background='rgba(108,99,255,0.3)';this.style.transform='scale(0.93)'" ontouchend="this.style.background='rgba(108,99,255,0.12)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;min-width:42px;background:linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);border:1px solid rgba(108,99,255,0.4);border-radius:12px;box-shadow:0 4px 14px rgba(108,99,255,0.4),0 1px 0 rgba(255,255,255,0.12) inset,0 -2px 0 rgba(0,0,0,0.4) inset;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:all 0.15s;flex-shrink:0;margin-left:auto;">
+      <div onclick="toggleMenu(event)" style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;min-width:42px;background:linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);border:1px solid rgba(108,99,255,0.4);border-radius:12px;box-shadow:0 4px 14px rgba(108,99,255,0.4),0 1px 0 rgba(255,255,255,0.12) inset,0 -2px 0 rgba(0,0,0,0.4) inset;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:all 0.15s;flex-shrink:0;margin-left:auto;">
         <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="0" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
           <rect x="8" y="0" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
@@ -4337,23 +4331,25 @@ var smSearching = false;
 
 // ESPN endpoints for search (all sports, key leagues)
 var SM_ENDPOINTS = [
-  // ⚽ Football
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',          sport:'⚽', league:'АПЛ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',          sport:'⚽', league:'Ла Лига' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',          sport:'⚽', league:'Бундеслига' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',          sport:'⚽', league:'Серия А' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',          sport:'⚽', league:'Лига 1' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',    sport:'⚽', league:'ЛЕ' },
-  // 🏀 Basketball
-  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',        sport:'🏀', league:'НБА' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard', sport:'🏀', league:'Евролига' },
-  // 🏒 Hockey
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
-  // 🎾 Tennis
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennis:true },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennis:true },
+  // ⚽ Футбол — те же лиги что в ALL_EP
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',  sport:'⚽', league:'ЛЧ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',           sport:'⚽', league:'АПЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',           sport:'⚽', league:'Ла Лига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',           sport:'⚽', league:'Бундеслига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',           sport:'⚽', league:'Серия А' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',           sport:'⚽', league:'Лига 1' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',     sport:'⚽', league:'ЛЕ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard',           sport:'⚽', league:'Примейра' },
+  // 🏀 Баскетбол
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',         sport:'🏀', league:'НБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard', sport:'🏀', league:'NCAA' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard',  sport:'🏀', league:'Евролига' },
+  // 🏒 Хоккей
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',             sport:'🏒', league:'НХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',             sport:'🏒', league:'АХЛ' },
+  // 🎾 Теннис — tennisEvents:true как в основном коде
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', sport:'🎾', league:'ATP', tennis:true, tennisEvents:true },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', sport:'🎾', league:'WTA', tennis:true, tennisEvents:true },
 ];
 
 function toggleSearchMenu() {
@@ -4423,8 +4419,25 @@ async function doSearch() {
 async function smFetchEndpoint(ep, query) {
   try {
     var now = new Date();
-    var offsets = [null, -1, 0, 1, 2, 3, 4, 5, 6, 7];
+
+    // Split query into words, strip separators, min 2 chars each
+    var queryWords = query
+      .replace(/[—–—\-|\/]/g, ' ')
+      .split(/\s+/)
+      .map(function(w){ return w.trim().toLowerCase(); })
+      .filter(function(w){ return w.length >= 2; });
+    if(queryWords.length === 0) return [];
+
+    // Match if ANY word found in name string
+    function matches(nameStr) {
+      var s = nameStr.toLowerCase();
+      return queryWords.some(function(w){ return s.indexOf(w) >= 0; });
+    }
+
+    // Only today + 7 days forward (no past dates)
+    var offsets = [null, 0, 1, 2, 3, 4, 5, 6, 7];
     var found = [];
+    var seen = {};
 
     for(var i = 0; i < offsets.length; i++) {
       var url = ep.url;
@@ -4436,46 +4449,76 @@ async function smFetchEndpoint(ep, query) {
         url = url + sep + 'dates=' + dd;
       }
 
-      var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      var r;
+      try { r = await fetch(url, { signal: AbortSignal.timeout(8000) }); }
+      catch(e) { continue; }
       if(!r.ok) continue;
       var data = await r.json();
 
       var events = [];
-      if(ep.tennis) {
-        // Tennis: events[] = tournaments → groupings[].competitions[]
+
+      // ===== ТЕННИС: идентичный парсинг как в fetchESPNEndpointEvents =====
+      if(ep.tennisEvents) {
         var allT = [];
-        if(data.leagues) data.leagues.forEach(function(lg){ (lg.events||[]).forEach(function(e){ allT.push(e); }); });
-        (data.events||[]).forEach(function(e){ allT.push(e); });
-        allT.forEach(function(t){
-          (t.groupings||[]).forEach(function(g){
-            (g.competitions||[]).forEach(function(c){
-              events.push({ _tennis:true, name:c.name||t.name||'', date:c.date||t.date||'', status:c.status||{type:{state:'pre',shortDetail:''}}, competitions:[c] });
+        if(data.leagues) {
+          data.leagues.forEach(function(lg){
+            (lg.events||[]).forEach(function(t){ allT.push(t); });
+          });
+        }
+        (data.events||[]).forEach(function(t){ allT.push(t); });
+
+        allT.forEach(function(tournament){
+          // groupings[].competitions[]
+          (tournament.groupings||[]).forEach(function(grp){
+            (grp.competitions||[]).forEach(function(comp){
+              var state = comp.status && comp.status.type && comp.status.type.state;
+              if(state === 'final' || state === 'postponed' || state === 'cancelled') return;
+              events.push({
+                _tennis:true,
+                name: comp.name || tournament.name || '',
+                date: comp.date || tournament.date || '',
+                status: comp.status || {type:{state:'pre',shortDetail:''}},
+                competitions: [comp]
+              });
             });
           });
-          (t.competitions||[]).forEach(function(c){
-            events.push({ _tennis:true, name:c.name||t.name||'', date:c.date||t.date||'', status:c.status||{type:{state:'pre',shortDetail:''}}, competitions:[c] });
+          // competitions[] напрямую
+          (tournament.competitions||[]).forEach(function(comp){
+            var state = comp.status && comp.status.type && comp.status.type.state;
+            if(state !== 'in' && state !== 'pre' && state !== 'post') return;
+            events.push({_tennis:true, name:comp.name||tournament.name||'', date:comp.date||tournament.date||'', status:comp.status||{type:{state:'pre',shortDetail:''}}, competitions:[comp]});
+          });
+          // draws[].events[] / draws[].competitions[]
+          (tournament.draws||[]).forEach(function(draw){
+            (draw.events||draw.competitions||[]).forEach(function(comp){
+              var state = comp.status && comp.status.type && comp.status.type.state;
+              if(state !== 'in' && state !== 'pre' && state !== 'post') return;
+              events.push({_tennis:true, name:comp.name||tournament.name||'', date:comp.date||tournament.date||'', status:comp.status||{type:{state:'pre',shortDetail:''}}, competitions:[comp]});
+            });
           });
         });
+
       } else {
-        events = data.events || [];
+        // Обычные виды спорта
+        events = (data.events || data.scoreboard && data.scoreboard.events || []);
       }
 
-      // Filter by query
+      // Filter by query words and build results
       events.forEach(function(e) {
         var comp = (e.competitions && e.competitions[0]) || e;
         var teams = comp.competitors || comp.competitor || [];
-        var names = [];
+
+        // Collect all searchable strings
+        var nameStr = '';
         teams.forEach(function(t){
-          names.push((t.athlete && (t.athlete.displayName||t.athlete.fullName)) || '');
-          names.push((t.team && (t.team.displayName||t.team.shortDisplayName||t.team.name)) || '');
+          if(t.athlete) nameStr += ' ' + (t.athlete.displayName||'') + ' ' + (t.athlete.fullName||'');
+          if(t.team) nameStr += ' ' + (t.team.displayName||'') + ' ' + (t.team.shortDisplayName||'') + ' ' + (t.team.name||'');
         });
-        names.push(e.name || comp.name || '');
-        names.push(ep.league || '');
+        nameStr += ' ' + (e.name||comp.name||'') + ' ' + (ep.league||'');
 
-        var nameStr = names.join(' ').toLowerCase();
-        if(nameStr.indexOf(query) < 0) return;
+        if(!matches(nameStr)) return;
 
-        // Build match object
+        // Build display
         var state = (e.status && e.status.type && e.status.type.state) ||
                     (comp.status && comp.status.type && comp.status.type.state) || 'pre';
         var shortDetail = (e.status && e.status.type && e.status.type.shortDetail) ||
@@ -4486,29 +4529,34 @@ async function smFetchEndpoint(ep, query) {
         var hName = '', aName = '';
         if(teams.length >= 2) {
           var home, away;
-          if(ep.tennis) { away = teams[0]; home = teams[1]; }
-          else {
+          if(ep.tennisEvents || ep.tennis) {
+            away = teams[0]; home = teams[1] || teams[0];
+          } else {
             home = teams.find(function(t){ return t.homeAway === 'home'; }) || teams[1] || teams[0];
             away = teams.find(function(t){ return t.homeAway === 'away'; }) || teams[0];
           }
-          hName = (home && (home.athlete && (home.athlete.displayName||home.athlete.fullName)) || (home.team && (home.team.shortDisplayName||home.team.displayName||home.team.name))) || '';
-          aName = (away && (away.athlete && (away.athlete.displayName||away.athlete.fullName)) || (away.team && (away.team.shortDisplayName||away.team.displayName||away.team.name))) || '';
+          hName = (home.athlete && (home.athlete.displayName||home.athlete.fullName)) ||
+                  (home.team && (home.team.shortDisplayName||home.team.displayName||home.team.name)) || '';
+          aName = (away.athlete && (away.athlete.displayName||away.athlete.fullName)) ||
+                  (away.team && (away.team.shortDisplayName||away.team.displayName||away.team.name)) || '';
         }
+        // Fallback: parse from event name
         if(!hName && !aName) {
           var parts = (e.name||comp.name||'').split(/\s+(?:vs\.?|@|–|—)\s+/i);
           if(parts.length >= 2) { aName = parts[0].trim(); hName = parts[1].trim(); }
         }
         if(!hName && !aName) return;
 
+        // Deduplicate by team names
+        var key = (aName + '|' + hName).toLowerCase().replace(/\s/g,'');
+        if(seen[key]) return;
+        seen[key] = true;
+
         var score = '';
         if(isLive || isFt) {
-          score = shortDetail || (teams[0] && teams[1] ? (teams[0].score||0)+':'+(teams[1].score||0) : '');
+          score = shortDetail || ((teams[0]&&teams[1]) ? (teams[0].score||0)+':'+(teams[1].score||0) : '');
         }
-
-        var displayTime = '';
-        if(isLive) displayTime = shortDetail || 'LIVE';
-        else if(isFt) displayTime = 'FT';
-        else displayTime = smFmtDate(e.date || comp.date || '');
+        var displayTime = isLive ? (shortDetail||'LIVE') : (isFt ? 'FT' : smFmtDate(e.date||comp.date||''));
 
         found.push({
           sport: ep.sport,
@@ -4521,10 +4569,9 @@ async function smFetchEndpoint(ep, query) {
           rawDate: e.date || comp.date || '',
         });
       });
-
-      if(found.length > 0) break; // found results for this endpoint on this date
+      // NO break — check all dates to find all matches
     }
-    return found.slice(0, 10);
+    return found.slice(0, 15);
   } catch(err) {
     return [];
   }
