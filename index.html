@@ -2894,6 +2894,7 @@ const WORKER_URL_GROQ = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
 let globalDatetimeMap = new Map(); // глобальная карта дат матчей из ESPN
 let currentMatchDatetime = null;  // дата текущего выбранного матча
 let globalFirstHalfMap = new Map(); // карта статистики первого тайма для футбола
+let globalEventMap = new Map();    // normKey → {eventId, sportSlug, sport}
 
 // Собирает актуальные матчи из ESPN для передачи в Groq
 // Возвращает { matches: string[], datetimeMap: Map<normKey, datetime> }
@@ -2958,7 +2959,7 @@ async function fetchESPNMatchesForGroq() {
         for(const e of (d.events || [])) {
           const state = e.status?.type?.state;
           if(state !== 'in' && state !== 'pre') continue;
-          rawItems.push({ _comp: e.competitions?.[0], _date: e.date || '', _name: e.name || '', _status: e.status });
+          rawItems.push({ _comp: e.competitions?.[0], _date: e.date || '', _name: e.name || '', _status: e.status, _eventId: e.id || '', _epUrl: ep.url, _sport: ep.sport });
         }
       }
 
@@ -2990,6 +2991,13 @@ async function fetchESPNMatchesForGroq() {
           matches.push(matchLine);
           const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, datetime);
+          // Сохраняем eventId для ESPN Summary запросов
+          if(item._eventId) {
+            // Извлекаем sport/league slug из URL ESPN
+            const urlMatch = (item._epUrl||'').match(/sports\/([^/]+\/[^/]+)\/scoreboard/);
+            const sportSlug = urlMatch ? urlMatch[1] : null;
+            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport });
+          }
 
           // Собираем статистику первого тайма для футбола
           if(ep.sport === '⚽') {
@@ -3039,6 +3047,253 @@ function lookupDatetime(matchStr, datetimeMap) {
     }
   }
   return null;
+}
+
+// ===== ВНЕШНИЕ ДАННЫЕ ДЛЯ АНАЛИЗА =====
+
+// ESPN Summary — детальная статистика конкретного матча
+async function fetchESPNSummary(sportSlug, eventId) {
+  if(!sportSlug || !eventId) return null;
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/summary?event=${eventId}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const comp = d.header?.competitions?.[0] || d.boxscore?.teams?.[0]?.team && d;
+    const boxscore = d.boxscore;
+    if(!boxscore) return null;
+
+    const result = { possession: null, shots: null, shotsOn: null, corners: null, xg: null, fouls: null };
+
+    // Статистика из boxscore.teams
+    const teams = boxscore.teams || [];
+    const stats0 = teams[0]?.statistics || [];
+    const stats1 = teams[1]?.statistics || [];
+    const getStat = (arr, names) => {
+      for(const n of names) {
+        const f = arr.find(s => s.name===n || s.abbreviation===n || s.label===n);
+        if(f) return f.displayValue || f.value;
+      }
+      return null;
+    };
+    const home = teams.find(t=>t.homeAway==='home') || teams[1];
+    const away = teams.find(t=>t.homeAway==='away') || teams[0];
+    const hStats = home?.statistics || stats1;
+    const aStats = away?.statistics || stats0;
+
+    const pHome = getStat(hStats, ['possessionPct','possession','Possession']);
+    const pAway = getStat(aStats, ['possessionPct','possession','Possession']);
+    if(pHome||pAway) result.possession = `Хозяева ${pHome||'?'}% / Гости ${pAway||'?'}%`;
+
+    const shHome = getStat(hStats, ['totalShots','shots','Shots','SH']);
+    const shAway = getStat(aStats, ['totalShots','shots','Shots','SH']);
+    if(shHome||shAway) result.shots = `${shHome||'?'} / ${shAway||'?'}`;
+
+    const soHome = getStat(hStats, ['shotsOnTarget','SOG','onGoal','ShotsOnGoal']);
+    const soAway = getStat(aStats, ['shotsOnTarget','SOG','onGoal','ShotsOnGoal']);
+    if(soHome||soAway) result.shotsOn = `${soHome||'?'} / ${soAway||'?'}`;
+
+    const cHome = getStat(hStats, ['corners','cornerKicks','CK']);
+    const cAway = getStat(aStats, ['corners','cornerKicks','CK']);
+    if(cHome||cAway) result.corners = `${cHome||'?'} / ${cAway||'?'}`;
+
+    const xgHome = getStat(hStats, ['expectedGoals','xG','XG']);
+    const xgAway = getStat(aStats, ['expectedGoals','xG','XG']);
+    if(xgHome||xgAway) result.xg = `${xgHome||'?'} / ${xgAway||'?'}`;
+
+    const fHome = getStat(hStats, ['fouls','foulsCommitted','F']);
+    const fAway = getStat(aStats, ['fouls','foulsCommitted','F']);
+    if(fHome||fAway) result.fouls = `${fHome||'?'} / ${fAway||'?'}`;
+
+    // НХЛ: броски, Power Play
+    const bHome = getStat(hStats, ['shotsOnGoal','SOG','shots']);
+    const bAway = getStat(aStats, ['shotsOnGoal','SOG','shots']);
+    if(bHome||bAway) result.shots = `${bHome||'?'} / ${bAway||'?'}`;
+
+    const ppHome = getStat(hStats, ['powerPlayGoals','PPG','ppGoals']);
+    const ppAway = getStat(aStats, ['powerPlayGoals','PPG','ppGoals']);
+    if(ppHome||ppAway) result.powerplay = `ПП голы: ${ppHome||'?'} / ${ppAway||'?'}`;
+
+    // НБА: очки по четвертям, rebounds, assists
+    const rebHome = getStat(hStats, ['rebounds','REB','totalRebounds']);
+    const rebAway = getStat(aStats, ['rebounds','REB','totalRebounds']);
+    if(rebHome||rebAway) result.rebounds = `Подборы: ${rebHome||'?'} / ${rebAway||'?'}`;
+
+    const astHome = getStat(hStats, ['assists','AST']);
+    const astAway = getStat(aStats, ['assists','AST']);
+    if(astHome||astAway) result.assists = `Передачи: ${astHome||'?'} / ${astAway||'?'}`;
+
+    const fgHome = getStat(hStats, ['fieldGoalPct','FG%','fieldGoalPercentage']);
+    const fgAway = getStat(aStats, ['fieldGoalPct','FG%','fieldGoalPercentage']);
+    if(fgHome||fgAway) result.fgPct = `FG%: ${fgHome||'?'} / ${fgAway||'?'}`;
+
+    // Линейный счёт (по периодам/таймам)
+    const linescores = d.header?.competitions?.[0]?.competitors || [];
+    if(linescores.length >= 2) {
+      const ls0 = linescores[0]?.linescores || [];
+      const ls1 = linescores[1]?.linescores || [];
+      if(ls0.length && ls1.length) {
+        const periods = ls0.map((p,i) => `П${i+1}: ${ls1[i]?.value||0}-${p.value||0}`).join(', ');
+        result.periods = periods;
+      }
+    }
+
+    return result;
+  } catch(e) { return null; }
+}
+
+// NHL Stats API — форма команд, вратари
+async function fetchNHLTeamStats(teamName) {
+  try {
+    // Ищем команду
+    const r = await fetch('https://api-web.nhle.com/v1/standings/now', { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const standings = d.standings || [];
+    const norm = teamName.toLowerCase();
+    const team = standings.find(t =>
+      (t.teamName?.default||'').toLowerCase().includes(norm) ||
+      (t.teamAbbrev?.default||'').toLowerCase() === norm.slice(0,3) ||
+      (t.teamCommonName?.default||'').toLowerCase().includes(norm)
+    );
+    if(!team) return null;
+    return {
+      wins: team.wins, losses: team.losses, otLosses: team.otLosses,
+      points: team.points, rank: team.conferenceSequence,
+      l10: `${team.l10Wins||'?'}-${team.l10Losses||'?'}-${team.l10OtLosses||'?'}`,
+      goalsFor: team.goalFor, goalsAgainst: team.goalAgainst,
+      streakCode: team.streakCode
+    };
+  } catch(e) { return null; }
+}
+
+// Balldontlie — статистика НБА команд
+async function fetchNBATeamStats(teamName) {
+  try {
+    const r = await fetch(`https://api.balldontlie.io/v1/teams?search=${encodeURIComponent(teamName)}`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const team = d.data?.[0];
+    if(!team) return null;
+    // Получаем последние матчи команды
+    const r2 = await fetch(`https://api.balldontlie.io/v1/games?team_ids[]=${team.id}&per_page=5&seasons[]=2024`, {
+      signal: AbortSignal.timeout(6000)
+    });
+    if(!r2.ok) return { name: team.full_name, conference: team.conference };
+    const d2 = await r2.json();
+    const games = d2.data || [];
+    const wins = games.filter(g => {
+      const isHome = g.home_team?.id === team.id;
+      return isHome ? g.home_team_score > g.visitor_team_score : g.visitor_team_score > g.home_team_score;
+    }).length;
+    return {
+      name: team.full_name,
+      conference: team.conference,
+      division: team.division,
+      last5: `${wins}В-${games.length-wins}П из последних ${games.length}`
+    };
+  } catch(e) { return null; }
+}
+
+// Собирает все внешние данные для матча параллельно
+async function fetchExternalMatchData(match, sport) {
+  const parts = match.split('—').map(s=>s.trim());
+  const homeName = parts[1] || '';
+  const awayName = parts[0] || '';
+
+  const normKey = match.toLowerCase().replace(/\s+/g,' ').trim();
+  const eventInfo = globalEventMap.get(normKey) || (() => {
+    for(const [k,v] of globalEventMap) {
+      const kp = k.split('—').map(s=>s.trim());
+      const mp = normKey.split('—').map(s=>s.trim());
+      if(mp.length>=2 && kp.length>=2 &&
+         (kp[0].includes(mp[0])||mp[0].includes(kp[0])) &&
+         (kp[1].includes(mp[1])||mp[1].includes(kp[1]))) return v;
+    }
+    return null;
+  })();
+
+  const isFoot = sport.includes('⚽');
+  const isHock = sport.includes('🏒');
+  const isBask = sport.includes('🏀');
+
+  const promises = [];
+
+  // ESPN Summary для всех
+  if(eventInfo?.sportSlug && eventInfo?.eventId) {
+    promises.push(fetchESPNSummary(eventInfo.sportSlug, eventInfo.eventId));
+  } else {
+    promises.push(Promise.resolve(null));
+  }
+
+  // NHL API
+  if(isHock) {
+    promises.push(Promise.all([fetchNHLTeamStats(homeName), fetchNHLTeamStats(awayName)]));
+  } else {
+    promises.push(Promise.resolve(null));
+  }
+
+  // Balldontlie НБА
+  if(isBask) {
+    promises.push(Promise.all([fetchNBATeamStats(homeName), fetchNBATeamStats(awayName)]));
+  } else {
+    promises.push(Promise.resolve(null));
+  }
+
+  const [espnSummary, nhlData, nbaData] = await Promise.allSettled(promises).then(r => r.map(x => x.value ?? null));
+  return { espnSummary, nhlData, nbaData };
+}
+
+// Форматирует внешние данные в текст для промпта
+function formatExternalData(extData, sport) {
+  const lines = [];
+  const isFoot = sport.includes('⚽');
+  const isHock = sport.includes('🏒');
+  const isBask = sport.includes('🏀');
+  const { espnSummary, nhlData, nbaData } = extData;
+
+  if(espnSummary) {
+    const s = espnSummary;
+    if(isFoot) {
+      if(s.possession) lines.push(`Владение мячом (ESPN): ${s.possession}`);
+      if(s.shots) lines.push(`Удары хозяева/гости (ESPN): ${s.shots}`);
+      if(s.shotsOn) lines.push(`Удары в створ (ESPN): ${s.shotsOn}`);
+      if(s.corners) lines.push(`Угловые (ESPN): ${s.corners}`);
+      if(s.xg) lines.push(`xG хозяева/гости (ESPN): ${s.xg}`);
+      if(s.fouls) lines.push(`Фолы (ESPN): ${s.fouls}`);
+    } else if(isHock) {
+      if(s.shots) lines.push(`Броски в створ хозяева/гости (ESPN): ${s.shots}`);
+      if(s.powerplay) lines.push(s.powerplay);
+      if(s.periods) lines.push(`Счёт по периодам (ESPN): ${s.periods}`);
+    } else if(isBask) {
+      if(s.rebounds) lines.push(s.rebounds);
+      if(s.assists) lines.push(s.assists);
+      if(s.fgPct) lines.push(s.fgPct);
+      if(s.periods) lines.push(`Счёт по четвертям (ESPN): ${s.periods}`);
+    } else {
+      if(s.periods) lines.push(`Счёт по сетам (ESPN): ${s.periods}`);
+    }
+  }
+
+  if(isHock && nhlData && Array.isArray(nhlData)) {
+    const [home, away] = nhlData;
+    if(home) lines.push(`НХЛ таблица хозяева: ${home.wins}В-${home.losses}П-${home.otLosses}ОТ (${home.points}оч, место ${home.rank}), форма L10: ${home.l10}, серия: ${home.streakCode||'—'}`);
+    if(away) lines.push(`НХЛ таблица гости: ${away.wins}В-${away.losses}П-${away.otLosses}ОТ (${away.points}оч, место ${away.rank}), форма L10: ${away.l10}, серия: ${away.streakCode||'—'}`);
+  }
+
+  if(isBask && nbaData && Array.isArray(nbaData)) {
+    const [home, away] = nbaData;
+    if(home) lines.push(`НБА хозяева (Balldontlie): ${home.name} — ${home.last5||home.conference+' конф.'}`);
+    if(away) lines.push(`НБА гости (Balldontlie): ${away.name} — ${away.last5||away.conference+' конф.'}`);
+  }
+
+  if(!lines.length) return '';
+  return `
+ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ:
+${lines.join('\n')}
+`;
 }
 
 async function fetchGroqTopPicks() {
@@ -3611,6 +3866,13 @@ async function startAnalysis() {
     ? (matchDt.startsWith('LIVE') ? '🔴 LIVE · идёт сейчас' : `📅 ${matchDt}`)
     : `📅 ${date} | ⏰ время уточняется`;
 
+  // Загружаем внешние данные параллельно (ESPN Summary, NHL API, Balldontlie)
+  let extDataContext = '';
+  try {
+    const extData = await fetchExternalMatchData(match, currentSport);
+    extDataContext = formatExternalData(extData, currentSport);
+  } catch(_) {}
+
   const isFoot = currentSport.includes('⚽') || currentSport.toLowerCase().includes('футбол');
   const isHock = currentSport.includes('🏒') || currentSport.toLowerCase().includes('хоккей');
   const isBask = currentSport.includes('🏀') || currentSport.toLowerCase().includes('баскет');
@@ -3662,7 +3924,7 @@ async function startAnalysis() {
 Матч: ${match}
 Вид спорта: ${currentSport}
 Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
-${firstHalfContext}
+${firstHalfContext}${extDataContext}
 ВАЖНО: Этот матч реальный — получен из ESPN. Делай анализ безусловно. НЕ придумывай дату — используй ТОЛЬКО ту что указана выше в поле "Дата и время матча". Никогда не отказывайся от анализа.
 
 ANALYSIS_START
