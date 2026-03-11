@@ -1502,6 +1502,125 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 }
 .pred-view-text { font-size:13px;line-height:1.7;color:rgba(240,240,248,0.85);white-space:pre-wrap; }
 
+
+/* ===== SEARCH PANEL ===== */
+.search-btn {
+  display:inline-flex;align-items:center;justify-content:center;
+  width:42px;height:42px;min-width:42px;
+  background:linear-gradient(145deg,#0f2a1a 0%,#081e10 50%,#040f08 100%);
+  border:1px solid rgba(0,220,130,0.35);
+  border-radius:12px;
+  box-shadow:0 4px 14px rgba(0,220,130,0.2),0 1px 0 rgba(255,255,255,0.1) inset,0 -2px 0 rgba(0,0,0,0.4) inset;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  cursor:pointer;transition:all 0.15s;flex-shrink:0;
+}
+.search-btn:active { background:rgba(0,220,130,0.2); transform:scale(0.93); }
+
+.search-menu {
+  position:fixed;bottom:0;left:0;right:0;width:100%;
+  background:#080f0a;
+  border:1px solid rgba(0,220,130,0.15);
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -10px 60px rgba(0,0,0,0.95);
+  z-index:99999;
+  opacity:0;transform:translateY(100%);
+  transition:opacity 0.25s ease,transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  pointer-events:none;
+  padding-bottom:30px;max-height:88vh;
+  display:flex;flex-direction:column;
+}
+.search-menu.open { opacity:1;transform:translateY(0);pointer-events:auto; }
+
+.sm-handle { width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:14px auto 10px;flex-shrink:0; }
+.sm-header { padding:8px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0; }
+.sm-title { color:rgba(240,240,248,0.4);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px; }
+
+.sm-input-wrap {
+  display:flex;gap:8px;align-items:center;
+}
+.sm-input {
+  flex:1;padding:10px 14px;
+  background:rgba(0,220,130,0.06);
+  border:1px solid rgba(0,220,130,0.25);
+  border-radius:12px;
+  color:#F0F0F8;font-size:14px;
+  outline:none;
+  -webkit-appearance:none;
+}
+.sm-input::placeholder { color:rgba(240,240,248,0.25); }
+.sm-input:focus { border-color:rgba(0,220,130,0.5);background:rgba(0,220,130,0.09); }
+
+.sm-search-btn {
+  padding:10px 16px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,rgba(0,220,130,0.25),rgba(0,180,100,0.15));
+  border:1px solid rgba(0,220,130,0.35);
+  color:#00DC82;font-size:13px;font-weight:700;
+  box-shadow:0 2px 8px rgba(0,220,130,0.15);
+  touch-action:manipulation;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.sm-search-btn:active { opacity:0.7;transform:scale(0.95); }
+
+.sm-results { flex:1;overflow-y:auto;padding:8px 0 4px; }
+.sm-empty { padding:40px 20px;text-align:center;color:rgba(240,240,248,0.25);font-size:13px; }
+.sm-empty-icon { font-size:32px;margin-bottom:10px;opacity:0.4; }
+.sm-status { padding:10px 16px;font-size:12px;color:rgba(0,220,130,0.6);text-align:center; }
+
+.sm-card {
+  margin:6px 12px;padding:12px 14px;
+  background:linear-gradient(135deg,rgba(0,220,130,0.05) 0%,rgba(8,15,10,0.9) 100%);
+  border:1px solid rgba(0,220,130,0.12);border-radius:14px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;touch-action:manipulation;
+  transition:all 0.15s;
+  -webkit-tap-highlight-color:rgba(0,220,130,0.1);
+}
+.sm-card:active { background:rgba(0,220,130,0.1);transform:scale(0.98); }
+
+.sm-card-sport { font-size:22px;flex-shrink:0; }
+.sm-card-body { flex:1;min-width:0; }
+.sm-card-teams { font-size:13px;font-weight:700;color:#F0F0F8;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.sm-card-meta { font-size:11px;color:rgba(240,240,248,0.35);margin-top:2px; }
+.sm-card-right { flex-shrink:0;text-align:right; }
+.sm-card-time { font-size:12px;font-weight:700; }
+.sm-card-live { color:#FF4566; }
+.sm-card-pre  { color:rgba(240,240,248,0.5); }
+.sm-card-ft   { color:rgba(240,240,248,0.3); }
+.sm-card-score { font-size:11px;color:rgba(240,240,248,0.4);margin-top:2px; }
+
+.sm-card-add {
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:rgba(0,220,130,0.15);color:#00DC82;
+  font-size:16px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;
+}
+.sm-card-add:active { background:rgba(0,220,130,0.3); }
+
+.sm-overlay {
+  position:fixed;inset:0;z-index:99998;
+  background:rgba(0,0,0,0.6);display:none;touch-action:manipulation;
+}
+.sm-overlay.open { display:block; }
+
+.sm-sport-tabs {
+  display:flex;gap:6px;padding:8px 16px 0;overflow-x:auto;flex-shrink:0;
+  scrollbar-width:none;
+}
+.sm-sport-tabs::-webkit-scrollbar { display:none; }
+.sm-sport-tab {
+  padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);color:rgba(240,240,248,0.4);
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+  touch-action:manipulation;flex-shrink:0;transition:all 0.15s;
+}
+.sm-sport-tab.active {
+  background:rgba(0,220,130,0.15);color:#00DC82;
+  border-color:rgba(0,220,130,0.35);
+}
+.sm-results-count { padding:6px 16px;font-size:11px;color:rgba(240,240,248,0.3); }
+
 </style>
 </head>
 <body>
@@ -1631,8 +1750,19 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       <div class="sw-conf-badge" id="sw-conf-badge" style="display:none">
         <span id="sw-conf-val">—</span>
       </div>
+      <!-- SEARCH BUTTON -->
+      <div style="margin-left:auto;display:inline-flex;align-items:center;gap:8px;">
+        <div class="search-btn" id="search-btn"
+          ontouchstart="this.style.background='rgba(0,220,130,0.2)';this.style.transform='scale(0.93)'"
+          ontouchend="this.style.background='';this.style.transform='scale(1)';toggleSearchMenu()"
+          onclick="toggleSearchMenu()">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10.5" cy="10.5" r="6.5" stroke="rgba(0,220,130,0.85)" stroke-width="1.9"/>
+            <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="rgba(0,220,130,0.85)" stroke-width="1.9" stroke-linecap="round"/>
+          </svg>
+        </div>
       <!-- PREDICTIONS BUTTON -->
-      <div class="pred-btn-wrap" style="margin-left:auto;">
+      <div class="pred-btn-wrap">
         <div class="pred-btn" id="pred-btn"
           ontouchstart="this.style.background='rgba(0,180,255,0.2)';this.style.transform='scale(0.93)'"
           ontouchend="this.style.background='';this.style.transform='scale(1)';togglePredMenu()"
@@ -1659,6 +1789,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
           <rect x="8" y="11.5" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
         </svg>
       </div>
+      </div><!-- close search+pred wrapper -->
     </div>
   </div>
 
@@ -4194,6 +4325,312 @@ document.addEventListener('DOMContentLoaded', function() {
   getPredBadge();
 });
 
+
+
+// ============================================================
+// SEARCH SYSTEM
+// ============================================================
+var smAllResults = [];
+var smFilteredResults = [];
+var smCurrentFilter = 'all';
+var smSearching = false;
+
+// ESPN endpoints for search (all sports, key leagues)
+var SM_ENDPOINTS = [
+  // ⚽ Football
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard',          sport:'⚽', league:'АПЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard',          sport:'⚽', league:'Ла Лига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard',          sport:'⚽', league:'Бундеслига' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard',          sport:'⚽', league:'Серия А' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard',          sport:'⚽', league:'Лига 1' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',    sport:'⚽', league:'ЛЕ' },
+  // 🏀 Basketball
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',        sport:'🏀', league:'НБА' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard', sport:'🏀', league:'Евролига' },
+  // 🏒 Hockey
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
+  // 🎾 Tennis
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennis:true },
+  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennis:true },
+];
+
+function toggleSearchMenu() {
+  var m = document.getElementById('search-menu');
+  var o = document.getElementById('sm-overlay');
+  if(!m) return;
+  if(m.classList.contains('open')) {
+    closeSearchMenu();
+  } else {
+    m.classList.add('open');
+    if(o) o.classList.add('open');
+    setTimeout(function(){ var inp = document.getElementById('sm-input'); if(inp) inp.focus(); }, 350);
+  }
+}
+
+function closeSearchMenu() {
+  var m = document.getElementById('search-menu');
+  var o = document.getElementById('sm-overlay');
+  if(m) m.classList.remove('open');
+  if(o) o.classList.remove('open');
+}
+
+function onSmInput(val) {
+  // Allow search on enter, don't auto-search on every char
+}
+
+async function doSearch() {
+  var query = (document.getElementById('sm-input').value || '').trim().toLowerCase();
+  if(!query || query.length < 2) {
+    setSmResults('<div class="sm-empty"><div class="sm-empty-icon">✏️</div>Введи минимум 2 символа</div>');
+    return;
+  }
+  if(smSearching) return;
+  smSearching = true;
+
+  setSmResults('<div class="sm-status">⏳ Ищем матчи...</div>');
+  smAllResults = [];
+
+  // Fetch all endpoints in parallel
+  var promises = SM_ENDPOINTS.map(function(ep) {
+    return smFetchEndpoint(ep, query);
+  });
+
+  var results = await Promise.allSettled(promises);
+  results.forEach(function(r) {
+    if(r.status === 'fulfilled' && r.value) {
+      smAllResults = smAllResults.concat(r.value);
+    }
+  });
+
+  smSearching = false;
+
+  if(smAllResults.length === 0) {
+    setSmResults('<div class="sm-empty"><div class="sm-empty-icon">😕</div>Ничего не найдено по запросу «' + escSmHtml(query) + '»<br><br><span style="font-size:11px;color:rgba(240,240,248,0.2)">Попробуй на английском или другую команду</span></div>');
+    return;
+  }
+
+  smCurrentFilter = 'all';
+  // Reset sport tabs to "Все"
+  var tabs = document.querySelectorAll('.sm-sport-tab');
+  tabs.forEach(function(t){ t.classList.remove('active'); });
+  if(tabs[0]) tabs[0].classList.add('active');
+
+  renderSmResults();
+}
+
+async function smFetchEndpoint(ep, query) {
+  try {
+    var now = new Date();
+    var offsets = [null, -1, 0, 1, 2, 3, 4, 5, 6, 7];
+    var found = [];
+
+    for(var i = 0; i < offsets.length; i++) {
+      var url = ep.url;
+      if(offsets[i] !== null) {
+        var d = new Date(now);
+        d.setDate(d.getDate() + offsets[i]);
+        var sep = url.includes('?') ? '&' : '?';
+        var dd = d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate());
+        url = url + sep + 'dates=' + dd;
+      }
+
+      var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if(!r.ok) continue;
+      var data = await r.json();
+
+      var events = [];
+      if(ep.tennis) {
+        // Tennis: events[] = tournaments → groupings[].competitions[]
+        var allT = [];
+        if(data.leagues) data.leagues.forEach(function(lg){ (lg.events||[]).forEach(function(e){ allT.push(e); }); });
+        (data.events||[]).forEach(function(e){ allT.push(e); });
+        allT.forEach(function(t){
+          (t.groupings||[]).forEach(function(g){
+            (g.competitions||[]).forEach(function(c){
+              events.push({ _tennis:true, name:c.name||t.name||'', date:c.date||t.date||'', status:c.status||{type:{state:'pre',shortDetail:''}}, competitions:[c] });
+            });
+          });
+          (t.competitions||[]).forEach(function(c){
+            events.push({ _tennis:true, name:c.name||t.name||'', date:c.date||t.date||'', status:c.status||{type:{state:'pre',shortDetail:''}}, competitions:[c] });
+          });
+        });
+      } else {
+        events = data.events || [];
+      }
+
+      // Filter by query
+      events.forEach(function(e) {
+        var comp = (e.competitions && e.competitions[0]) || e;
+        var teams = comp.competitors || comp.competitor || [];
+        var names = [];
+        teams.forEach(function(t){
+          names.push((t.athlete && (t.athlete.displayName||t.athlete.fullName)) || '');
+          names.push((t.team && (t.team.displayName||t.team.shortDisplayName||t.team.name)) || '');
+        });
+        names.push(e.name || comp.name || '');
+        names.push(ep.league || '');
+
+        var nameStr = names.join(' ').toLowerCase();
+        if(nameStr.indexOf(query) < 0) return;
+
+        // Build match object
+        var state = (e.status && e.status.type && e.status.type.state) ||
+                    (comp.status && comp.status.type && comp.status.type.state) || 'pre';
+        var shortDetail = (e.status && e.status.type && e.status.type.shortDetail) ||
+                          (comp.status && comp.status.type && comp.status.type.shortDetail) || '';
+        var isLive = state === 'in';
+        var isFt   = state === 'post';
+
+        var hName = '', aName = '';
+        if(teams.length >= 2) {
+          var home, away;
+          if(ep.tennis) { away = teams[0]; home = teams[1]; }
+          else {
+            home = teams.find(function(t){ return t.homeAway === 'home'; }) || teams[1] || teams[0];
+            away = teams.find(function(t){ return t.homeAway === 'away'; }) || teams[0];
+          }
+          hName = (home && (home.athlete && (home.athlete.displayName||home.athlete.fullName)) || (home.team && (home.team.shortDisplayName||home.team.displayName||home.team.name))) || '';
+          aName = (away && (away.athlete && (away.athlete.displayName||away.athlete.fullName)) || (away.team && (away.team.shortDisplayName||away.team.displayName||away.team.name))) || '';
+        }
+        if(!hName && !aName) {
+          var parts = (e.name||comp.name||'').split(/\s+(?:vs\.?|@|–|—)\s+/i);
+          if(parts.length >= 2) { aName = parts[0].trim(); hName = parts[1].trim(); }
+        }
+        if(!hName && !aName) return;
+
+        var score = '';
+        if(isLive || isFt) {
+          score = shortDetail || (teams[0] && teams[1] ? (teams[0].score||0)+':'+(teams[1].score||0) : '');
+        }
+
+        var displayTime = '';
+        if(isLive) displayTime = shortDetail || 'LIVE';
+        else if(isFt) displayTime = 'FT';
+        else displayTime = smFmtDate(e.date || comp.date || '');
+
+        found.push({
+          sport: ep.sport,
+          league: ep.league,
+          teams: aName + ' — ' + hName,
+          score: score,
+          time: displayTime,
+          live: isLive,
+          ft: isFt,
+          rawDate: e.date || comp.date || '',
+        });
+      });
+
+      if(found.length > 0) break; // found results for this endpoint on this date
+    }
+    return found.slice(0, 10);
+  } catch(err) {
+    return [];
+  }
+}
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function smFmtDate(iso) {
+  if(!iso) return '—';
+  try {
+    var d = new Date(iso);
+    var msk = new Date(d.getTime() + 3*3600*1000);
+    var months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    return pad2(msk.getUTCDate()) + ' ' + months[msk.getUTCMonth()] + ' · ' + pad2(msk.getUTCHours()) + ':' + pad2(msk.getUTCMinutes());
+  } catch(e) { return '—'; }
+}
+
+function filterSmSport(sport, el) {
+  smCurrentFilter = sport;
+  var tabs = document.querySelectorAll('.sm-sport-tab');
+  tabs.forEach(function(t){ t.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  renderSmResults();
+}
+
+function renderSmResults() {
+  var list = smCurrentFilter === 'all' ? smAllResults :
+    smAllResults.filter(function(m){ return m.sport === smCurrentFilter; });
+
+  if(list.length === 0) {
+    setSmResults('<div class="sm-results-count">0 матчей</div><div class="sm-empty"><div class="sm-empty-icon">🏷</div>Нет матчей в этой категории</div>');
+    return;
+  }
+
+  // Sort: LIVE first, then upcoming, then FT
+  list.sort(function(a,b){
+    if(a.live && !b.live) return -1;
+    if(!a.live && b.live) return 1;
+    if(!a.ft && b.ft) return -1;
+    if(a.ft && !b.ft) return 1;
+    return 0;
+  });
+
+  var html = '<div class="sm-results-count">' + list.length + ' матч' + (list.length===1?'':'ей') + '</div>';
+  html += list.slice(0, 10).map(function(m, i) {
+    var timeClass = m.live ? 'sm-card-live' : (m.ft ? 'sm-card-ft' : 'sm-card-pre');
+    var timeLabel = m.live ? '🔴 ' + m.time : m.time;
+    var scoreHtml = m.score ? '<div class="sm-card-score">' + escSmHtml(m.score) + '</div>' : '';
+    return '<div class="sm-card" onclick="smPickMatch(' + i + ')">' +
+      '<div class="sm-card-sport">' + m.sport + '</div>' +
+      '<div class="sm-card-body">' +
+        '<div class="sm-card-teams">' + escSmHtml(m.teams) + '</div>' +
+        '<div class="sm-card-meta">' + escSmHtml(m.league) + '</div>' +
+      '</div>' +
+      '<div class="sm-card-right">' +
+        '<div class="sm-card-time ' + timeClass + '">' + escSmHtml(timeLabel) + '</div>' +
+        scoreHtml +
+      '</div>' +
+      '<button class="sm-card-add" onclick="event.stopPropagation();smPickMatch(' + i + ')" title="Добавить в анализ">+</button>' +
+    '</div>';
+  }).join('');
+
+  // Store filtered for index lookup
+  smFilteredResults = list.slice(0, 10);
+  setSmResults(html);
+}
+
+function smPickMatch(idx) {
+  var list = smCurrentFilter === 'all' ? smAllResults :
+    smAllResults.filter(function(m){ return m.sport === smCurrentFilter; });
+  var m = list[idx] || smFilteredResults[idx];
+  if(!m) return;
+
+  // Fill match input and switch to Матч tab
+  var inp = document.getElementById('match-input');
+  if(inp) {
+    inp.value = m.teams;
+    if(typeof updateBtn === 'function') updateBtn();
+    if(typeof detectSport === 'function') detectSport(m.teams);
+    window._lastMatchDate = m.rawDate || null;
+  }
+
+  closeSearchMenu();
+
+  // Switch to Матч tab
+  if(typeof switchTabById === 'function') switchTabById('match');
+  else {
+    var matchTab = document.querySelector('[data-tab="match"]') || document.getElementById('tab-match');
+    if(matchTab) matchTab.click();
+  }
+
+  // Scroll input into view gently
+  setTimeout(function(){
+    if(inp) inp.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 400);
+}
+
+function setSmResults(html) {
+  var el = document.getElementById('sm-results');
+  if(el) el.innerHTML = html;
+}
+
+function escSmHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 </script>
   <!-- STEAM PUSH TOAST -->
   <div class="steam-push-toast" id="steam-push-toast" onclick="this.classList.remove('show')">
@@ -4268,6 +4705,42 @@ document.addEventListener('DOMContentLoaded', function() {
         <button onclick="closePredView()">✕</button>
       </div>
       <div class="pred-view-text" id="pred-view-text"></div>
+    </div>
+  </div>
+
+
+  <!-- SEARCH OVERLAY -->
+  <div class="sm-overlay" id="sm-overlay" onclick="closeSearchMenu()"></div>
+
+  <!-- SEARCH PANEL -->
+  <div class="search-menu" id="search-menu">
+    <div class="sm-handle"></div>
+    <div class="sm-header">
+      <div class="sm-title">🔍 Поиск матча</div>
+      <div class="sm-input-wrap">
+        <input class="sm-input" id="sm-input" type="text" placeholder="Команда, игрок, лига..."
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doSearch();}"
+          oninput="onSmInput(this.value)">
+        <button class="sm-search-btn" onclick="doSearch()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/>
+          </svg>
+          Найти
+        </button>
+      </div>
+      <div class="sm-sport-tabs" id="sm-sport-tabs">
+        <div class="sm-sport-tab active" onclick="filterSmSport('all',this)">Все</div>
+        <div class="sm-sport-tab" onclick="filterSmSport('⚽',this)">⚽ Футбол</div>
+        <div class="sm-sport-tab" onclick="filterSmSport('🏀',this)">🏀 Баскет</div>
+        <div class="sm-sport-tab" onclick="filterSmSport('🏒',this)">🏒 Хоккей</div>
+        <div class="sm-sport-tab" onclick="filterSmSport('🎾',this)">🎾 Теннис</div>
+      </div>
+    </div>
+    <div class="sm-results" id="sm-results">
+      <div class="sm-empty">
+        <div class="sm-empty-icon">🔍</div>
+        Введи название команды или игрока
+      </div>
     </div>
   </div>
 
