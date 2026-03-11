@@ -1420,16 +1420,16 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       </div>
     </div>
 
-    <div style="padding:6px 18px 8px;display:flex;justify-content:flex-end;">
-      <div ontouchstart="this.style.background='rgba(108,99,255,0.3)';this.style.transform='scale(0.93)'" ontouchend="this.style.background='rgba(108,99,255,0.12)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);border:1px solid rgba(108,99,255,0.4);border-radius:12px;box-shadow:0 4px 14px rgba(108,99,255,0.4),0 1px 0 rgba(255,255,255,0.12) inset,0 -2px 0 rgba(0,0,0,0.4) inset;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:all 0.15s;flex-shrink:0;">
-        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="0" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
-          <rect x="8" y="0" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
-          <rect x="0" y="5.75" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
-          <rect x="8" y="5.75" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
-          <rect x="0" y="11.5" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
-          <rect x="8" y="11.5" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
-        </svg>
+    <div style="padding:4px 12px 6px;display:flex;justify-content:flex-end;align-items:center;" id="sport-filter-top">
+      <div class="sport-filter" id="sport-filter" style="margin:0;padding:0;">
+        <button class="sf-btn active" id="sf-all" onclick="filterSport('all',this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Все <span class="sf-count" id="sf-count-all">0</span>
+        </button>
+        <button class="sf-btn sf-football" id="sf-football" onclick="filterSport('football',this)">⚽ <span class="sf-count" id="sf-count-football">0</span></button>
+        <button class="sf-btn sf-basketball" id="sf-basketball" onclick="filterSport('basketball',this)">🏀 <span class="sf-count" id="sf-count-basketball">0</span></button>
+        <button class="sf-btn sf-hockey" id="sf-hockey" onclick="filterSport('hockey',this)">🏒 <span class="sf-count" id="sf-count-hockey">0</span></button>
+        <button class="sf-btn sf-tennis" id="sf-tennis" onclick="filterSport('tennis',this)">🎾 <span class="sf-count" id="sf-count-tennis">0</span></button>
       </div>
     </div>
     <div class="header-info-bar">
@@ -1496,6 +1496,17 @@ input::placeholder { color: rgba(240,240,248,0.2); }
       </div>
       <div class="sw-conf-badge" id="sw-conf-badge" style="display:none">
         <span id="sw-conf-val">—</span>
+      </div>
+      <!-- MENU BUTTON moved here -->
+      <div ontouchstart="this.style.background='rgba(108,99,255,0.3)';this.style.transform='scale(0.93)'" ontouchend="this.style.background='rgba(108,99,255,0.12)';this.style.transform='scale(1)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" onclick="var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;min-width:42px;background:linear-gradient(145deg,#2a2560 0%,#1a1840 50%,#0f0e28 100%);border:1px solid rgba(108,99,255,0.4);border-radius:12px;box-shadow:0 4px 14px rgba(108,99,255,0.4),0 1px 0 rgba(255,255,255,0.12) inset,0 -2px 0 rgba(0,0,0,0.4) inset;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;transition:all 0.15s;flex-shrink:0;margin-left:auto;">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
+          <rect x="8" y="0" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
+          <rect x="0" y="5.75" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
+          <rect x="8" y="5.75" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
+          <rect x="0" y="11.5" width="6" height="4.5" rx="1.5" fill="#6C63FF"/>
+          <rect x="8" y="11.5" width="12" height="4.5" rx="1.5" fill="rgba(180,176,255,0.55)"/>
+        </svg>
       </div>
     </div>
   </div>
@@ -1575,17 +1586,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 
       <!-- LIVE NOW -->
       <div class="section-title">🔥 Горячие матчи сейчас</div>
-      <!-- SPORT FILTER -->
-      <div class="sport-filter" id="sport-filter">
-        <button class="sf-btn active" id="sf-all" onclick="filterSport('all',this)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Все <span class="sf-count" id="sf-count-all">0</span>
-        </button>
-        <button class="sf-btn sf-football" id="sf-football" onclick="filterSport('football',this)">⚽ <span class="sf-count" id="sf-count-football">0</span></button>
-        <button class="sf-btn sf-basketball" id="sf-basketball" onclick="filterSport('basketball',this)">🏀 <span class="sf-count" id="sf-count-basketball">0</span></button>
-        <button class="sf-btn sf-hockey" id="sf-hockey" onclick="filterSport('hockey',this)">🏒 <span class="sf-count" id="sf-count-hockey">0</span></button>
-        <button class="sf-btn sf-tennis" id="sf-tennis" onclick="filterSport('tennis',this)">🎾 <span class="sf-count" id="sf-count-tennis">0</span></button>
-      </div>
+      <!-- SPORT FILTER moved to header -->
       <div class="live-matches" id="live-matches-list"></div>
 
       <!-- HISTORY -->
