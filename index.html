@@ -2893,6 +2893,7 @@ async function fetchOddsHotMatches() {
 const WORKER_URL_GROQ = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
 let globalDatetimeMap = new Map(); // глобальная карта дат матчей из ESPN
 let currentMatchDatetime = null;  // дата текущего выбранного матча
+let globalFirstHalfMap = new Map(); // карта статистики первого тайма для футбола
 
 // Собирает актуальные матчи из ESPN для передачи в Groq
 // Возвращает { matches: string[], datetimeMap: Map<normKey, datetime> }
@@ -2989,6 +2990,29 @@ async function fetchESPNMatchesForGroq() {
           matches.push(matchLine);
           const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, datetime);
+
+          // Собираем статистику первого тайма для футбола
+          if(ep.sport === '⚽') {
+            try {
+              const linescores = comp.linescores || [];
+              const h1Home = linescores[0]?.home?.value ?? linescores[0]?.value ?? null;
+              const h1Away = linescores[0]?.away?.value ?? null;
+              // Статистика команд
+              const homeStats = home?.statistics || [];
+              const awayStats = away?.statistics || [];
+              const getStat = (arr, name) => arr.find(s => s.name === name || s.abbreviation === name)?.displayValue || null;
+              const firstHalfData = {
+                score1H: (h1Home !== null && h1Away !== null) ? `${h1Home}:${h1Away}` : null,
+                homeGoals1H: getStat(homeStats, 'firstHalfGoals') || getStat(homeStats, 'goalsHalf1'),
+                awayGoals1H: getStat(awayStats, 'firstHalfGoals') || getStat(awayStats, 'goalsHalf1'),
+                homeShotsOn: getStat(homeStats, 'shotsOnTarget') || getStat(homeStats, 'SOG'),
+                awayShotsOn: getStat(awayStats, 'shotsOnTarget') || getStat(awayStats, 'SOG'),
+                homeXG: getStat(homeStats, 'expectedGoals') || getStat(homeStats, 'xG'),
+                awayXG: getStat(awayStats, 'expectedGoals') || getStat(awayStats, 'xG'),
+              };
+              globalFirstHalfMap.set(normKey, firstHalfData);
+            } catch(_){}
+          }
         } catch(_){}
       }
     } catch(_){}
@@ -3587,12 +3611,58 @@ async function startAnalysis() {
     ? (matchDt.startsWith('LIVE') ? '🔴 LIVE · идёт сейчас' : `📅 ${matchDt}`)
     : `📅 ${date} | ⏰ время уточняется`;
 
+  const isFoot = currentSport.includes('⚽') || currentSport.toLowerCase().includes('футбол');
+  const isHock = currentSport.includes('🏒') || currentSport.toLowerCase().includes('хоккей');
+  const isBask = currentSport.includes('🏀') || currentSport.toLowerCase().includes('баскет');
+  const isTenn = currentSport.includes('🎾') || currentSport.toLowerCase().includes('теннис');
+
+  // Пункт 4 вердикта по виду спорта
+  let verdict4Line = '';
+  if(isFoot) verdict4Line = '🟦4️⃣ Гол в 1-м тайме: ⚽ [Да/Нет + обоснование]';
+  else if(isTenn) verdict4Line = '🟦4️⃣ Тотал геймов: 🎾 [Б/М XX.5]';
+  else if(isHock) verdict4Line = '🟦4️⃣ Тотал шайб: 🏒 [Б/М X.5]';
+  else if(isBask) verdict4Line = '🟦4️⃣ Тотал очков: 🏀 [Б/М XXX.5]';
+  else verdict4Line = '🟦4️⃣ Тотал: 📈 [Б/М X.5]';
+
+  // ESPN данные первого тайма для футбола
+  let firstHalfContext = '';
+  if(isFoot) {
+    const normKey = match.toLowerCase().replace(/\s+/g,' ').trim();
+    const fh = globalFirstHalfMap.get(normKey) || (() => {
+      for(const [k, v] of globalFirstHalfMap) {
+        const parts = normKey.split('—').map(s=>s.trim());
+        const kp = k.split('—').map(s=>s.trim());
+        if(parts.length>=2 && kp.length>=2 &&
+           (kp[0].includes(parts[0])||parts[0].includes(kp[0])) &&
+           (kp[1].includes(parts[1])||parts[1].includes(kp[1]))) return v;
+      }
+      return null;
+    })();
+    if(fh) {
+      const lines = [];
+      if(fh.score1H) lines.push(`Счёт 1-го тайма (ESPN): ${fh.score1H}`);
+      if(fh.homeGoals1H || fh.awayGoals1H) lines.push(`Голы в 1-м тайме: хозяева ${fh.homeGoals1H||'?'} / гости ${fh.awayGoals1H||'?'}`);
+      if(fh.homeShotsOn || fh.awayShotsOn) lines.push(`Удары в створ: хозяева ${fh.homeShotsOn||'?'} / гости ${fh.awayShotsOn||'?'}`);
+      if(fh.homeXG || fh.awayXG) lines.push(`xG: хозяева ${fh.homeXG||'?'} / гости ${fh.awayXG||'?'}`);
+      if(lines.length) firstHalfContext = `\nДАННЫЕ ESPN (первый тайм):\n${lines.join('\n')}\n`;
+    }
+    if(!firstHalfContext) firstHalfContext = `\nДАННЫЕ ESPN (первый тайм): нет прямых данных — анализируй по форме, среднему % матчей с голом в 1-м тайме, xG первых таймов.\n`;
+  }
+
+  // Специфичный пункт 2 по виду спорта
+  let statsPoint2 = '';
+  if(isFoot) statsPoint2 = '🟦2️⃣ xG / xGA / PPDA + голы в 1-м тайме (% матчей с голом до 45 мин, среднее xG 1-го тайма)\n[1-2 строки]';
+  else if(isHock) statsPoint2 = '🟦2️⃣ Corsi / Fenwick / xGF% / PDO / PP% / PK%\n[1-2 строки]';
+  else if(isBask) statsPoint2 = '🟦2️⃣ ORtg / DRtg / Pace / eFG% / TOV%\n[1-2 строки]';
+  else if(isTenn) statsPoint2 = '🟦2️⃣ Ace% / DF% / 1stWon% / BPSaved% / покрытие\n[1-2 строки]';
+  else statsPoint2 = '🟦2️⃣ Advanced Stats\n[1-2 строки]';
+
   const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
 
 Матч: ${match}
 Вид спорта: ${currentSport}
 Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
-
+${firstHalfContext}
 ВАЖНО: Этот матч реальный — получен из ESPN. Делай анализ безусловно. НЕ придумывай дату — используй ТОЛЬКО ту что указана выше в поле "Дата и время матча". Никогда не отказывайся от анализа.
 
 ANALYSIS_START
@@ -3605,8 +3675,7 @@ ${matchDateLine}
 🟦1️⃣ Форма и таблица
 [1-2 строки]
 
-🟦2️⃣ Advanced Stats
-[1-2 строки]
+${statsPoint2}
 
 🟦3️⃣ H2H
 [1-2 строки]
@@ -3620,7 +3689,7 @@ ${matchDateLine}
 🟦6️⃣ Линия / Умные деньги
 [1-2 строки]
 
-🟦7️⃣ Тоталы
+🟦7️⃣ Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
 [1-2 строки]
 ANALYSIS_END
 
@@ -3634,13 +3703,12 @@ ${emoji} ${match}
 🟦1️⃣ Исход: 🏆 [П1/X/П2]
 🟦2️⃣ Счёт: 🎯 [X:X]
 🟦3️⃣ Тотал: 📈 [Б/М X.5]
-🟦4️⃣ Фора: ⚖️ [±X.5]
+${verdict4Line}
 🟦5️⃣ Уверенность: 🔥 [XX%]
 🟦6️⃣ X-фактор: ⚡ [1 строка]
 🟦7️⃣ Смарт-прогноз: 🧠 [1 строка]
 🟦8️⃣ Профи-сигнал: 🐋 Sharp [направление] | 📊 CLV [+/-] | 🔴 Steam [Да/Нет]
 🟦9️⃣ Движение кефа: 📉 [данные]
-🔟 Размер ставки: 💰 [X% банка]
 
 ✅ ТОП-3 СТАВКИ
 🥇 [ставка] — кеф 🟡 X.XX | [причина]
