@@ -304,7 +304,7 @@ body::before {
 .ticker-inner {
   display: flex;
   gap: 32px;
-  animation: ticker 30s linear infinite;
+  animation: ticker 33s linear infinite;
   width: max-content;
 }
 @keyframes ticker {
@@ -2895,6 +2895,7 @@ let globalDatetimeMap = new Map(); // глобальная карта дат м�
 let currentMatchDatetime = null;  // дата текущего выбранного матча
 let globalFirstHalfMap = new Map(); // карта статистики первого тайма для футбола
 let globalEventMap = new Map();    // normKey → {eventId, sportSlug, sport}
+let globalLiveMap  = new Map();    // normKey → {isLive, score, form, record, ...}
 
 // Собирает актуальные матчи из ESPN для передачи в Groq
 // Возвращает { matches: string[], datetimeMap: Map<normKey, datetime> }
@@ -2959,7 +2960,7 @@ async function fetchESPNMatchesForGroq() {
         for(const e of (d.events || [])) {
           const state = e.status?.type?.state;
           if(state !== 'in' && state !== 'pre') continue;
-          rawItems.push({ _comp: e.competitions?.[0], _date: e.date || '', _name: e.name || '', _status: e.status, _eventId: e.id || '', _epUrl: ep.url, _sport: ep.sport });
+          rawItems.push({ _comp: e.competitions?.[0], _date: e.date || '', _name: e.name || '', _status: e.status, _eventId: e.id || '', _epUrl: ep.url, _sport: ep.sport, _event: e });
         }
       }
 
@@ -2993,11 +2994,35 @@ async function fetchESPNMatchesForGroq() {
           datetimeMap.set(normKey, datetime);
           // Сохраняем eventId для ESPN Summary запросов
           if(item._eventId) {
-            // Извлекаем sport/league slug из URL ESPN
             const urlMatch = (item._epUrl||'').match(/sports\/([^/]+\/[^/]+)\/scoreboard/);
             const sportSlug = urlMatch ? urlMatch[1] : null;
             globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport });
           }
+          // Сохраняем форму команд и live-данные из ESPN
+          try {
+            const ev = item._event;
+            if(ev) {
+              const c = ev.competitions?.[0];
+              const comps = c?.competitors || [];
+              const liveData = {};
+              liveData.isLive = (c?.status?.type?.state === 'in');
+              liveData.clock = c?.status?.displayClock || '';
+              liveData.period = c?.status?.period || '';
+              liveData.detail = c?.status?.type?.shortDetail || '';
+              for(const cx of comps) {
+                const side = cx.homeAway === 'home' ? 'home' : 'away';
+                liveData[side+'Score'] = cx.score || '0';
+                // Форма: ВПВНП
+                const formStr = (cx.form||'').toUpperCase().replace(/W/g,'В').replace(/L/g,'П').replace(/D/g,'Н').replace(/T/g,'Н');
+                liveData[side+'Form'] = formStr || null;
+                // Рекорд: wins-losses-ties
+                const rec = cx.records?.find(r=>r.type==='total') || cx.records?.[0];
+                liveData[side+'Record'] = rec ? rec.summary : null;
+                liveData[side+'Name'] = cx.team?.displayName || cx.team?.shortDisplayName || cx.athlete?.displayName || '';
+              }
+              globalLiveMap.set(normKey, liveData);
+            }
+          } catch(_){}
 
           // Собираем статистику первого тайма для футбола
           if(ep.sport === '⚽') {
@@ -3138,6 +3163,41 @@ async function fetchESPNSummary(sportSlug, eventId) {
       }
     }
 
+    // Травмы
+    try {
+      const injuries = d.injuries || [];
+      const injList = [];
+      for(const team of injuries) {
+        const tName = team.team?.displayName || team.team?.shortDisplayName || '';
+        for(const inj of (team.injuries||[]).slice(0,3)) {
+          const pName = inj.athlete?.displayName || inj.athlete?.shortName || '';
+          const status = inj.status || inj.type || '';
+          if(pName) injList.push(`${tName}: ${pName} (${status})`);
+        }
+      }
+      if(injList.length) result.injuries = injList.join(', ');
+    } catch(_){}
+
+    // H2H
+    try {
+      const h2h = d.headToHead || d.matchHistory;
+      if(h2h) {
+        const games = h2h.games || h2h.competitions || [];
+        const h2hLines = games.slice(0,3).map(g => {
+          const comps = g.competitors || g.teams || [];
+          if(comps.length >= 2) {
+            const n0 = comps[0]?.team?.abbreviation || comps[0]?.team?.shortDisplayName || '';
+            const n1 = comps[1]?.team?.abbreviation || comps[1]?.team?.shortDisplayName || '';
+            const s0 = comps[0]?.score || '?';
+            const s1 = comps[1]?.score || '?';
+            return `${n0} ${s0}-${s1} ${n1}`;
+          }
+          return null;
+        }).filter(Boolean);
+        if(h2hLines.length) result.h2h = h2hLines.join(', ');
+      }
+    } catch(_){}
+
     return result;
   } catch(e) { return null; }
 }
@@ -3247,12 +3307,34 @@ async function fetchExternalMatchData(match, sport) {
 }
 
 // Форматирует внешние данные в текст для промпта
-function formatExternalData(extData, sport) {
+function formatExternalData(extData, sport, match) {
   const lines = [];
   const isFoot = sport.includes('⚽');
   const isHock = sport.includes('🏒');
   const isBask = sport.includes('🏀');
   const { espnSummary, nhlData, nbaData } = extData;
+
+  // Форма и live-данные из globalLiveMap
+  const normKey = (match||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const liveD = globalLiveMap.get(normKey) || (() => {
+    for(const [k,v] of globalLiveMap) {
+      const kp = k.split('—').map(s=>s.trim());
+      const mp = normKey.split('—').map(s=>s.trim());
+      if(mp.length>=2 && kp.length>=2 &&
+         (kp[0].includes(mp[0])||mp[0].includes(kp[0])) &&
+         (kp[1].includes(mp[1])||mp[1].includes(kp[1]))) return v;
+    }
+    return null;
+  })();
+  if(liveD) {
+    if(liveD.isLive && liveD.homeScore !== undefined) {
+      lines.push(`LIVE счёт: ${liveD.awayName} ${liveD.awayScore} — ${liveD.homeScore} ${liveD.homeName} (${liveD.detail||liveD.clock||''})`);
+    }
+    if(liveD.homeForm) lines.push(`Форма хозяев (ESPN): ${liveD.homeForm}`);
+    if(liveD.awayForm) lines.push(`Форма гостей (ESPN): ${liveD.awayForm}`);
+    if(liveD.homeRecord) lines.push(`Рекорд хозяев: ${liveD.homeRecord}`);
+    if(liveD.awayRecord) lines.push(`Рекорд гостей: ${liveD.awayRecord}`);
+  }
 
   if(espnSummary) {
     const s = espnSummary;
@@ -3870,7 +3952,7 @@ async function startAnalysis() {
   let extDataContext = '';
   try {
     const extData = await fetchExternalMatchData(match, currentSport);
-    extDataContext = formatExternalData(extData, currentSport);
+    extDataContext = formatExternalData(extData, currentSport, match);
   } catch(_) {}
 
   const isFoot = currentSport.includes('⚽') || currentSport.toLowerCase().includes('футбол');
@@ -3980,7 +4062,19 @@ VERDICT_END`;
 
   try {
     const WORKER_URL = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
-    const payload = {messages:[{role:'user',content:prompt}]};
+    const systemPrompt = `Ты профессиональный аналитик ставок SharpRadar. Правила:
+1. Строго следуй шаблону — не добавляй лишних пунктов, не пропускай существующие.
+2. Используй ТОЛЬКО предоставленные данные ESPN/NHL/NBA. Не выдумывай статистику.
+3. Пункты 🟦1️⃣-🟦9️⃣ — обязательны, каждый на отдельной строке с префиксом 🟦.
+4. ТОП-3 ставки — конкретные с кефом 🟡X.XX.
+5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
+6. Дату берёшь ТОЛЬКО из поля "Дата и время матча" — не выдумывай.`;
+    const payload = {
+      system: systemPrompt,
+      temperature: 0.3,
+      top_p: 0.85,
+      messages:[{role:'user',content:prompt}]
+    };
 
     const res = await fetch(WORKER_URL, {
       method:'POST',
