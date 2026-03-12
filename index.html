@@ -3296,43 +3296,30 @@ async function fetchNBATeamStats(teamName) {
   } catch(e) { return null; }
 }
 
-// ESPN Injuries — травмы команды (через team roster/injuries endpoint)
+// ESPN Injuries — травмы команды (через roster с фильтром injured)
 async function fetchESPNInjuries(sportSlug, leagueSlug, teamId) {
-  if(!sportSlug || !leagueSlug || !teamId) return null;
+  if(!sportSlug || !teamId) return null;
   try {
-    // Пробуем team-specific injuries
-    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/teams/${teamId}/injuries`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-    if(!r.ok) {
-      // Fallback: league injuries endpoint
-      const url2 = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/injuries`;
-      const r2 = await fetch(url2, { signal: AbortSignal.timeout(6000) });
-      if(!r2.ok) return null;
-      const d2 = await r2.json();
-      const teams = d2.injuries || d2.teams || [];
-      const result = [];
-      for(const t of teams) {
-        const tid = t.team?.id || t.id || '';
-        if(String(tid) !== String(teamId)) continue;
-        const tName = t.team?.displayName || t.team?.shortDisplayName || '';
-        for(const inj of (t.injuries || t.players || []).slice(0, 4)) {
-          const name = inj.athlete?.displayName || inj.athlete?.shortName || inj.fullName || '';
-          const status = inj.status || inj.type?.description || inj.type || '';
-          const pos = inj.athlete?.position?.abbreviation || inj.position || '';
-          if(name) result.push(`${tName}: ${name}${pos ? ' ('+pos+')' : ''} — ${status}`);
-        }
-      }
-      return result.length ? result.join(', ') : null;
-    }
+    // Roster endpoint — возвращает игроков с их статусом
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/teams/${teamId}/roster`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(7000) });
+    if(!r.ok) return null;
     const d = await r.json();
     const result = [];
-    // team injuries endpoint structure
-    const injuries = d.injuries || d.athletes || d.items || [];
-    for(const inj of injuries.slice(0, 5)) {
-      const name = inj.athlete?.displayName || inj.athlete?.shortName || inj.displayName || inj.fullName || '';
-      const status = inj.status || inj.injury?.status || inj.type || '';
-      const pos = inj.athlete?.position?.abbreviation || inj.position?.abbreviation || '';
-      if(name) result.push(`${name}${pos ? ' ('+pos+')' : ''} — ${status}`);
+    // Roster содержит athletes по позициям
+    const groups = d.athletes || [];
+    for(const group of groups) {
+      const players = group.items || group.athletes || (Array.isArray(group) ? group : []);
+      for(const p of players) {
+        const status = p.status?.type?.name || p.status?.name || p.injuryStatus || '';
+        // Только травмированные/сомнительные
+        if(!status || status === 'Active' || status === 'active') continue;
+        const name = p.displayName || p.fullName || p.shortName || '';
+        const pos = p.position?.abbreviation || '';
+        if(name) result.push(`${name}${pos ? ' ('+pos+')' : ''} — ${status}`);
+        if(result.length >= 4) break;
+      }
+      if(result.length >= 4) break;
     }
     return result.length ? result.join(', ') : null;
   } catch(e) { return null; }
@@ -3366,7 +3353,7 @@ async function fetchESPNH2H(sportSlug, leagueSlug, homeTeamId, awayTeamId) {
       const hScore = (typeof home?.score === 'object' ? home?.score?.value : home?.score) || '?';
       const aScore = (typeof away?.score === 'object' ? away?.score?.value : away?.score) || '?';
       const date = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '';
-      return `${date} ${aName}${aScore}-${hScore}${hName}`;
+      return `${date} ${aName} ${aScore}–${hScore} ${hName}`;
     });
     return lines.join(' | ');
   } catch(e) { return null; }
