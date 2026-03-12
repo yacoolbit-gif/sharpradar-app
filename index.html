@@ -3965,11 +3965,11 @@ async function startAnalysis() {
 
   // Пункт 4 вердикта по виду спорта
   let verdict4Line = '';
-  if(isFoot) verdict4Line = '🟦4️⃣ Гол в 1-м тайме: ⚽ [Да/Нет + обоснование]';
-  else if(isTenn) verdict4Line = '🟦4️⃣ Тотал геймов: 🎾 [Б/М XX.5]';
-  else if(isHock) verdict4Line = '🟦4️⃣ Тотал шайб: 🏒 [Б/М X.5]';
-  else if(isBask) verdict4Line = '🟦4️⃣ Тотал очков: 🏀 [Б/М XXX.5]';
-  else verdict4Line = '🟦4️⃣ Тотал: 📈 [Б/М X.5]';
+  if(isFoot) verdict4Line = '4. Гол в 1-м тайме: ⚽ [Да/Нет + обоснование]';
+  else if(isTenn) verdict4Line = '4. Тотал геймов: 🎾 [Б/М XX.5]';
+  else if(isHock) verdict4Line = '4. Тотал шайб: 🏒 [Б/М X.5]';
+  else if(isBask) verdict4Line = '4. Тотал очков: 🏀 [Б/М XXX.5]';
+  else verdict4Line = '4. Тотал: 📈 [Б/М X.5]';
 
   // ESPN данные первого тайма для футбола
   let firstHalfContext = '';
@@ -3998,11 +3998,11 @@ async function startAnalysis() {
 
   // Специфичный пункт 2 по виду спорта
   let statsPoint2 = '';
-  if(isFoot) statsPoint2 = '🟦2️⃣ xG / xGA / PPDA + голы в 1-м тайме (% матчей с голом до 45 мин, среднее xG 1-го тайма)\n[1-2 строки]';
-  else if(isHock) statsPoint2 = '🟦2️⃣ Corsi / Fenwick / xGF% / PDO / PP% / PK%\n[1-2 строки]';
-  else if(isBask) statsPoint2 = '🟦2️⃣ ORtg / DRtg / Pace / eFG% / TOV%\n[1-2 строки]';
-  else if(isTenn) statsPoint2 = '🟦2️⃣ Ace% / DF% / 1stWon% / BPSaved% / покрытие\n[1-2 строки]';
-  else statsPoint2 = '🟦2️⃣ Advanced Stats\n[1-2 строки]';
+  if(isFoot) statsPoint2 = '2. xG / xGA / PPDA + голы в 1-м тайме (% матчей с голом до 45 мин, среднее xG 1-го тайма)\n[1-2 строки]';
+  else if(isHock) statsPoint2 = '2. Corsi / Fenwick / xGF% / PDO / PP% / PK%\n[1-2 строки]';
+  else if(isBask) statsPoint2 = '2. ORtg / DRtg / Pace / eFG% / TOV%\n[1-2 строки]';
+  else if(isTenn) statsPoint2 = '2. Ace% / DF% / 1stWon% / BPSaved% / покрытие\n[1-2 строки]';
+  else statsPoint2 = '2. Advanced Stats\n[1-2 строки]';
 
   const prompt = `Ты профессиональный аналитик ставок. Краткий анализ по шаблону Аналитик 3.0. Только факты, без воды, без ** звёздочек.
 
@@ -4019,24 +4019,24 @@ ${matchDateLine}
 
 📊 АНАЛИЗ 7 ПУНКТОВ
 
-🟦1️⃣ Форма и таблица
+1. Форма и таблица
 [1-2 строки]
 
 ${statsPoint2}
 
-🟦3️⃣ H2H
+3. H2H
 [1-2 строки]
 
-🟦4️⃣ Травмы
+4. Травмы
 [1-2 строки]
 
-🟦5️⃣ Мотивация
+5. Мотивация
 [1-2 строки]
 
-🟦6️⃣ Линия / Умные деньги
+6. Линия / Умные деньги
 [1-2 строки]
 
-🟦7️⃣ Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
+7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
 [1-2 строки]
 ANALYSIS_END
 
@@ -4047,15 +4047,15 @@ ${emoji} ${match}
 
 🏆 ВЕРДИКТ
 
-🟦1️⃣ Исход: 🏆 [П1/X/П2]
-🟦2️⃣ Счёт: 🎯 [X:X]
-🟦3️⃣ Тотал: 📈 [Б/М X.5]
+1. Исход: 🏆 [П1/X/П2]
+2. Счёт: 🎯 [X:X]
+3. Тотал: 📈 [Б/М X.5]
 ${verdict4Line}
-🟦5️⃣ Уверенность: 🔥 [XX%]
-🟦6️⃣ X-фактор: ⚡ [1 строка]
-🟦7️⃣ Смарт-прогноз: 🧠 [1 строка]
-🟦8️⃣ Профи-сигнал: 🐋 Sharp [направление] | 📊 CLV [+/-] | 🔴 Steam [Да/Нет]
-🟦9️⃣ Движение кефа: 📉 [данные]
+5. Уверенность: 🔥 [XX%]
+6. X-фактор: ⚡ [1 строка]
+7. Смарт-прогноз: 🧠 [1 строка]
+8. Профи-сигнал: 🐋 Sharp [направление] | 📊 CLV [+/-] | 🔴 Steam [Да/Нет]
+9. Движение кефа: 📉 [данные]
 
 ✅ ТОП-3 СТАВКИ
 🥇 [ставка] — кеф 🟡 X.XX | [причина]
@@ -4068,8 +4068,8 @@ VERDICT_END`;
     const systemPrompt = `Ты профессиональный аналитик ставок SharpRadar. Правила:
 1. Строго следуй шаблону — не добавляй лишних пунктов, не пропускай существующие.
 2. Используй ТОЛЬКО предоставленные данные ESPN/NHL/NBA. Не выдумывай статистику.
-3. КАЖДЫЙ пункт анализа И вердикта ОБЯЗАТЕЛЬНО начинается с 🟦 и цифрового эмодзи: 🟦1️⃣ 🟦2️⃣ 🟦3️⃣ 🟦4️⃣ 🟦5️⃣ 🟦6️⃣ 🟦7️⃣ 🟦8️⃣ 🟦9️⃣. СТРОГО ЗАПРЕЩЕНО писать "1." "2." "3." или просто "1️⃣" без 🟦.
-4. ТОП-3 ставки — ТОЛЬКО с медалями 🥇 🥈 🥉 и кефом 🟡X.XX. ЗАПРЕЩЕНО нумеровать "1." "2." "3.".
+3. Каждый пункт анализа И вердикта нумеруй строго по шаблону: "1. Название", "2. Название" и т.д., каждый на отдельной строке.
+4. ТОП-3 ставки — ТОЛЬКО с медалями 🥇 🥈 🥉 и кефом 🟡X.XX.
 5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
 6. Дату берёшь ТОЛЬКО из поля "Дата и время матча" — не выдумывай.`;
     const payload = {
@@ -4140,6 +4140,29 @@ VERDICT_END`;
         verdictText    = '';
       }
     }
+
+    // Нормализация: добавляем 🟦 если Groq вернул числа без него
+    function normalizeBadges(t) {
+      const nums = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+      return t.split('\n').map(line => {
+        const tr = line.trimStart();
+        for(const n of nums) {
+          if(tr.startsWith(n) && !tr.startsWith('🟦')) {
+            return line.replace(tr, '🟦' + tr);
+          }
+        }
+        // Также ловим "1. " "2. " в начале строки
+        const dotMatch = tr.match(/^([1-9]|10)\. (.+)/);
+        if(dotMatch && !tr.startsWith('🟦')) {
+          const numMap = {'1':'1️⃣','2':'2️⃣','3':'3️⃣','4':'4️⃣','5':'5️⃣','6':'6️⃣','7':'7️⃣','8':'8️⃣','9':'9️⃣','10':'🔟'};
+          const badge = numMap[dotMatch[1]];
+          if(badge) return line.replace(tr, '🟦' + badge + ' ' + dotMatch[2]);
+        }
+        return line;
+      }).join('\n');
+    }
+    analysisResult = normalizeBadges(analysisResult);
+    verdictText = normalizeBadges(verdictText);
 
     document.getElementById('analysis-loading').style.display = 'none';
     document.getElementById('analysis-text').innerHTML = renderText(analysisResult,'analysis');
