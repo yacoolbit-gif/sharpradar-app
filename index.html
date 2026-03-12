@@ -4786,10 +4786,12 @@ VERDICT_END`;
 9. Движение кефа: П1 упал 1.45 → 1.28 после жеребьёвки — деньги идут на фаворита
 10. Альт.сценарий: Риск — соперник специалист покрытия, Djokovic 3-й матч за 4 дня`;
     const payload = {
-      system: systemPrompt,
       temperature: 0.3,
       top_p: 0.85,
-      messages:[{role:'user',content:prompt}]
+      messages:[
+        {role:'system', content: systemPrompt},
+        {role:'user',content:prompt}
+      ]
     };
 
     const res = await fetch(WORKER_URL, {
