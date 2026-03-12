@@ -3007,7 +3007,14 @@ async function fetchESPNMatchesForGroq() {
           if(item._eventId) {
             const urlMatch = (item._epUrl||'').match(/sports\/([^/]+\/[^/]+)\/scoreboard/);
             const sportSlug = urlMatch ? urlMatch[1] : null;
-            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport });
+            // Сохраняем teamId обеих команд для H2H и травм
+            const compsList = item._event?.competitions?.[0]?.competitors || [];
+            const homeComp = compsList.find(c=>c.homeAway==='home');
+            const awayComp = compsList.find(c=>c.homeAway==='away');
+            const homeTeamId = homeComp?.team?.id || null;
+            const awayTeamId = awayComp?.team?.id || null;
+            const leagueSlug = (item._epUrl||'').match(/sports\/[^/]+\/([^/]+)\/scoreboard/)?.[1] || null;
+            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug });
           }
           // Сохраняем форму команд и live-данные из ESPN
           try {
@@ -3289,6 +3296,65 @@ async function fetchNBATeamStats(teamName) {
   } catch(e) { return null; }
 }
 
+// ESPN Injuries — травмы команды
+async function fetchESPNInjuries(sportSlug, leagueSlug, teamId) {
+  if(!sportSlug || !leagueSlug || !teamId) return null;
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/injuries`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const teams = d.teams || d.injuries || [];
+    const result = [];
+    for(const t of teams) {
+      const tid = t.team?.id || t.id;
+      if(String(tid) !== String(teamId)) continue;
+      const tName = t.team?.displayName || t.team?.shortDisplayName || '';
+      for(const inj of (t.injuries || []).slice(0, 4)) {
+        const name = inj.athlete?.displayName || inj.athlete?.shortName || '';
+        const status = inj.status || inj.type || '';
+        const pos = inj.athlete?.position?.abbreviation || '';
+        if(name) result.push(`${tName}: ${name}${pos ? ' ('+pos+')' : ''} — ${status}`);
+      }
+    }
+    return result.length ? result.join(', ') : null;
+  } catch(e) { return null; }
+}
+
+// ESPN H2H — история встреч двух команд
+async function fetchESPNH2H(sportSlug, leagueSlug, homeTeamId, awayTeamId) {
+  if(!sportSlug || !leagueSlug || !homeTeamId || !awayTeamId) return null;
+  try {
+    // ESPN schedule для домашней команды
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportSlug}/teams/${homeTeamId}/schedule`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const events = d.events || [];
+    // Фильтруем матчи против awayTeamId которые уже завершены
+    const h2hGames = events.filter(e => {
+      const comps = e.competitions?.[0]?.competitors || [];
+      const hasOpponent = comps.some(c => String(c.team?.id) === String(awayTeamId));
+      const isComplete = e.competitions?.[0]?.status?.type?.completed === true;
+      return hasOpponent && isComplete;
+    }).slice(0, 5);
+    if(!h2hGames.length) return null;
+    const lines = h2hGames.map(e => {
+      const c = e.competitions?.[0];
+      const comps = c?.competitors || [];
+      const home = comps.find(x=>x.homeAway==='home');
+      const away = comps.find(x=>x.homeAway==='away');
+      const hName = home?.team?.abbreviation || home?.team?.shortDisplayName || '?';
+      const aName = away?.team?.abbreviation || away?.team?.shortDisplayName || '?';
+      const hScore = home?.score || '?';
+      const aScore = away?.score || '?';
+      const date = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '';
+      return `${date} ${aName}${aScore}-${hScore}${hName}`;
+    });
+    return lines.join(' | ');
+  } catch(e) { return null; }
+}
+
 // ESPN Team Record — форма дома/выезд, таблица для футбола
 async function fetchESPNTeamRecord(sportSlug, eventId) {
   if(!sportSlug || !eventId) return null;
@@ -3351,7 +3417,16 @@ async function fetchExternalMatchData(match, sport) {
   if(eventInfo?.sportSlug && eventInfo?.eventId) {
     promises.push(fetchESPNSummary(eventInfo.sportSlug, eventInfo.eventId));
     promises.push(fetchESPNTeamRecord(eventInfo.sportSlug, eventInfo.eventId));
+    // H2H
+    promises.push(fetchESPNH2H(eventInfo.sportSlug, eventInfo.leagueSlug, eventInfo.homeTeamId, eventInfo.awayTeamId));
+    // Травмы обеих команд параллельно
+    promises.push(Promise.all([
+      fetchESPNInjuries(eventInfo.sportSlug, eventInfo.leagueSlug, eventInfo.homeTeamId),
+      fetchESPNInjuries(eventInfo.sportSlug, eventInfo.leagueSlug, eventInfo.awayTeamId)
+    ]));
   } else {
+    promises.push(Promise.resolve(null));
+    promises.push(Promise.resolve(null));
     promises.push(Promise.resolve(null));
     promises.push(Promise.resolve(null));
   }
@@ -3370,8 +3445,8 @@ async function fetchExternalMatchData(match, sport) {
     promises.push(Promise.resolve(null));
   }
 
-  const [espnSummary, teamRecord, nhlData, nbaData] = await Promise.allSettled(promises).then(r => r.map(x => x.value ?? null));
-  return { espnSummary, teamRecord, nhlData, nbaData };
+  const [espnSummary, teamRecord, h2hData, injuriesData, nhlData, nbaData] = await Promise.allSettled(promises).then(r => r.map(x => x.value ?? null));
+  return { espnSummary, teamRecord, h2hData, injuriesData, nhlData, nbaData };
 }
 
 // Форматирует внешние данные в текст для промпта
@@ -3380,7 +3455,17 @@ function formatExternalData(extData, sport, match) {
   const isFoot = sport.includes('⚽');
   const isHock = sport.includes('🏒');
   const isBask = sport.includes('🏀');
-  const { espnSummary, teamRecord, nhlData, nbaData } = extData;
+  const { espnSummary, teamRecord, h2hData, injuriesData, nhlData, nbaData } = extData;
+
+  // H2H из отдельного запроса
+  if(h2hData) lines.push(`H2H последние встречи (ESPN): ${h2hData}`);
+
+  // Травмы из отдельного запроса
+  if(Array.isArray(injuriesData)) {
+    const [homeInj, awayInj] = injuriesData;
+    if(homeInj) lines.push(`Травмы хозяева (ESPN): ${homeInj}`);
+    if(awayInj) lines.push(`Травмы гости (ESPN): ${awayInj}`);
+  }
 
   // Рекорды команд дома/выезд
   if(teamRecord) {
@@ -3439,11 +3524,11 @@ function formatExternalData(extData, sport, match) {
     }
   }
 
-  // Травмы и H2H из ESPN — для всех видов спорта
+  // Травмы и H2H из ESPN Summary (fallback если отдельные запросы не дали данных)
   if(espnSummary) {
     const s = espnSummary;
-    if(s.injuries) lines.push(`Травмы (ESPN): ${s.injuries}`);
-    if(s.h2h) lines.push(`H2H (ESPN): ${s.h2h}`);
+    if(s.injuries && !injuriesData?.[0] && !injuriesData?.[1]) lines.push(`Травмы (ESPN): ${s.injuries}`);
+    if(s.h2h && !h2hData) lines.push(`H2H (ESPN): ${s.h2h}`);
   }
 
   if(isHock && nhlData && Array.isArray(nhlData)) {
