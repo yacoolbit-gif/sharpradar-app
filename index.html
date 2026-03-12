@@ -3036,6 +3036,26 @@ async function fetchESPNMatchesForGroq() {
                 // Рекорд: wins-losses-ties
                 const rec = cx.records?.find(r=>r.type==='total') || cx.records?.[0];
                 liveData[side+'Record'] = rec ? rec.summary : null;
+                // Рекорд дома/выезд
+                const recHome = cx.records?.find(r=>r.type==='home');
+                const recAway = cx.records?.find(r=>r.type==='road'||r.type==='away');
+                if(recHome) liveData[side+'HomeRec'] = recHome.summary;
+                if(recAway) liveData[side+'AwayRec'] = recAway.summary;
+                // Статистика команды (голы за/против)
+                const teamStats = cx.team?.statistics || cx.statistics || [];
+                if(Array.isArray(teamStats) && teamStats.length) {
+                  const getStat = (names) => {
+                    for(const n of names) {
+                      const f = teamStats.find(s=>s.name===n||s.abbreviation===n);
+                      if(f) return f.displayValue||f.value;
+                    }
+                    return null;
+                  };
+                  const gf = getStat(['goalsFor','goalsScored','points','GF','goalsPerGame','pointsPerGame']);
+                  const ga = getStat(['goalsAgainst','goalsAllowed','GA','goalsAllowedPerGame']);
+                  if(gf) liveData[side+'GoalsFor'] = gf;
+                  if(ga) liveData[side+'GoalsAgainst'] = ga;
+                }
                 liveData[side+'Name'] = cx.team?.displayName || cx.team?.shortDisplayName || cx.athlete?.displayName || '';
               }
               globalLiveMap.set(normKey, liveData);
@@ -3614,8 +3634,15 @@ function formatExternalData(extData, sport, match) {
     }
     if(liveD.homeForm) lines.push(`Форма хозяев (ESPN): ${liveD.homeForm}`);
     if(liveD.awayForm) lines.push(`Форма гостей (ESPN): ${liveD.awayForm}`);
-    if(liveD.homeRecord) lines.push(`Рекорд хозяев: ${liveD.homeRecord}`);
-    if(liveD.awayRecord) lines.push(`Рекорд гостей: ${liveD.awayRecord}`);
+    if(liveD.homeRecord) lines.push(`Рекорд хозяев сезон: ${liveD.homeRecord}`);
+    if(liveD.awayRecord) lines.push(`Рекорд гостей сезон: ${liveD.awayRecord}`);
+    if(liveD.homeHomeRec) lines.push(`Рекорд хозяев ДОМА: ${liveD.homeHomeRec}`);
+    if(liveD.awayAwayRec) lines.push(`Рекорд гостей В ГОСТЯХ: ${liveD.awayAwayRec}`);
+    // Голы за сезон
+    if(liveD.homeGoalsFor) lines.push(`${liveD.homeName||'Хозяева'} голов забито: ${liveD.homeGoalsFor}`);
+    if(liveD.homeGoalsAgainst) lines.push(`${liveD.homeName||'Хозяева'} голов пропущено: ${liveD.homeGoalsAgainst}`);
+    if(liveD.awayGoalsFor) lines.push(`${liveD.awayName||'Гости'} голов забито: ${liveD.awayGoalsFor}`);
+    if(liveD.awayGoalsAgainst) lines.push(`${liveD.awayName||'Гости'} голов пропущено: ${liveD.awayGoalsAgainst}`);
   }
 
   if(espnSummary) {
@@ -4316,6 +4343,11 @@ async function startAnalysis() {
 Вид спорта: ${currentSport}
 Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
 ${firstHalfContext}${extDataContext}
+⚠️ ПРАВИЛО ДАННЫХ: Все цифры и факты в анализе ДОЛЖНЫ браться из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" выше.
+- Если там есть "Рекорд хозяев ДОМА: X-Y-Z" — используй именно эти цифры
+- Если там есть "голов забито: N" — используй именно это число  
+- Если там есть "H2H: дата ALA X–Y VIL" — ссылайся на этот конкретный матч
+- Если данных нет в блоке выше — пиши "нет данных", не подставляй похожие цифры из памяти
 
 ⛔ СТОП-СЛОВА — эти фразы ЗАПРЕЩЕНЫ в ответе:
 - "можно предположить"
@@ -4329,7 +4361,7 @@ ${firstHalfContext}${extDataContext}
 
 ⛔ ЗАПРЕЩЕНО выдумывать числа: xG, Corsi, CLV, кефы — только если они есть в ESPN данных выше.
 
-✅ Пункт 5 вердикта СТРОГО в формате: "70% — форма +25%, Sharp нейтрально, H2H нет данных, мотивация +15%"
+✅ Пункт 5 вердикта СТРОГО в формате: "70% — форма +25%, Sharp нейтрально, H2H +10%, мотивация +15%". Если в анализе есть H2H данные — учитывай их (не пиши "нет данных" если данные есть в пункте 3 анализа). Если H2H в пользу фаворита — добавь +5..+15%, против — минус.
 ✅ ТОП-3 СТРОГО в формате: "🥇 П1 — кеф 💛1.85 | причина"
 
 ВАЖНО: Делай анализ безусловно. НЕ придумывай дату — используй ТОЛЬКО поле выше.
@@ -4359,7 +4391,7 @@ ${statsPoint2}
 [данные из Sharp/CLV/линии ESPN выше — или "нет данных"]
 
 7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
-[используй данные "голов за матч" / "пропускает за матч" из ESPN выше — или "нет данных"]
+[используй данные "голов забито" / "голов пропущено" / "Рекорд дома" / "Рекорд в гостях" из ESPN выше для расчёта среднего — или "нет данных"]
 
 8. Контекст лиги / турнира
 [место в таблице хозяев и гостей, разрыв от зоны вылета / топ-4 / плей-офф — используй рекорды и таблицу из ESPN выше]
@@ -4398,7 +4430,7 @@ VERDICT_END`;
 
 ПРАВИЛА КАЧЕСТВА:
 1. Строго следуй шаблону — не добавляй лишних пунктов, не пропускай существующие.
-2. ЗАПРЕЩЕНО выдумывать или "предполагать" статистику. Если данных нет — пиши только "нет данных". НЕ ПИШИ фразы типа "можно предположить", "учитывая форму", "вероятно" — это домыслы.
+2. ЗАПРЕЩЕНО выдумывать или "предполагать" статистику. Если данных нет — пиши только "нет данных". НЕ ПИШИ фразы типа "можно предположить", "учитывая форму", "вероятно" — это домыслы. Все цифры (рекорды, голы, H2H счёт, кефы) берутся ИСКЛЮЧИТЕЛЬНО из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" в запросе. Даже если ты знаешь похожие данные из памяти — используй ТОЛЬКО то что передано в контексте.
 3. Каждый пункт анализа И вердикта нумеруй строго по шаблону: "1. Название", "2. Название" и т.д., каждый на отдельной строке.
 4. ТОП-3 ставки — ТОЛЬКО формат: 🥇 [ставка] — кеф 💛X.XX | [причина]. Эмодзи 💛 перед кефом ОБЯЗАТЕЛЬНО.
 5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
