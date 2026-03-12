@@ -4144,14 +4144,28 @@ VERDICT_END`;
     // Нормализация: добавляем 🟦 если Groq вернул числа без него
     function normalizeBadges(t) {
       const nums = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+      let inTop3 = false;
       return t.split('\n').map(line => {
         const tr = line.trimStart();
+        // Определяем блок ТОП-3 — после него не трогаем нумерацию
+        if(tr.startsWith('✅') || tr.includes('ТОП-3') || tr.includes('TOP-3')) { inTop3 = true; return line; }
+        // Строки с медалями не трогаем
+        if(tr.startsWith('🥇') || tr.startsWith('🥈') || tr.startsWith('🥉')) return line;
+        // Если мы в блоке ТОП-3 — заменяем "1." "2." "3." на медали
+        if(inTop3) {
+          const medalMap = {'1':'🥇','2':'🥈','3':'🥉'};
+          const mMatch = tr.match(/^([1-3])\. (.+)/);
+          if(mMatch && medalMap[mMatch[1]]) {
+            return line.replace(tr, medalMap[mMatch[1]] + ' ' + mMatch[2]);
+          }
+          return line;
+        }
+        // Вне ТОП-3 — конвертируем числа в 🟦 бейджи
         for(const n of nums) {
           if(tr.startsWith(n) && !tr.startsWith('🟦')) {
             return line.replace(tr, '🟦' + tr);
           }
         }
-        // Также ловим "1. " "2. " в начале строки
         const dotMatch = tr.match(/^([1-9]|10)\. (.+)/);
         if(dotMatch && !tr.startsWith('🟦')) {
           const numMap = {'1':'1️⃣','2':'2️⃣','3':'3️⃣','4':'4️⃣','5':'5️⃣','6':'6️⃣','7':'7️⃣','8':'8️⃣','9':'9️⃣','10':'🔟'};
