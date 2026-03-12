@@ -34,6 +34,7 @@ body::before {
   border-bottom: 1px solid rgba(255,255,255,0.07);
   padding: 0 18px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 .header-top-bar {
   display: flex;
@@ -124,6 +125,9 @@ body::before {
   align-items: center;
   gap: 12px;
   padding: 8px 0 10px;
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
 }
 .sw-icon-wrap {
   position: relative;
@@ -137,6 +141,8 @@ body::before {
   opacity: 0.35;
   transition: background 0.5s, opacity 0.3s;
   animation: swGlowPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 @keyframes swGlowPulse {
   0%,100% { opacity: 0.25; transform: scale(0.9); }
