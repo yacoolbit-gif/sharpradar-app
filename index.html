@@ -1920,7 +1920,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="icon">🏆</div>
         <p>Вердикт появится после анализа</p>
       </div>
-      <div id="verdict-content" style="display:none">
+      <div id="verdict-content" style="display:none;padding-bottom:32px">
         <div class="verdict-card">
           <div id="verdict-text" class="analysis-text"></div>
         </div>
@@ -3903,6 +3903,11 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('sec-' + id).classList.add('active');
   btn.classList.add('active');
+  // Скролл наверх при переключении вкладки
+  setTimeout(() => {
+    const sec = document.getElementById('sec-' + id);
+    if(sec) sec.scrollTop = 0;
+  }, 50);
 }
 function switchTabById(id) {
   const tabs = document.querySelectorAll('.tab');
@@ -4218,7 +4223,7 @@ function renderText(text, mode) {
     }
     else if(line.startsWith('📊')||line.startsWith('🏆')||line.startsWith('✅')) cls='line-section';
     else if(/^[⚽🏒🏀🎾]/.test(line)) cls='line-match';
-    else if(line.startsWith('🟦')||/^[❶❷❸❹❺❻❼❽❾❿]/.test(line)||/^[1-9]️⃣/.test(line)||line.startsWith('🔟')) {
+    else if(line.startsWith('🟦')||/^[❶❷❸❹❺❻❼❽❾❿]/.test(line)) {
       cls='line-point';
       // Map emoji numbers to digits
       const emojiMap = {'1️⃣':'1','2️⃣':'2','3️⃣':'3','4️⃣':'4','5️⃣':'5','6️⃣':'6','7️⃣':'7','8️⃣':'8','9️⃣':'9','🔟':'10','❶':'1','❷':'2','❸':'3','❹':'4','❺':'5','❻':'6','❼':'7','❽':'8','❾':'9','❿':'10'};
