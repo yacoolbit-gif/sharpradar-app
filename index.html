@@ -1920,7 +1920,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
         <div class="icon">🏆</div>
         <p>Вердикт появится после анализа</p>
       </div>
-      <div id="verdict-content" style="display:none;padding-bottom:32px">
+      <div id="verdict-content" style="display:none">
         <div class="verdict-card">
           <div id="verdict-text" class="analysis-text"></div>
         </div>
@@ -3903,11 +3903,6 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('sec-' + id).classList.add('active');
   btn.classList.add('active');
-  // Скролл наверх при переключении вкладки
-  setTimeout(() => {
-    const sec = document.getElementById('sec-' + id);
-    if(sec) sec.scrollTop = 0;
-  }, 50);
 }
 function switchTabById(id) {
   const tabs = document.querySelectorAll('.tab');
@@ -4073,8 +4068,8 @@ VERDICT_END`;
     const systemPrompt = `Ты профессиональный аналитик ставок SharpRadar. Правила:
 1. Строго следуй шаблону — не добавляй лишних пунктов, не пропускай существующие.
 2. Используй ТОЛЬКО предоставленные данные ESPN/NHL/NBA. Не выдумывай статистику.
-3. Пункты 🟦1️⃣-🟦9️⃣ — обязательны, каждый на отдельной строке с префиксом 🟦.
-4. ТОП-3 ставки — конкретные с кефом 🟡X.XX.
+3. КАЖДЫЙ пункт анализа И вердикта ОБЯЗАТЕЛЬНО начинается с 🟦 и цифрового эмодзи: 🟦1️⃣ 🟦2️⃣ 🟦3️⃣ 🟦4️⃣ 🟦5️⃣ 🟦6️⃣ 🟦7️⃣ 🟦8️⃣ 🟦9️⃣. СТРОГО ЗАПРЕЩЕНО писать "1." "2." "3." или просто "1️⃣" без 🟦.
+4. ТОП-3 ставки — ТОЛЬКО с медалями 🥇 🥈 🥉 и кефом 🟡X.XX. ЗАПРЕЩЕНО нумеровать "1." "2." "3.".
 5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
 6. Дату берёшь ТОЛЬКО из поля "Дата и время матча" — не выдумывай.`;
     const payload = {
