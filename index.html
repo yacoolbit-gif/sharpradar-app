@@ -2902,6 +2902,22 @@ async function fetchOddsHotMatches() {
 
 // ===== GROQ ТОП ПРОГНОЗЫ (каждые 2 часа) =====
 const WORKER_URL_GROQ = 'https://sharpradar-proxy.ya-coolbit.workers.dev';
+const WORKER_URL_FD = 'https://sharpradar-proxy.ya-coolbit.workers.dev/football-data';
+
+// ESPN leagueSlug → football-data.org competition code
+const FD_LEAGUE_MAP = {
+  'eng.1':          'PL',
+  'esp.1':          'PD',
+  'ita.1':          'SA',
+  'ger.1':          'BL1',
+  'fra.1':          'FL1',
+  'uefa.champions': 'CL',
+  'uefa.europa':    'EL',
+  'por.1':          'PPL',
+  'ned.1':          'DED',
+  'eng.2':          'ELC',
+};
+
 let globalDatetimeMap = new Map(); // глобальная карта дат матчей из ESPN
 let currentMatchDatetime = null;  // дата текущего выбранного матча
 let globalFirstHalfMap = new Map(); // карта статистики первого тайма для футбола
@@ -3014,7 +3030,7 @@ async function fetchESPNMatchesForGroq() {
             const homeTeamId = homeComp?.team?.id || null;
             const awayTeamId = awayComp?.team?.id || null;
             const leagueSlug = (item._epUrl||'').match(/sports\/[^/]+\/([^/]+)\/scoreboard/)?.[1] || null;
-            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug });
+            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug, eventDate: item._event?.date || null });
           }
           // Сохраняем форму команд и live-данные из ESPN
           try {
@@ -3316,6 +3332,39 @@ async function fetchNBATeamStats(teamName) {
   } catch(e) { return null; }
 }
 
+// ESPN Tennis — статистика теннисиста по имени
+async function fetchESPNTennisAthleteStats(athleteName) {
+  if(!athleteName) return null;
+  try {
+    const searchName = encodeURIComponent(athleteName.split(' ').slice(-1)[0]); // фамилия
+    const url = `https://site.api.espn.com/apis/site/v2/sports/tennis/athletes?limit=5&search=${searchName}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const athletes = d.athletes || d.items || [];
+    const norm = athleteName.toLowerCase();
+    const athlete = athletes.find(a =>
+      (a.displayName||'').toLowerCase().includes(norm.split(' ')[0]) ||
+      (a.displayName||'').toLowerCase().includes(norm.split(' ').slice(-1)[0])
+    ) || athletes[0];
+    if(!athlete) return null;
+    const result = { name: athlete.displayName, ranking: null, stats: [] };
+    // Рейтинг
+    const rank = athlete.rankings?.[0]?.current || athlete.rank || athlete.seed;
+    if(rank) result.ranking = rank;
+    // Статистика
+    const stats = athlete.statistics?.splits?.categories || [];
+    for(const cat of stats) {
+      for(const s of (cat.stats||[]).slice(0,4)) {
+        const n = s.name || s.abbreviation || '';
+        const v = s.displayValue || s.value || '';
+        if(n && v) result.stats.push(`${n}: ${v}`);
+      }
+    }
+    return result;
+  } catch(e) { return null; }
+}
+
 // ESPN Injuries — травмы команды (через roster с фильтром injured)
 async function fetchESPNInjuries(sportSlug, leagueSlug, teamId) {
   if(!sportSlug || !teamId) return null;
@@ -3501,6 +3550,144 @@ async function fetchESPNTeamRecord(sportSlug, eventId) {
   } catch(e) { return null; }
 }
 
+// ═══════════════════════════════════════════════
+// football-data.org — реальные данные топ-лиг
+// ═══════════════════════════════════════════════
+
+// Таблица лиги с football-data.org
+async function fetchFDStandings(leagueSlug) {
+  const compCode = FD_LEAGUE_MAP[leagueSlug];
+  if(!compCode) return null;
+  try {
+    const r = await fetch(`${WORKER_URL_FD}/competitions/${compCode}/standings`, {
+      signal: AbortSignal.timeout(7000)
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const result = {};
+    const tables = d.standings || [];
+    for(const table of tables) {
+      if(table.type !== 'TOTAL') continue;
+      for(const entry of (table.table || [])) {
+        const id   = entry.team?.id;
+        const name = entry.team?.name || entry.team?.shortName || '';
+        const pos  = entry.position;
+        const pts  = entry.points;
+        const gd   = entry.goalDifference;
+        const won  = entry.won;
+        const draw = entry.draw;
+        const lost = entry.lost;
+        const form = entry.form || ''; // "W,W,L,D,W"
+        if(id) result[String(id)] = { name, pos, pts, gd, won, draw, lost, form };
+      }
+      break; // берём только TOTAL
+    }
+    return Object.keys(result).length ? result : null;
+  } catch(e) { return null; }
+}
+
+// H2H из football-data.org по ID матча
+async function fetchFDH2H(matchId) {
+  if(!matchId) return null;
+  try {
+    const r = await fetch(`${WORKER_URL_FD}/matches/${matchId}/head2head?limit=6`, {
+      signal: AbortSignal.timeout(7000)
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const matches = d.matches || [];
+    if(!matches.length) return null;
+    const lines = matches.slice(0, 5).map(m => {
+      const hName = m.homeTeam?.shortName || m.homeTeam?.name || '?';
+      const aName = m.awayTeam?.shortName || m.awayTeam?.name || '?';
+      const hScore = m.score?.fullTime?.home ?? '?';
+      const aScore = m.score?.fullTime?.away ?? '?';
+      const date = m.utcDate ? new Date(m.utcDate).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '';
+      return `${date} ${hName} ${hScore}–${aScore} ${aName}`;
+    });
+    // Агрегат
+    const agg = d.aggregates;
+    let aggStr = '';
+    if(agg) {
+      const hn = agg.homeTeam?.name || '';
+      const an = agg.awayTeam?.name || '';
+      aggStr = ` | Итого: ${hn} ${agg.homeTeam?.wins||0}П / Ничьи ${agg.awayTeam?.draws||0} / ${an} ${agg.awayTeam?.wins||0}П`;
+    }
+    return lines.join(' | ') + aggStr;
+  } catch(e) { return null; }
+}
+
+// Поиск матча в football-data.org по именам команд и дате
+async function fetchFDMatch(leagueSlug, homeTeamName, awayTeamName, matchDate) {
+  const compCode = FD_LEAGUE_MAP[leagueSlug];
+  if(!compCode || !homeTeamName || !awayTeamName) return null;
+  try {
+    // Берём матчи на ±2 дня
+    const dt = matchDate ? new Date(matchDate) : new Date();
+    const from = new Date(dt); from.setDate(from.getDate() - 1);
+    const to   = new Date(dt); to.setDate(to.getDate() + 2);
+    const fmt = d => d.toISOString().slice(0,10);
+    const url = `${WORKER_URL_FD}/competitions/${compCode}/matches?dateFrom=${fmt(from)}&dateTo=${fmt(to)}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(7000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const matches = d.matches || [];
+    // Нормализация для сравнения
+    const norm = s => (s||'').toLowerCase().replace(/[^a-zа-яё0-9]/gi,'');
+    const homeParts = homeTeamName.toLowerCase().split(/\s+/);
+    const awayParts = awayTeamName.toLowerCase().split(/\s+/);
+    const match = matches.find(m => {
+      const hn = norm(m.homeTeam?.name || '') + ' ' + norm(m.homeTeam?.shortName || '');
+      const an = norm(m.awayTeam?.name || '') + ' ' + norm(m.awayTeam?.shortName || '');
+      const homeMatch = homeParts.some(p => p.length > 3 && hn.includes(norm(p)));
+      const awayMatch = awayParts.some(p => p.length > 3 && an.includes(norm(p)));
+      return homeMatch && awayMatch;
+    });
+    if(!match) return null;
+    return {
+      matchId:    match.id,
+      homeTeamFD: match.homeTeam?.id,
+      awayTeamFD: match.awayTeam?.id,
+      status:     match.status,
+      score:      match.score,
+    };
+  } catch(e) { return null; }
+}
+
+// ESPN Standings — позиции в таблице для лиги
+async function fetchESPNStandings(sportSlug, leagueSlug) {
+  if(!sportSlug || !leagueSlug) return null;
+  try {
+    const url = `https://site.api.espn.com/apis/v2/sports/${sportSlug}/standings?league=${leagueSlug}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const result = {};
+    const groups = d.children || d.standings?.entries || [];
+    const processEntries = (entries) => {
+      for(const entry of entries) {
+        const teamId = entry.team?.id || entry.id;
+        const teamName = entry.team?.displayName || entry.team?.shortDisplayName || '';
+        const rank = entry.stats?.find(s=>s.name==='rank'||s.abbreviation==='RK')?.displayValue
+                  || entry.stats?.find(s=>s.type==='rank')?.displayValue
+                  || entry.stats?.find(s=>s.name==='playoffSeed')?.displayValue;
+        const pts  = entry.stats?.find(s=>s.name==='points'||s.abbreviation==='PTS'||s.name==='pts')?.displayValue;
+        const gd   = entry.stats?.find(s=>s.name==='pointDifferential'||s.abbreviation==='DIFF'||s.name==='differential')?.displayValue;
+        if(teamId && teamName) {
+          result[String(teamId)] = { name: teamName, rank, pts, gd };
+        }
+      }
+    };
+    if(Array.isArray(groups)) {
+      for(const g of groups) {
+        const entries = g.standings?.entries || g.entries || [];
+        processEntries(entries);
+      }
+    }
+    return Object.keys(result).length ? result : null;
+  } catch(e) { return null; }
+}
+
 // Собирает все внешние данные для матча параллельно
 async function fetchExternalMatchData(match, sport) {
   const parts = match.split('—').map(s=>s.trim());
@@ -3541,7 +3728,10 @@ async function fetchExternalMatchData(match, sport) {
       fetchESPNTeamSeasonStats(eventInfo.sportSlug, eventInfo.leagueSlug, eventInfo.homeTeamId),
       fetchESPNTeamSeasonStats(eventInfo.sportSlug, eventInfo.leagueSlug, eventInfo.awayTeamId)
     ]));
+    // Таблица лиги (standings)
+    promises.push(fetchESPNStandings(eventInfo.sportSlug, eventInfo.leagueSlug));
   } else {
+    promises.push(Promise.resolve(null));
     promises.push(Promise.resolve(null));
     promises.push(Promise.resolve(null));
     promises.push(Promise.resolve(null));
@@ -3563,8 +3753,34 @@ async function fetchExternalMatchData(match, sport) {
     promises.push(Promise.resolve(null));
   }
 
-  const [espnSummary, teamRecord, h2hData, injuriesData, seasonStats, nhlData, nbaData] = await Promise.allSettled(promises).then(r => r.map(x => x.value ?? null));
-  return { espnSummary, teamRecord, h2hData, injuriesData, seasonStats, nhlData, nbaData };
+  // ESPN Tennis статистика игроков
+  const isTenn = sport.includes('🎾');
+  if(isTenn) {
+    promises.push(Promise.all([fetchESPNTennisAthleteStats(homeName), fetchESPNTennisAthleteStats(awayName)]));
+  } else {
+    promises.push(Promise.resolve(null));
+  }
+
+  // football-data.org — только для топ футбольных лиг
+  let fdMatchPromise = Promise.resolve(null);
+  let fdStandingsPromise = Promise.resolve(null);
+  if(isFoot && eventInfo?.leagueSlug && FD_LEAGUE_MAP[eventInfo.leagueSlug]) {
+    const matchDt = eventInfo?.eventDate || null;
+    fdMatchPromise = fetchFDMatch(eventInfo.leagueSlug, homeName, awayName, matchDt);
+    fdStandingsPromise = fetchFDStandings(eventInfo.leagueSlug);
+  }
+  promises.push(fdMatchPromise);
+  promises.push(fdStandingsPromise);
+
+  const [espnSummary, teamRecord, h2hData, injuriesData, seasonStats, standingsData, nhlData, nbaData, tennisData, fdMatch, fdStandings] = await Promise.allSettled(promises).then(r => r.map(x => x.value ?? null));
+
+  // H2H из football-data.org если есть matchId
+  let fdH2H = null;
+  if(fdMatch?.matchId) {
+    fdH2H = await fetchFDH2H(fdMatch.matchId).catch(()=>null);
+  }
+
+  return { espnSummary, teamRecord, h2hData, injuriesData, seasonStats, standingsData, nhlData, nbaData, tennisData, fdMatch, fdStandings, fdH2H };
 }
 
 // Форматирует внешние данные в текст для промпта
@@ -3573,7 +3789,47 @@ function formatExternalData(extData, sport, match) {
   const isFoot = sport.includes('⚽');
   const isHock = sport.includes('🏒');
   const isBask = sport.includes('🏀');
-  const { espnSummary, teamRecord, h2hData, injuriesData, seasonStats, nhlData, nbaData } = extData;
+  const { espnSummary, teamRecord, h2hData, injuriesData, seasonStats, standingsData, nhlData, nbaData, tennisData, fdMatch, fdStandings, fdH2H } = extData;
+  const isTenn = sport.includes('🎾');
+
+  // ── football-data.org таблица (приоритет над ESPN standings для футбола) ──
+  if(isFoot && fdStandings && typeof fdStandings === 'object') {
+    const eventInfo = (() => {
+      const normKey2 = (match||'').toLowerCase().replace(/\s+/g,' ').trim();
+      for(const [k,v] of globalEventMap) {
+        const kp = k.split('—').map(s=>s.trim());
+        const mp = normKey2.split('—').map(s=>s.trim());
+        if(mp.length>=2 && kp.length>=2 &&
+           (kp[0].includes(mp[0])||mp[0].includes(kp[0])) &&
+           (kp[1].includes(mp[1])||mp[1].includes(kp[1]))) return v;
+      }
+      return null;
+    })();
+    // Ищем команды по имени в fdStandings
+    const normName = s => (s||'').toLowerCase().replace(/[^a-zа-яё0-9]/gi,'');
+    const parts = (match||'').split('—').map(s=>s.trim());
+    const homeQ = parts[1]||''; // homeName
+    const awayQ = parts[0]||''; // awayName
+    let homeEntry = null, awayEntry = null;
+    for(const [id, entry] of Object.entries(fdStandings)) {
+      const n = normName(entry.name);
+      if(!homeEntry && homeQ.split(' ').some(p=>p.length>3 && n.includes(normName(p)))) homeEntry = entry;
+      if(!awayEntry && awayQ.split(' ').some(p=>p.length>3 && n.includes(normName(p)))) awayEntry = entry;
+    }
+    if(homeEntry) {
+      const form = homeEntry.form ? ` форма: ${homeEntry.form.replace(/,/g,'')}` : '';
+      lines.push(`Таблица хозяева (FD): ${homeEntry.name} — ${homeEntry.pos} место, ${homeEntry.pts} оч, GD ${homeEntry.gd>=0?'+':''}${homeEntry.gd}${form}`);
+    }
+    if(awayEntry) {
+      const form = awayEntry.form ? ` форма: ${awayEntry.form.replace(/,/g,'')}` : '';
+      lines.push(`Таблица гости (FD): ${awayEntry.name} — ${awayEntry.pos} место, ${awayEntry.pts} оч, GD ${awayEntry.gd>=0?'+':''}${awayEntry.gd}${form}`);
+    }
+  }
+
+  // ── football-data.org H2H ──
+  if(isFoot && fdH2H) {
+    lines.push(`H2H последние встречи (FD): ${fdH2H}`);
+  }
 
   // Статистика сезона обеих команд
   if(Array.isArray(seasonStats)) {
@@ -3614,6 +3870,27 @@ function formatExternalData(extData, sport, match) {
     // Лидеры команды
     const leaderFields = Object.keys(tr).filter(k => k.includes('Stat_'));
     for(const f of leaderFields.slice(0,4)) { if(tr[f]) lines.push(tr[f]); }
+  }
+
+  // Таблица лиги (standings) — позиция, очки, разница голов
+  if(standingsData && typeof standingsData === 'object') {
+    const eventInfo = (() => {
+      const normKey2 = (match||'').toLowerCase().replace(/\s+/g,' ').trim();
+      for(const [k,v] of globalEventMap) {
+        const kp = k.split('—').map(s=>s.trim());
+        const mp = normKey2.split('—').map(s=>s.trim());
+        if(mp.length>=2 && kp.length>=2 &&
+           (kp[0].includes(mp[0])||mp[0].includes(kp[0])) &&
+           (kp[1].includes(mp[1])||mp[1].includes(kp[1]))) return v;
+      }
+      return null;
+    })();
+    if(eventInfo?.homeTeamId && eventInfo?.awayTeamId) {
+      const home = standingsData[String(eventInfo.homeTeamId)];
+      const away = standingsData[String(eventInfo.awayTeamId)];
+      if(home && home.rank) lines.push(`Таблица хозяева: ${home.name} — место ${home.rank}${home.pts ? ', '+home.pts+' оч' : ''}${home.gd ? ', GD '+home.gd : ''}`);
+      if(away && away.rank) lines.push(`Таблица гости: ${away.name} — место ${away.rank}${away.pts ? ', '+away.pts+' оч' : ''}${away.gd ? ', GD '+away.gd : ''}`);
+    }
   }
 
   // Форма и live-данные из globalLiveMap
@@ -3687,6 +3964,20 @@ function formatExternalData(extData, sport, match) {
     const [home, away] = nbaData;
     if(home) lines.push(`НБА хозяева (Balldontlie): ${home.name} — ${home.last5||home.conference+' конф.'}`);
     if(away) lines.push(`НБА гости (Balldontlie): ${away.name} — ${away.last5||away.conference+' конф.'}`);
+  }
+
+  if(isTenn && tennisData && Array.isArray(tennisData)) {
+    const [home, away] = tennisData;
+    if(home) {
+      const rankStr = home.ranking ? ` (рейтинг WTA/ATP: ${home.ranking})` : '';
+      lines.push(`Теннис хозяин (ESPN): ${home.name}${rankStr}`);
+      if(home.stats?.length) lines.push(`Статистика ${home.name}: ${home.stats.slice(0,4).join(', ')}`);
+    }
+    if(away) {
+      const rankStr = away.ranking ? ` (рейтинг WTA/ATP: ${away.ranking})` : '';
+      lines.push(`Теннис гость (ESPN): ${away.name}${rankStr}`);
+      if(away.stats?.length) lines.push(`Статистика ${away.name}: ${away.stats.slice(0,4).join(', ')}`);
+    }
   }
 
   if(!lines.length) return '';
@@ -4325,41 +4616,41 @@ async function startAnalysis() {
     const statHints = [];
     if(hasPoss) statHints.push('используй данные владения/ударов из ESPN выше');
     if(hasGoalStats) statHints.push('используй данные голов за матч из ESPN выше');
-    if(!hasPoss && !hasGoalStats) statHints.push('нет данных');
+    if(!hasPoss && !hasGoalStats) statHints.push('ESPN данных нет — используй знания модели о xG/xGA/PPDA команд с пометкой (~ИИ)');
     statsPoint2 = `2. xG / xGA / PPDA + голы в 1-м тайме\n${statHints.join(', ')}`;
   } else if(isHock) {
-    const statHints = hasNHL ? 'используй данные НХЛ (gF/gA, L10, серия) из ESPN выше' : 'нет данных';
+    const statHints = hasNHL ? 'используй данные НХЛ (gF/gA, L10, серия) из ESPN выше' : 'ESPN данных нет — используй знания модели о Corsi/Fenwick/xGF%/PDO команд с пометкой (~ИИ)';
     statsPoint2 = `2. Corsi / Fenwick / xGF% / PDO / PP% / PK%\n${statHints}`;
   } else if(isBask) {
-    const statHints = hasNBA ? 'используй данные НБА из ESPN выше' : 'нет данных';
+    const statHints = hasNBA ? 'используй данные НБА из ESPN выше' : 'ESPN данных нет — используй знания модели об ORtg/DRtg/Pace команд с пометкой (~ИИ)';
     statsPoint2 = `2. ORtg / DRtg / Pace / eFG% / TOV%\n${statHints}`;
   } else if(isTenn) {
-    statsPoint2 = '2. Ace% / DF% / 1stWon% / BPSaved% / покрытие\nнет данных — пиши только "нет данных"';
+    statsPoint2 = '2. Ace% / DF% / 1stWon% / BPSaved% / покрытие\nESPN данных нет — используй знания модели о статистике подачи/приёма игроков с пометкой (~ИИ)';
   } else {
-    statsPoint2 = '2. Advanced Stats\nнет данных';
+    statsPoint2 = '2. Advanced Stats\nESPN данных нет — используй знания модели с пометкой (~ИИ)';
   }
 
   const prompt = `Матч: ${match}
 Вид спорта: ${currentSport}
 Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
 ${firstHalfContext}${extDataContext}
-⚠️ ПРАВИЛО ДАННЫХ: Все цифры и факты в анализе ДОЛЖНЫ браться из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" выше.
+⚠️ ПРАВИЛО ДАННЫХ — двухуровневая система:
+УРОВЕНЬ 1 (приоритет): Данные из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" выше.
 - Если там есть "Рекорд хозяев ДОМА: X-Y-Z" — используй именно эти цифры
-- Если там есть "голов забито: N" — используй именно это число  
+- Если там есть "голов забито: N" — используй именно это число
 - Если там есть "H2H: дата ALA X–Y VIL" — ссылайся на этот конкретный матч
-- Если данных нет в блоке выше — пиши "нет данных", не подставляй похожие цифры из памяти
 
-⛔ СТОП-СЛОВА — эти фразы ЗАПРЕЩЕНЫ в ответе:
-- "можно предположить"
-- "обычно такие факторы"
-- "могли бы повлиять"
-- "вероятно"
-- "как правило"
-- "скорее всего"
-- "как правило команды такого уровня"
-Если данных нет — пиши ТОЛЬКО: "нет данных". Ничего больше.
+УРОВЕНЬ 2 (резерв — только если ESPN данных нет для этого пункта):
+- Используй свои знания о командах, лиге, игроках — добавляй пометку (~ИИ) в конце строки
+- Пример: "xGA Roma сезон ~1.3 за матч (~ИИ)" или "H2H: последние 3 встречи — Roma выиграла 2 (~ИИ)"
+- Для xG/xGA/PPDA/Corsi/Fenwick — можно указать приблизительный диапазон (~ИИ)
+- Для H2H — можно указать общую тенденцию последних 3-5 встреч (~ИИ)
+- Для травм — указывай только если уверен в актуальности, иначе "нет данных"
 
-⛔ ЗАПРЕЩЕНО выдумывать числа: xG, Corsi, CLV, кефы — только если они есть в ESPN данных выше.
+⛔ ЗАПРЕЩЕНО:
+- Выдумывать точные кефы/линии/CLV/Steam — только из ESPN данных или "нет данных"
+- Использовать фразы: "можно предположить", "обычно", "как правило", "скорее всего"
+- Добавлять (~ИИ) к кефам, CLV, Steam Move — эти данные только из реальных источников
 
 ✅ Пункт 5 вердикта СТРОГО в формате: "70% — форма +25%, Sharp нейтрально, H2H +10%, мотивация +15%". Если в анализе есть H2H данные — учитывай их (не пиши "нет данных" если данные есть в пункте 3 анализа). Если H2H в пользу фаворита — добавь +5..+15%, против — минус.
 ✅ ТОП-3 СТРОГО в формате: "🥇 П1 — кеф 💛1.85 | причина"
@@ -4379,10 +4670,10 @@ ${matchDateLine}
 ${statsPoint2}
 
 3. H2H
-[только если есть данные в ESPN — или "нет данных"]
+[если есть данные ESPN — используй их; иначе — знания модели об исторических встречах с пометкой (~ИИ); если совсем неизвестно — "нет данных"]
 
 4. Травмы / Состав
-[только если есть данные в ESPN — или "нет данных"]
+[если есть данные ESPN — используй их; иначе — знания модели об актуальных травмах/дисквалификациях с пометкой (~ИИ); если неизвестно — "нет данных"]
 
 5. Мотивация
 [конкретная причина — место в таблице, турнир, серия, что поставлено на карту]
@@ -4430,14 +4721,19 @@ VERDICT_END`;
 
 ПРАВИЛА КАЧЕСТВА:
 1. Строго следуй шаблону — не добавляй лишних пунктов, не пропускай существующие.
-2. ЗАПРЕЩЕНО выдумывать или "предполагать" статистику. Если данных нет — пиши только "нет данных". НЕ ПИШИ фразы типа "можно предположить", "учитывая форму", "вероятно" — это домыслы. Все цифры (рекорды, голы, H2H счёт, кефы) берутся ИСКЛЮЧИТЕЛЬНО из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" в запросе. Даже если ты знаешь похожие данные из памяти — используй ТОЛЬКО то что передано в контексте.
+2. ДВУХУРОВНЕВАЯ СИСТЕМА ДАННЫХ:
+   ПРИОРИТЕТ 1 — данные из блока "ДАННЫЕ РЕАЛЬНОГО ВРЕМЕНИ" в запросе. Используй их точно как переданы.
+   ПРИОРИТЕТ 2 — если ESPN данных НЕТ для конкретного пункта (xG, H2H, травмы, статистика) — используй знания модели с обязательной пометкой (~ИИ) в конце.
+   Пример: "xGA за сезон ~1.4 (~ИИ)" или "H2H: Bologna выиграла 2 из 5 последних (~ИИ)"
+   ЗАПРЕЩЕНО (~ИИ) для: кефов, CLV, Steam Move, точных текущих очков в таблице — только ESPN.
+   НЕ ПИШИ "нет данных" если ты знаешь информацию о командах — заполни с (~ИИ).
 3. Каждый пункт анализа И вердикта нумеруй строго по шаблону: "1. Название", "2. Название" и т.д., каждый на отдельной строке.
 4. ТОП-3 ставки — ТОЛЬКО формат: 🥇 [ставка] — кеф 💛X.XX | [причина]. Эмодзи 💛 перед кефом ОБЯЗАТЕЛЬНО.
 5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
 6. Дату берёшь ТОЛЬКО из поля "Дата и время матча" — не выдумывай.
 7. Уверенность (пункт 5 вердикта): ОБЯЗАТЕЛЬНО пиши XX% и затем обоснование через тире — Sharp +X%, форма +X%, H2H +X%, мотивация +X%. Пример: "65% — форма +25%, Sharp нейтрально +0%, H2H нет данных +0%, мотивация +15%"
 8. Пункт 10 (Альт.сценарий) ОБЯЗАТЕЛЕН — конкретный риск, не общие слова.
-9. Анализ (9 пунктов): каждый пункт минимум 1 конкретный факт из ESPN данных. Пункты 8 и 9 (контекст лиги, серия) ОБЯЗАТЕЛЬНЫ — всегда заполняй из рекордов и формы команд. Если данных нет — "нет данных" и не более.
+9. Анализ (9 пунктов): каждый пункт должен содержать минимум 1 конкретный факт. Пункты 2 (статистика), 3 (H2H), 4 (травмы) — заполняй данными ESPN если есть, иначе используй знания модели с пометкой (~ИИ). Пункты 8 и 9 (контекст лиги, серия) ОБЯЗАТЕЛЬНЫ — всегда заполняй из рекордов/формы ESPN или (~ИИ). ЗАПРЕЩЕНО писать "нет данных" если ты знаешь информацию о командах.
 10. Профи-сигнал (пункт 8 вердикта): если реальных данных о Sharp/CLV/Steam нет в контексте — пиши "Sharp нейтрально | CLV нет данных | Steam Нет". ЗАПРЕЩЕНО выдумывать числа CLV.
 
 ПРИМЕРЫ ИДЕАЛЬНОГО ВЕРДИКТА ПО КАЖДОМУ ВИДУ СПОРТА:
