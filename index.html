@@ -4353,9 +4353,9 @@ function renderText(text, mode) {
       const badge = badgeNum ? `<span class="num-badge">${badgeNum}</span>` : '';
       return `<div class="${cls}" style="margin-bottom:1px;line-height:1.5;display:flex;align-items:baseline;gap:2px">${badge}${processedLine}</div>`;
     }
-    else if(line.startsWith('🥇')) cls='line-top1';
-    else if(line.startsWith('🥈')) cls='line-top2';
-    else if(line.startsWith('🥉')) cls='line-top3';
+    else if(line.includes('🥇')) { cls='line-top1'; }
+    else if(line.includes('🥈')) { cls='line-top2'; }
+    else if(line.includes('🥉')) { cls='line-top3'; }
     return `<div class="${cls}" style="margin-bottom:1px;line-height:1.5">${line}</div>`;
   }).join('');
 }
