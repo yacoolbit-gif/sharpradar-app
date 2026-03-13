@@ -2659,7 +2659,7 @@ async function fetchESPNTicker() {
       }
     } catch(err) {
       const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
-      logEvent('ESPN', false, `${sport} — ${isTimeout ? 'timeout 8s' : err.message || 'сеть недоступна'}`);
+      logEvent('ESPN', false, `${sport} — ${isTimeout ? 'timeout 12s' : err.message || 'сеть недоступна'}`);
     }
   }
   if(anyOk) logEvent('ESPN', true, `OK · загружено ${results.length} матчей`);
@@ -2737,7 +2737,7 @@ async function fetchESPNEndpointEvents(ep) {
   // ===== NHL Score API (api-web.nhle.com) =====
   if(ep.nhlScoreApi) {
     try {
-      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(12000) });
       if(!r.ok) return [];
       const d = await r.json();
       const games = d.games || [];
@@ -2853,7 +2853,8 @@ async function fetchESPNEndpointEvents(ep) {
         const sep = ep.url.includes('?') ? '&' : '?';
         url = `${ep.url}${sep}dates=${fmtESPNDate(d)}`;
       }
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const tOut = ep.sport === '⚽' ? 12000 : 8000;
+      const r = await fetch(url, { signal: AbortSignal.timeout(tOut) });
       if(!r.ok) continue;
       const data = await r.json();
       const rawEvents = data.events || data.scoreboard?.events || [];
@@ -3212,8 +3213,19 @@ async function fetchESPNMatchesForGroq() {
       }
     } catch(_){}
   }
+
+  // Дедупликация: убираем дубли матчей по нормализованному имени (НХЛ дважды — ESPN + NHL API)
+  const seen = new Set();
+  const dedupedMatches = matches.filter(m => {
+    // Извлекаем имя матча (до первого '|')
+    const baseName = m.split('|')[0].replace(/[⚽🏀🏒🎾]/u,'').trim().toLowerCase().replace(/\s+/g,' ');
+    if(seen.has(baseName)) return false;
+    seen.add(baseName);
+    return true;
+  });
+
   globalDatetimeMap = datetimeMap; // сохраняем глобально
-  return { matches, datetimeMap, rawDateMap };
+  return { matches: dedupedMatches, datetimeMap, rawDateMap };
 }
 
 // Ищет datetime в Map по частичному совпадению имени матча
@@ -4550,7 +4562,7 @@ const SPORT_CONFIG = {
           <path d="M3 14 Q8 8 14 14 Q20 20 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <path d="M3 14 Q8 20 14 14 Q20 8 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <line x1="14" y1="3" x2="14" y2="25" stroke="#FF6B35" stroke-width="1.5"/>`,
-    keywords: ['нба','nba','баскетбол','basketball','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','golden state','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','oklahoma','клипперс','clippers','nuggets','denver','jazz','utah','suns','phoenix','mavs','mavericks','dallas','rockets','houston','spurs','san antonio','pelicans','new orleans','hawks','atlanta','bucks','milwaukee','sixers','philadelphia','pistons','detroit','cavs','cavaliers','cleveland','raptors','toronto','magic','orlando','timberwolves','minnesota','wolves','grizzlies','memphis','blazers','portland','kings','sacramento','hornets','charlotte','wizards','washington','pacers','indiana']
+    keywords: ['нба','nba','баскетбол','basketball','ncaa','ncaab','college basketball','wolverines','buckeyes','jayhawks','tar heels','blue devils','hoosiers','wildcats','razorbacks','longhorns','unc','duke','kentucky','kansas','michigan','ohio state buckeyes','gonzaga','uconn','villanova','purdue','indiana','marquette','creighton','baylor','houston','tennessee','auburn','iowa state','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','golden state','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','oklahoma','клипперс','clippers','nuggets','denver','jazz','utah','suns','phoenix','mavs','mavericks','dallas','rockets','houston','spurs','san antonio','pelicans','new orleans','hawks','atlanta','bucks','milwaukee','sixers','philadelphia','pistons','detroit','cavs','cavaliers','cleveland','raptors','toronto','magic','orlando','timberwolves','minnesota','wolves','grizzlies','memphis','blazers','portland','kings','sacramento','hornets','charlotte','wizards','washington','pacers','indiana']
   },
   tennis: {
     name: '🎾 Теннис', label: 'Теннис / ATP / WTA',
