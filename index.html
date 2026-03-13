@@ -2717,7 +2717,7 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
   // 🏒 NHL Score API — живые матчи НХЛ + резерв
-  { url:'https://api-web.nhle.com/v1/score/now',                                           sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
+  { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/nhl-score',                      sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
   // 🏒 КХЛ — через proxy (khl.ru официальный API)
   { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
 
@@ -2983,24 +2983,27 @@ async function fetchOddsHotMatches() {
       return da - db;
     });
 
-    // Приоритет: сначала сегодняшние матчи, если нет — завтрашние
+    // Приоритет: сначала матчи текущего игрового дня (полночь МСК → 12:00 МСК следующего дня)
+    // Это покрывает ночные американские матчи (НБА/НХЛ до 06:00 UTC = 09:00 МСК след. дня)
     const nowMs = Date.now();
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const dayAfterStart = new Date(tomorrowStart); dayAfterStart.setDate(dayAfterStart.getDate() + 1);
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0); // полночь МСК сегодня
+    // "Игровой день" = 36 часов: полночь сегодня → полдень завтра (покрывает все лиги мира)
+    const gameDayEnd = new Date(todayStart); gameDayEnd.setHours(36,0,0,0);
+    const nextDayEnd = new Date(gameDayEnd);  nextDayEnd.setHours(nextDayEnd.getHours() + 24);
 
     const byPre = (() => {
+      // Матчи в пределах текущего игрового дня (36 часов)
       const todayMatches = byPreAll.filter(e => {
         if(!e.eventDate) return false;
         const t = new Date(e.eventDate).getTime();
-        return t >= todayStart.getTime() && t < tomorrowStart.getTime();
+        return t >= todayStart.getTime() && t < gameDayEnd.getTime();
       });
       if(todayMatches.length > 0) return todayMatches;
-      // Нет сегодняшних — берём завтрашние
+      // Нет — берём следующий день
       const tomorrowMatches = byPreAll.filter(e => {
         if(!e.eventDate) return false;
         const t = new Date(e.eventDate).getTime();
-        return t >= tomorrowStart.getTime() && t < dayAfterStart.getTime();
+        return t >= gameDayEnd.getTime() && t < nextDayEnd.getTime();
       });
       if(tomorrowMatches.length > 0) return tomorrowMatches;
       // Fallback — любые ближайшие
@@ -3072,7 +3075,7 @@ async function fetchESPNMatchesForGroq() {
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/liiga/scoreboard',          sport:'🏒', league:'Liiga' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/echl/scoreboard',           sport:'🏒', league:'ECHL' },
-    { url:'https://api-web.nhle.com/v1/score/now',                                           sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
+    { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/nhl-score',                      sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
     { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
     // 🎾 Теннис — ESPN ATP/WTA (рабочие)
     { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennisEvents:true },
@@ -4186,9 +4189,13 @@ async function fetchGroqTopPicks() {
     return t >= from.getTime() && t < to.getTime();
   });
 
+  // Игровой день = 36 часов от полуночи МСК (покрывает ночные американские матчи)
+  const groqGameDayEnd = new Date(groqTodayStart); groqGameDayEnd.setHours(36,0,0,0);
+  const groqNextDayEnd = new Date(groqGameDayEnd);  groqNextDayEnd.setHours(groqNextDayEnd.getHours() + 24);
+
   const preMatches = espnMatches.filter(m => !m.includes('LIVE'));
-  let filteredPre = filterByDay(preMatches, groqTodayStart, groqTomorrowStart);
-  if(filteredPre.length === 0) filteredPre = filterByDay(preMatches, groqTomorrowStart, groqDayAfterStart);
+  let filteredPre = filterByDay(preMatches, groqTodayStart, groqGameDayEnd);
+  if(filteredPre.length === 0) filteredPre = filterByDay(preMatches, groqGameDayEnd, groqNextDayEnd);
   if(filteredPre.length === 0) filteredPre = preMatches; // fallback
 
   // Сортируем по времени (ближайшие сначала)
