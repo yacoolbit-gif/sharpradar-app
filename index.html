@@ -2718,9 +2718,6 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
   // 🏒 NHL Score API — живые матчи НХЛ + резерв
   { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/nhl-score',                      sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
-  // 🏒 КХЛ — через proxy (khl.ru официальный API)
-  { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
-
   // 🎾 ТЕННИС — ESPN ATP/WTA (рабочие, Challenger не поддерживается ESPN)
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennisEvents:true },
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennisEvents:true },
@@ -2737,7 +2734,7 @@ async function fetchESPNEndpointEvents(ep) {
   const now = new Date();
   const attempts = [null, 0, 1, 2, 3, 4, 5, 6, 7];
 
-  // ===== NHL Score API (api-web.nhle.com) — резерв для КХЛ/НХЛ =====
+  // ===== NHL Score API (api-web.nhle.com) =====
   if(ep.nhlScoreApi) {
     try {
       const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
@@ -2755,7 +2752,7 @@ async function fetchESPNEndpointEvents(ep) {
         const displayTime = isPre ? espnTimeToMSK(dateStr) : (isLive ? (g.period ? `P${g.period}` : 'LIVE') : 'FT');
         const aName = g.awayTeam?.abbrev || g.awayTeam?.commonName?.default || '?';
         const hName = g.homeTeam?.abbrev || g.homeTeam?.commonName?.default || '?';
-        // Определяем лигу: КХЛ не приходит отсюда, но оставим как НХЛ
+        // НХЛ Live через api-web.nhle.com
         results.push({
           _nhlApi: true,
           name: `${aName} — ${hName}`,
@@ -2778,68 +2775,6 @@ async function fetchESPNEndpointEvents(ep) {
       logEvent('Odds API', false, `NHL API: ${err.message}`);
     }
     return [];
-  }
-
-  // ===== КХЛ API через proxy =====
-  if(ep.khlApi) {
-    try {
-      const r = await fetch(ep.url, { signal: AbortSignal.timeout(10000) });
-      if(!r.ok) { logEvent('Odds API', false, `КХЛ proxy HTTP ${r.status}`); return []; }
-      const d = await r.json();
-      // Worker нормализует ответ → { games: [...], source: '...' }
-      // Пробуем все возможные поля разных KHL API форматов
-      const games = d.games || d.events || d.data || d.items || d.matches || [];
-      const results = [];
-      const now = new Date();
-      for(const g of games) {
-        // Разные форматы дат в разных KHL API
-        const dateStr = g.startTimeUTC || g.startTimeLocal || g.start_at || g.date ||
-                        g.startTime || g.game_time || g.time || '';
-        if(dateStr) {
-          const diffH = (new Date(dateStr) - now) / 3600000;
-          if(diffH < -3 || diffH > 36) continue; // игровой день: -3ч до +36ч
-        }
-        // Разные форматы команд
-        const hName = g.homeTeam?.name || g.homeTeam?.shortName ||
-                      g.team_a?.name || g.host?.name || g.home_team?.name ||
-                      g.home || '?';
-        const aName = g.guestTeam?.name || g.guestTeam?.shortName ||
-                      g.team_b?.name || g.guest?.name || g.away_team?.name ||
-                      g.guest || '?';
-        if(hName === '?' && aName === '?') continue;
-        // Статус игры
-        const gameStatus = String(g.gameState || g.status || g.state || 'Not Started').toLowerCase();
-        const isLive = gameStatus.includes('progress') || gameStatus.includes('live') ||
-                       gameStatus.includes('in') || gameStatus === 'crit' || gameStatus === 'on_air';
-        const isPre  = gameStatus.includes('not started') || gameStatus.includes('pre') ||
-                       gameStatus.includes('future') || gameStatus.includes('scheduled') ||
-                       gameStatus.includes('planned') || gameStatus === 'fut';
-        const isPost = gameStatus.includes('finish') || gameStatus.includes('final') ||
-                       gameStatus.includes('over') || gameStatus.includes('post');
-        if(isPost) continue; // пропускаем завершённые
-        const displayTime = isPre && dateStr ? espnTimeToMSK(dateStr) : (isLive ? 'LIVE' : '');
-        const score = isLive ? `${g.score_a||g.homeScore||0}:${g.score_b||g.guestScore||0}` : '— : —';
-        results.push({
-          _khlGame: true,
-          name: `${aName} — ${hName}`,
-          date: dateStr,
-          status: { type: { state: isLive ? 'in' : 'pre', shortDetail: displayTime } },
-          competitions: [{
-            competitors: [
-              { homeAway: 'away', team: { shortDisplayName: aName, displayName: aName }, score: isLive ? (g.score_b||0) : 0 },
-              { homeAway: 'home', team: { shortDisplayName: hName, displayName: hName }, score: isLive ? (g.score_a||0) : 0 },
-            ],
-            status: { type: { state: isLive ? 'in' : 'pre', shortDetail: displayTime } }
-          }]
-        });
-      }
-      if(results.length > 0) logEvent('Odds API', true, `КХЛ: ${results.length} матчей ✅`);
-      else logEvent('Odds API', false, `КХЛ proxy: 0 матчей (source: ${d.source||'?'}, total: ${games.length})`);
-      return results;
-    } catch(err) {
-      logEvent('Odds API', false, `КХЛ proxy CATCH: ${err.message}`);
-      return [];
-    }
   }
 
   // ===== ТЕННИС: особая обработка =====
@@ -3094,46 +3029,12 @@ async function fetchESPNMatchesForGroq() {
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/echl/scoreboard',           sport:'🏒', league:'ECHL' },
     { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/nhl-score',                      sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
-    { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
     // 🎾 Теннис — ESPN ATP/WTA (рабочие)
     { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennisEvents:true },
     { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennisEvents:true },
   ];
   for(const ep of ALL_EP) {
     try {
-      // КХЛ API через proxy
-      if(ep.khlApi) {
-        const r = await fetch(ep.url, { signal: AbortSignal.timeout(10000) });
-        if(!r.ok) continue;
-        const d = await r.json();
-        const games = d.games || d.events || d.data || d.items || d.matches || [];
-        const now = new Date();
-        for(const g of games) {
-          const dateStr = g.startTimeUTC || g.startTimeLocal || g.start_at || g.date ||
-                          g.startTime || g.game_time || g.time || '';
-          if(dateStr) {
-            const diffH = (new Date(dateStr) - now) / 3600000;
-            if(diffH < -3 || diffH > 36) continue;
-          }
-          const hName = g.homeTeam?.name || g.homeTeam?.shortName || g.team_a?.name || g.host?.name || g.home || '?';
-          const aName = g.guestTeam?.name || g.guestTeam?.shortName || g.team_b?.name || g.guest?.name || g.guest || '?';
-          if(hName === '?' && aName === '?') continue;
-          const gameStatus = String(g.gameState || g.status || g.state || 'Not Started').toLowerCase();
-          const isLive = gameStatus.includes('progress') || gameStatus.includes('live') ||
-                         gameStatus === 'in' || gameStatus === 'crit' || gameStatus === 'on_air';
-          const isPost = gameStatus.includes('finish') || gameStatus.includes('final') || gameStatus.includes('over');
-          if(isPost) continue;
-          const timeStr = dateStr ? espnTimeToMSK(dateStr) : '';
-          const status = isLive ? '🔴 LIVE' : `⏰ ${timeStr}`;
-          const matchLine = `🏒 ${aName} — ${hName} | КХЛ | ${status}`;
-          matches.push(matchLine);
-          rawDateMap.set(matchLine, dateStr);
-          const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
-          datetimeMap.set(normKey, isLive ? 'LIVE · идёт' : timeStr);
-        }
-        continue;
-      }
-
       // NHL Score API — особая обработка
       if(ep.nhlScoreApi) {
         const r = await fetch(ep.url, { signal: AbortSignal.timeout(6000) });
@@ -4618,7 +4519,7 @@ function doLogout() {
 // ===== SMART SPORT WIDGET =====
 const SPORT_CONFIG = {
   hockey: {
-    name: '🏒 Хоккей', label: 'Хоккей / КХЛ / НХЛ',
+    name: '🏒 Хоккей', label: 'Хоккей / НХЛ',
     color: '#64B5F6', glow: 'rgba(100,181,246,0.4)',
     bg: 'linear-gradient(135deg,rgba(100,181,246,0.15),rgba(30,100,200,0.08))',
     shadow: '0 6px 20px rgba(100,181,246,0.2)',
