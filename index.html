@@ -2708,7 +2708,7 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard', sport:'🏀', league:'Евролига' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/basketball/g-league/scoreboard',   sport:'🏀', league:'G-League' },
 
-  // 🏒 ХОККЕЙ — ESPN лиги
+  // 🏒 ХОККЕЙ — ESPN рабочие лиги
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/scoreboard', sport:'🏒', league:'NCAA Хоккей' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
@@ -2716,19 +2716,14 @@ const HOT_ENDPOINTS = [
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/liiga/scoreboard',          sport:'🏒', league:'Liiga' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
   { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nla/scoreboard',            sport:'🏒', league:'NLA' },
-  // 🏒 КХЛ и другие — через альтернативный ESPN endpoint
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/khl/scoreboard',            sport:'🏒', league:'КХЛ' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/del/scoreboard',            sport:'🏒', league:'DEL' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ohl/scoreboard',            sport:'🏒', league:'OHL' },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/whl/scoreboard',            sport:'🏒', league:'WHL' },
-  // 🏒 КХЛ через NHL.com API (резерв)
-  { url:'https://api-web.nhle.com/v1/score/now',                                           sport:'🏒', league:'КХЛ/НХЛ', nhlScoreApi:true },
+  // 🏒 NHL Score API — живые матчи НХЛ + резерв
+  { url:'https://api-web.nhle.com/v1/score/now',                                           sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
+  // 🏒 КХЛ — через proxy (khl.ru официальный API)
+  { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
 
-  // 🎾 ТЕННИС — ESPN ATP/WTA + Challenger
+  // 🎾 ТЕННИС — ESPN ATP/WTA (рабочие, Challenger не поддерживается ESPN)
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennisEvents:true },
   { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennisEvents:true },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp-challenger/scoreboard', sport:'🎾', league:'ATP Challenger', tennisEvents:true },
-  { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/itf/scoreboard',            sport:'🎾', league:'ITF', tennisEvents:true },
 ];
 
 // Форматирует дату в YYYYMMDD для ESPN
@@ -2783,6 +2778,50 @@ async function fetchESPNEndpointEvents(ep) {
       logEvent('Odds API', false, `NHL API: ${err.message}`);
     }
     return [];
+  }
+
+  // ===== КХЛ API через proxy =====
+  if(ep.khlApi) {
+    try {
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) { logEvent('Odds API', false, `КХЛ proxy HTTP ${r.status}`); return []; }
+      const d = await r.json();
+      // khl.ru API: { events: [{ id, homeTeam, guestTeam, startTimeLocal, stage }] }
+      const games = d.events || d.data || d.games || [];
+      const results = [];
+      const now = new Date();
+      for(const g of games) {
+        const dateStr = g.startTimeLocal || g.date || g.startTime || '';
+        const eventDate = dateStr ? new Date(dateStr) : null;
+        // Берём только предстоящие сегодня
+        if(eventDate) {
+          const diffH = (eventDate - now) / 3600000;
+          if(diffH < -2 || diffH > 24) continue; // пропускаем старые и слишком далёкие
+        }
+        const hName = g.homeTeam?.name || g.team_a?.name || g.home || '?';
+        const aName = g.guestTeam?.name || g.team_b?.name || g.guest || '?';
+        const displayTime = dateStr ? espnTimeToMSK(dateStr) : '';
+        results.push({
+          _khlGame: true,
+          name: `${aName} — ${hName}`,
+          date: dateStr,
+          status: { type: { state: 'pre', shortDetail: displayTime } },
+          competitions: [{
+            competitors: [
+              { homeAway: 'away', team: { shortDisplayName: aName, displayName: aName }, score: 0 },
+              { homeAway: 'home', team: { shortDisplayName: hName, displayName: hName }, score: 0 },
+            ],
+            status: { type: { state: 'pre', shortDetail: displayTime } }
+          }]
+        });
+      }
+      if(results.length > 0) logEvent('Odds API', true, `КХЛ proxy: ${results.length} матчей ✅`);
+      else logEvent('Odds API', false, `КХЛ proxy: 0 матчей (API вернул ${games.length} записей)`);
+      return results;
+    } catch(err) {
+      logEvent('Odds API', false, `КХЛ proxy CATCH: ${err.message}`);
+      return [];
+    }
   }
 
   // ===== ТЕННИС: особая обработка =====
@@ -3030,20 +3069,42 @@ async function fetchESPNMatchesForGroq() {
     // 🏒 Хоккей
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',            sport:'🏒', league:'НХЛ' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/ahl/scoreboard',            sport:'🏒', league:'АХЛ' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/khl/scoreboard',            sport:'🏒', league:'КХЛ' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/liiga/scoreboard',          sport:'🏒', league:'Liiga' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/shl/scoreboard',            sport:'🏒', league:'SHL' },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/del/scoreboard',            sport:'🏒', league:'DEL' },
     { url:'https://site.api.espn.com/apis/site/v2/sports/hockey/echl/scoreboard',           sport:'🏒', league:'ECHL' },
     { url:'https://api-web.nhle.com/v1/score/now',                                           sport:'🏒', league:'НХЛ Live', nhlScoreApi:true },
-    // 🎾 Теннис — ESPN ATP/WTA + Challenger
+    { url:'https://sharpradar-proxy.ya-coolbit.workers.dev/khl',                             sport:'🏒', league:'КХЛ', khlApi:true },
+    // 🎾 Теннис — ESPN ATP/WTA (рабочие)
     { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard',            sport:'🎾', league:'ATP', tennisEvents:true },
     { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard',            sport:'🎾', league:'WTA', tennisEvents:true },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/atp-challenger/scoreboard', sport:'🎾', league:'ATP Challenger', tennisEvents:true },
-    { url:'https://site.api.espn.com/apis/site/v2/sports/tennis/itf/scoreboard',            sport:'🎾', league:'ITF', tennisEvents:true },
   ];
   for(const ep of ALL_EP) {
     try {
+      // КХЛ API через proxy
+      if(ep.khlApi) {
+        const r = await fetch(ep.url, { signal: AbortSignal.timeout(6000) });
+        if(!r.ok) continue;
+        const d = await r.json();
+        const games = d.events || d.data || d.games || [];
+        const now = new Date();
+        for(const g of games) {
+          const dateStr = g.startTimeLocal || g.date || g.startTime || '';
+          if(dateStr) {
+            const diffH = (new Date(dateStr) - now) / 3600000;
+            if(diffH < -2 || diffH > 24) continue;
+          }
+          const hName = g.homeTeam?.name || g.team_a?.name || g.home || '?';
+          const aName = g.guestTeam?.name || g.team_b?.name || g.guest || '?';
+          const timeStr = dateStr ? espnTimeToMSK(dateStr) : '';
+          const matchLine = `🏒 ${aName} — ${hName} | КХЛ | ⏰ ${timeStr}`;
+          matches.push(matchLine);
+          rawDateMap.set(matchLine, dateStr);
+          const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
+          datetimeMap.set(normKey, timeStr);
+        }
+        continue;
+      }
+
       // NHL Score API — особая обработка
       if(ep.nhlScoreApi) {
         const r = await fetch(ep.url, { signal: AbortSignal.timeout(6000) });
