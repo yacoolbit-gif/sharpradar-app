@@ -2775,13 +2775,13 @@ async function fetchESPNEndpointEvents(ep) {
           // Fallback: competitions[] и draws[] напрямую
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
-            if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+            if(state !== 'in' && state !== 'pre') continue;
             matches.push({ _isTennisMatch: true, name: comp.name || tournament.name || '', date: comp.date || tournament.date || '', status: comp.status, competitions: [comp] });
           }
           for(const draw of (tournament.draws || [])) {
             for(const comp of (draw.events || draw.competitions || [])) {
               const state = comp.status?.type?.state;
-              if(state !== 'in' && state !== 'pre' && state !== 'post') continue;
+              if(state !== 'in' && state !== 'pre') continue;
               matches.push({ _isTennisMatch: true, name: comp.name || tournament.name || '', date: comp.date || tournament.date || '', status: comp.status, competitions: [comp] });
             }
           }
@@ -2814,7 +2814,7 @@ async function fetchESPNEndpointEvents(ep) {
       const data = await r.json();
       const rawEvents = data.events || data.scoreboard?.events || [];
       const events = rawEvents.filter(e =>
-        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre' || e.status?.type?.state === 'post'
+        e.status?.type?.state === 'in' || e.status?.type?.state === 'pre'
       );
       if(events.length > 0) {
         logEvent('Odds API', true, `${ep.league}: ${events.length} матчей`);
@@ -2839,10 +2839,9 @@ async function fetchOddsHotMatches() {
       // Сначала LIVE, потом upcoming, потом завершённые как fallback
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
-      const finished = events.filter(e => e.status?.type?.state === 'post');
       // Для тенниса берём больше матчей с каждого эндпоинта
       const pickLimit = ep.sport === '🎾' ? 8 : 6;
-      const pick     = [...live, ...upcoming, ...finished].slice(0, pickLimit);
+      const pick     = [...live, ...upcoming].slice(0, pickLimit);
 
       for(const e of pick) {
         try {
@@ -2872,7 +2871,8 @@ async function fetchOddsHotMatches() {
           }
           if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
-          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive });
+          const rawDate = e.date || comp.date || '';
+          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive, eventDate: rawDate });
         } catch(_){}
       }
     } catch(err) {
@@ -2883,12 +2883,43 @@ async function fetchOddsHotMatches() {
   if(allEvents.length >= 1) {
     // Балансируем по спортам: сначала LIVE всех видов, потом по 6 на спорт
     const byLive = allEvents.filter(e => e.live);
-    const byPre  = allEvents.filter(e => !e.live);
+    const byPreAll = allEvents.filter(e => !e.live);
+
+    // Сортируем предстоящие по дате: ближайшие сначала
+    byPreAll.sort((a, b) => {
+      const da = a.eventDate ? new Date(a.eventDate).getTime() : Infinity;
+      const db = b.eventDate ? new Date(b.eventDate).getTime() : Infinity;
+      return da - db;
+    });
+
+    // Приоритет: сначала сегодняшние матчи, если нет — завтрашние
+    const nowMs = Date.now();
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const dayAfterStart = new Date(tomorrowStart); dayAfterStart.setDate(dayAfterStart.getDate() + 1);
+
+    const byPre = (() => {
+      const todayMatches = byPreAll.filter(e => {
+        if(!e.eventDate) return false;
+        const t = new Date(e.eventDate).getTime();
+        return t >= todayStart.getTime() && t < tomorrowStart.getTime();
+      });
+      if(todayMatches.length > 0) return todayMatches;
+      // Нет сегодняшних — берём завтрашние
+      const tomorrowMatches = byPreAll.filter(e => {
+        if(!e.eventDate) return false;
+        const t = new Date(e.eventDate).getTime();
+        return t >= tomorrowStart.getTime() && t < dayAfterStart.getTime();
+      });
+      if(tomorrowMatches.length > 0) return tomorrowMatches;
+      // Fallback — любые ближайшие
+      return byPreAll;
+    })();
+
     const balanced = [...byLive];
     const TOTAL_LIMIT = 30;
     const SPORTS = ['⚽','🏀','🏒','🎾'];
     const PER_SPORT = 6;
-    const otherSports = ['⚽','🏀','🏒'];
     for(const sp of SPORTS) {
       const picks = byPre.filter(e => e.sport === sp).slice(0, PER_SPORT);
       balanced.push(...picks);
@@ -2928,7 +2959,8 @@ let globalLiveMap  = new Map();    // normKey → {isLive, score, form, record, 
 // Возвращает { matches: string[], datetimeMap: Map<normKey, datetime> }
 async function fetchESPNMatchesForGroq() {
   const matches = [];
-  const datetimeMap = new Map(); // ключ: нормализованное имя матча → datetime строка
+  const datetimeMap = new Map();
+  const rawDateMap = new Map();  // matchLine -> ISO date для сортировки по времени
   const ALL_EP = [
     // ⚽ Футбол
     { url:'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard', sport:'⚽', league:'ЛЧ' },
@@ -3017,6 +3049,7 @@ async function fetchESPNMatchesForGroq() {
           const status = isLive ? `🔴 LIVE (${shortDetail})` : `⏰ ${timeStr}`;
           const matchLine = `${ep.sport} ${aName} — ${hName} | ${ep.league} | ${status}`;
           matches.push(matchLine);
+          rawDateMap.set(matchLine, item._date || '');
           const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, datetime);
           // Сохраняем eventId для ESPN Summary запросов
@@ -3105,7 +3138,7 @@ async function fetchESPNMatchesForGroq() {
     } catch(_){}
   }
   globalDatetimeMap = datetimeMap; // сохраняем глобально
-  return { matches, datetimeMap };
+  return { matches, datetimeMap, rawDateMap };
 }
 
 // Ищет datetime в Map по частичному совпадению имени матча
@@ -3993,7 +4026,28 @@ async function fetchGroqTopPicks() {
   const dateStr = now.toLocaleDateString('ru-RU');
 
   // 1. Получаем реальные матчи из ESPN + карту datetime
-  const { matches: espnMatches, datetimeMap } = await fetchESPNMatchesForGroq();
+  const { matches: espnMatches, datetimeMap, rawDateMap } = await fetchESPNMatchesForGroq();
+
+  // Фильтруем предстоящие матчи: сначала сегодняшние, если нет — завтрашние
+  const groqNow = Date.now();
+  const groqTodayStart = new Date(); groqTodayStart.setHours(0,0,0,0);
+  const groqTomorrowStart = new Date(groqTodayStart); groqTomorrowStart.setDate(groqTomorrowStart.getDate()+1);
+  const groqDayAfterStart = new Date(groqTomorrowStart); groqDayAfterStart.setDate(groqDayAfterStart.getDate()+1);
+
+  const getMatchDate = m => { const d = rawDateMap.get(m); return d ? new Date(d).getTime() : Infinity; };
+
+  const filterByDay = (arr, from, to) => arr.filter(m => {
+    const t = getMatchDate(m);
+    return t >= from.getTime() && t < to.getTime();
+  });
+
+  const preMatches = espnMatches.filter(m => !m.includes('LIVE'));
+  let filteredPre = filterByDay(preMatches, groqTodayStart, groqTomorrowStart);
+  if(filteredPre.length === 0) filteredPre = filterByDay(preMatches, groqTomorrowStart, groqDayAfterStart);
+  if(filteredPre.length === 0) filteredPre = preMatches; // fallback
+
+  // Сортируем по времени (ближайшие сначала)
+  filteredPre.sort((a, b) => getMatchDate(a) - getMatchDate(b));
 
   // Балансируем матчи по видам спорта для Groq — по 10 на вид
   const groqBalanced = [];
@@ -4002,9 +4056,9 @@ async function fetchGroqTopPicks() {
   // Сначала LIVE всех видов
   const groqLive = espnMatches.filter(m => m.includes('LIVE'));
   groqBalanced.push(...groqLive.slice(0, 20));
-  // Потом по лимиту на каждый вид спорта
+  // Потом по лимиту на каждый вид спорта (из отфильтрованных по дате)
   for(const sp of groqSports) {
-    const spMatches = espnMatches.filter(m => m.startsWith(sp) && !m.includes('LIVE'));
+    const spMatches = filteredPre.filter(m => m.startsWith(sp));
     groqBalanced.push(...spMatches.slice(0, GROQ_PER_SPORT));
   }
   const groqList = [...new Set(groqBalanced)].slice(0, 60);
