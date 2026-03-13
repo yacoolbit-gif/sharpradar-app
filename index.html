@@ -2808,10 +2808,15 @@ async function fetchESPNEndpointEvents(ep) {
                       g.guest || '?';
         if(hName === '?' && aName === '?') continue;
         // Статус игры
-        const gameStatus = g.gameState || g.status || g.state || 'pre';
-        const isLive = ['live','in','LIVE','CRIT','on_air'].includes(String(gameStatus));
-        const isPre  = ['pre','future','FUT','PRE','scheduled','planned'].includes(String(gameStatus));
-        if(!isLive && !isPre) continue;
+        const gameStatus = String(g.gameState || g.status || g.state || 'Not Started').toLowerCase();
+        const isLive = gameStatus.includes('progress') || gameStatus.includes('live') ||
+                       gameStatus.includes('in') || gameStatus === 'crit' || gameStatus === 'on_air';
+        const isPre  = gameStatus.includes('not started') || gameStatus.includes('pre') ||
+                       gameStatus.includes('future') || gameStatus.includes('scheduled') ||
+                       gameStatus.includes('planned') || gameStatus === 'fut';
+        const isPost = gameStatus.includes('finish') || gameStatus.includes('final') ||
+                       gameStatus.includes('over') || gameStatus.includes('post');
+        if(isPost) continue; // пропускаем завершённые
         const displayTime = isPre && dateStr ? espnTimeToMSK(dateStr) : (isLive ? 'LIVE' : '');
         const score = isLive ? `${g.score_a||g.homeScore||0}:${g.score_b||g.guestScore||0}` : '— : —';
         results.push({
@@ -3113,8 +3118,11 @@ async function fetchESPNMatchesForGroq() {
           const hName = g.homeTeam?.name || g.homeTeam?.shortName || g.team_a?.name || g.host?.name || g.home || '?';
           const aName = g.guestTeam?.name || g.guestTeam?.shortName || g.team_b?.name || g.guest?.name || g.guest || '?';
           if(hName === '?' && aName === '?') continue;
-          const gameStatus = g.gameState || g.status || g.state || 'pre';
-          const isLive = ['live','in','LIVE','CRIT','on_air'].includes(String(gameStatus));
+          const gameStatus = String(g.gameState || g.status || g.state || 'Not Started').toLowerCase();
+          const isLive = gameStatus.includes('progress') || gameStatus.includes('live') ||
+                         gameStatus === 'in' || gameStatus === 'crit' || gameStatus === 'on_air';
+          const isPost = gameStatus.includes('finish') || gameStatus.includes('final') || gameStatus.includes('over');
+          if(isPost) continue;
           const timeStr = dateStr ? espnTimeToMSK(dateStr) : '';
           const status = isLive ? '🔴 LIVE' : `⏰ ${timeStr}`;
           const matchLine = `🏒 ${aName} — ${hName} | КХЛ | ${status}`;
