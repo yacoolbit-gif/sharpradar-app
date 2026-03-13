@@ -2783,40 +2783,53 @@ async function fetchESPNEndpointEvents(ep) {
   // ===== КХЛ API через proxy =====
   if(ep.khlApi) {
     try {
-      const r = await fetch(ep.url, { signal: AbortSignal.timeout(8000) });
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(10000) });
       if(!r.ok) { logEvent('Odds API', false, `КХЛ proxy HTTP ${r.status}`); return []; }
       const d = await r.json();
-      // khl.ru API: { events: [{ id, homeTeam, guestTeam, startTimeLocal, stage }] }
-      const games = d.events || d.data || d.games || [];
+      // Worker нормализует ответ → { games: [...], source: '...' }
+      // Пробуем все возможные поля разных KHL API форматов
+      const games = d.games || d.events || d.data || d.items || d.matches || [];
       const results = [];
       const now = new Date();
       for(const g of games) {
-        const dateStr = g.startTimeLocal || g.date || g.startTime || '';
-        const eventDate = dateStr ? new Date(dateStr) : null;
-        // Берём только предстоящие сегодня
-        if(eventDate) {
-          const diffH = (eventDate - now) / 3600000;
-          if(diffH < -2 || diffH > 24) continue; // пропускаем старые и слишком далёкие
+        // Разные форматы дат в разных KHL API
+        const dateStr = g.startTimeUTC || g.startTimeLocal || g.start_at || g.date ||
+                        g.startTime || g.game_time || g.time || '';
+        if(dateStr) {
+          const diffH = (new Date(dateStr) - now) / 3600000;
+          if(diffH < -3 || diffH > 36) continue; // игровой день: -3ч до +36ч
         }
-        const hName = g.homeTeam?.name || g.team_a?.name || g.home || '?';
-        const aName = g.guestTeam?.name || g.team_b?.name || g.guest || '?';
-        const displayTime = dateStr ? espnTimeToMSK(dateStr) : '';
+        // Разные форматы команд
+        const hName = g.homeTeam?.name || g.homeTeam?.shortName ||
+                      g.team_a?.name || g.host?.name || g.home_team?.name ||
+                      g.home || '?';
+        const aName = g.guestTeam?.name || g.guestTeam?.shortName ||
+                      g.team_b?.name || g.guest?.name || g.away_team?.name ||
+                      g.guest || '?';
+        if(hName === '?' && aName === '?') continue;
+        // Статус игры
+        const gameStatus = g.gameState || g.status || g.state || 'pre';
+        const isLive = ['live','in','LIVE','CRIT','on_air'].includes(String(gameStatus));
+        const isPre  = ['pre','future','FUT','PRE','scheduled','planned'].includes(String(gameStatus));
+        if(!isLive && !isPre) continue;
+        const displayTime = isPre && dateStr ? espnTimeToMSK(dateStr) : (isLive ? 'LIVE' : '');
+        const score = isLive ? `${g.score_a||g.homeScore||0}:${g.score_b||g.guestScore||0}` : '— : —';
         results.push({
           _khlGame: true,
           name: `${aName} — ${hName}`,
           date: dateStr,
-          status: { type: { state: 'pre', shortDetail: displayTime } },
+          status: { type: { state: isLive ? 'in' : 'pre', shortDetail: displayTime } },
           competitions: [{
             competitors: [
-              { homeAway: 'away', team: { shortDisplayName: aName, displayName: aName }, score: 0 },
-              { homeAway: 'home', team: { shortDisplayName: hName, displayName: hName }, score: 0 },
+              { homeAway: 'away', team: { shortDisplayName: aName, displayName: aName }, score: isLive ? (g.score_b||0) : 0 },
+              { homeAway: 'home', team: { shortDisplayName: hName, displayName: hName }, score: isLive ? (g.score_a||0) : 0 },
             ],
-            status: { type: { state: 'pre', shortDetail: displayTime } }
+            status: { type: { state: isLive ? 'in' : 'pre', shortDetail: displayTime } }
           }]
         });
       }
-      if(results.length > 0) logEvent('Odds API', true, `КХЛ proxy: ${results.length} матчей ✅`);
-      else logEvent('Odds API', false, `КХЛ proxy: 0 матчей (API вернул ${games.length} записей)`);
+      if(results.length > 0) logEvent('Odds API', true, `КХЛ: ${results.length} матчей ✅`);
+      else logEvent('Odds API', false, `КХЛ proxy: 0 матчей (source: ${d.source||'?'}, total: ${games.length})`);
       return results;
     } catch(err) {
       logEvent('Odds API', false, `КХЛ proxy CATCH: ${err.message}`);
@@ -3085,25 +3098,30 @@ async function fetchESPNMatchesForGroq() {
     try {
       // КХЛ API через proxy
       if(ep.khlApi) {
-        const r = await fetch(ep.url, { signal: AbortSignal.timeout(6000) });
+        const r = await fetch(ep.url, { signal: AbortSignal.timeout(10000) });
         if(!r.ok) continue;
         const d = await r.json();
-        const games = d.events || d.data || d.games || [];
+        const games = d.games || d.events || d.data || d.items || d.matches || [];
         const now = new Date();
         for(const g of games) {
-          const dateStr = g.startTimeLocal || g.date || g.startTime || '';
+          const dateStr = g.startTimeUTC || g.startTimeLocal || g.start_at || g.date ||
+                          g.startTime || g.game_time || g.time || '';
           if(dateStr) {
             const diffH = (new Date(dateStr) - now) / 3600000;
-            if(diffH < -2 || diffH > 24) continue;
+            if(diffH < -3 || diffH > 36) continue;
           }
-          const hName = g.homeTeam?.name || g.team_a?.name || g.home || '?';
-          const aName = g.guestTeam?.name || g.team_b?.name || g.guest || '?';
+          const hName = g.homeTeam?.name || g.homeTeam?.shortName || g.team_a?.name || g.host?.name || g.home || '?';
+          const aName = g.guestTeam?.name || g.guestTeam?.shortName || g.team_b?.name || g.guest?.name || g.guest || '?';
+          if(hName === '?' && aName === '?') continue;
+          const gameStatus = g.gameState || g.status || g.state || 'pre';
+          const isLive = ['live','in','LIVE','CRIT','on_air'].includes(String(gameStatus));
           const timeStr = dateStr ? espnTimeToMSK(dateStr) : '';
-          const matchLine = `🏒 ${aName} — ${hName} | КХЛ | ⏰ ${timeStr}`;
+          const status = isLive ? '🔴 LIVE' : `⏰ ${timeStr}`;
+          const matchLine = `🏒 ${aName} — ${hName} | КХЛ | ${status}`;
           matches.push(matchLine);
           rawDateMap.set(matchLine, dateStr);
           const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
-          datetimeMap.set(normKey, timeStr);
+          datetimeMap.set(normKey, isLive ? 'LIVE · идёт' : timeStr);
         }
         continue;
       }
