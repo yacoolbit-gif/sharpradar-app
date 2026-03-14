@@ -2,9 +2,6 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>SharpRadar | Аналитик 3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -4189,6 +4186,9 @@ ${matchContext}
 - Матчи которых НЕТ в списке выше
 - Матчи уже завершённые (со статусом FT, finished, итоговым счётом)
 - Матчи старше сегодняшней даты
+- TBD, Unknown, "?" в названии команды
+- Ставка "Нет ставки" или пустая
+- Кеф 0.00 или отсутствующий
 
 В поле match используй ТОЧНО те же названия как в списке выше.
 
@@ -4222,14 +4222,24 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const parsed = JSON.parse(clean);
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
+      // Фильтруем мусор: TBD, нулевые кефы, нет ставки
+      const clean = parsed.filter(p => {
+        const m = (p.match || '').trim().toLowerCase();
+        const odds = parseFloat(p.odds || p.coef || '0');
+        const bet = (p.bet || '').trim().toLowerCase();
+        if(!m || m.includes('tbd') || m === '— : —' || m === '- : -') return false;
+        if(odds === 0 || isNaN(odds)) return false;
+        if(bet === 'нет ставки' || bet === 'no bet' || bet === '') return false;
+        return true;
+      });
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = parsed.slice(0,25).map((p,i) => {
+      topPicks = clean.slice(0,25).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
       });
       buildTopPicks();
-      logEvent('Groq', true, `OK · топ-${Math.min(parsed.length,15)} прогнозов обновлены`);
+      logEvent('Groq', true, `OK · топ-${topPicks.length} прогнозов обновлены`);
     } else {
       logEvent('Groq', false, 'Неверный формат JSON ответа');
     }
@@ -4259,7 +4269,7 @@ function startAutoRefresh() {
   _mainTimer = setInterval(() => {
     fetchOddsHotMatches();
     fetchGroqTopPicks();
-  }, 1800000);
+  }, 7200000);
 }
 
 // ===== SPORT FILTER =====
