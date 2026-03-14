@@ -2661,11 +2661,11 @@ async function fetchESPNTicker() {
           else if(isPre) min = espnTimeToMSK(e.date);
           else           min = e.status.type.shortDetail || 'FT';
           const score = (isLive || state==='post')
-            ? `${away?.score||0}:${home?.score||0}` : '— : —';
+            ? `${home?.score||0}:${away?.score||0}` : '— : —';
           const aName = away?.team?.shortDisplayName || away?.team?.name || '?';
           const hName = home?.team?.shortDisplayName || home?.team?.name || '?';
           const datetime = isLive ? 'LIVE · идёт' : espnTimeToMSK(e.date || '');
-          results.push({ sport: ep.sport, teams:`${aName} — ${hName}`, score, min, live: isLive, datetime });
+          results.push({ sport: ep.sport, teams:`${hName} — ${aName}`, score, min, live: isLive, datetime });
         } catch(_){}
       }
     } catch(err) {
@@ -2759,14 +2759,14 @@ async function fetchESPNEndpointEvents(ep) {
         const isPre  = state === 'FUT'  || state === 'PRE';
         if(!isLive && !isPre) continue; // пропускаем завершённые
         const dateStr = g.startTimeUTC || '';
-        const score = isLive ? `${g.awayTeam?.score||0}:${g.homeTeam?.score||0}` : '— : —';
+        const score = isLive ? `${g.homeTeam?.score||0}:${g.awayTeam?.score||0}` : '— : —';
         const displayTime = isPre ? espnTimeToMSK(dateStr) : (isLive ? (g.period ? `P${g.period}` : 'LIVE') : 'FT');
         const aName = g.awayTeam?.abbrev || g.awayTeam?.commonName?.default || '?';
         const hName = g.homeTeam?.abbrev || g.homeTeam?.commonName?.default || '?';
         // НХЛ Live через api-web.nhle.com
         results.push({
           _nhlApi: true,
-          name: `${aName} — ${hName}`,
+          name: `${hName} — ${aName}`,
           date: dateStr,
           status: { type: { state: isPre ? 'pre' : 'in', shortDetail: displayTime } },
           competitions: [{
@@ -2908,14 +2908,16 @@ async function fetchOddsHotMatches() {
           const isLive = state === 'in';
           const isPre  = state === 'pre';
           const displayTime = isPre ? espnTimeToMSK(e.date || comp.date || '') : (isLive ? (e.status?.type?.shortDetail || comp.status?.type?.shortDetail || 'LIVE') : (e.status?.type?.shortDetail || comp.status?.type?.shortDetail || 'FT'));
+          let home_s, away_s;
+          if(isTennis) { home_s = t[0]; away_s = t[1]; }
+          else { home_s = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away_s = t.find(x => x.homeAway === 'away') || t[0]; }
           const score = (isLive || state === 'post')
-            ? (comp.status?.type?.shortDetail || `${t[0]?.score||0}:${t[1]?.score||0}`) : '— : —';
+            ? (comp.status?.type?.shortDetail || `${home_s?.score||0}:${away_s?.score||0}`) : '— : —';
 
           let aName = '', hName = '';
           if(t.length >= 2) {
-            let home, away;
-            if(isTennis) { away = t[0]; home = t[1]; }
-            else { home = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away = t.find(x => x.homeAway === 'away') || t[0]; }
+            let home = home_s, away = away_s;
+            if(true) { void 0; } // already assigned above
             aName = away?.athlete?.displayName || away?.athlete?.fullName || away?.team?.shortDisplayName || away?.team?.displayName || away?.team?.name || '';
             hName = home?.athlete?.displayName || home?.athlete?.fullName || home?.team?.shortDisplayName || home?.team?.displayName || home?.team?.name || '';
           }
@@ -2928,7 +2930,7 @@ async function fetchOddsHotMatches() {
           if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
           const rawDate = e.date || comp.date || '';
-          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive, eventDate: rawDate, espnId: e.id || comp.id || '' });
+          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${hName} — ${aName}`, score, minute: displayTime, live: isLive, eventDate: rawDate, espnId: e.id || comp.id || '' });
         } catch(_){}
       }
     } catch(err) {
@@ -3062,10 +3064,10 @@ async function fetchESPNMatchesForGroq() {
           const aName = g.awayTeam?.abbrev || g.awayTeam?.commonName?.default || '?';
           const hName = g.homeTeam?.abbrev || g.homeTeam?.commonName?.default || '?';
           const status = isLive ? '🔴 LIVE' : `⏰ ${timeStr}`;
-          const matchLine = `🏒 ${aName} — ${hName} | ${ep.league} | ${status}`;
+          const matchLine = `🏒 ${hName} — ${aName} | ${ep.league} | ${status}`;
           matches.push(matchLine);
           rawDateMap.set(matchLine, dateStr);
-          const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
+          const normKey = `${hName} — ${aName}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, isLive ? 'LIVE · идёт' : timeStr);
         }
         continue;
@@ -3118,7 +3120,7 @@ async function fetchESPNMatchesForGroq() {
           if(t.length < 1) continue;
           const isTennis = ep.sport === '🎾';
           let home, away;
-          if(isTennis) { away = t[0]; home = t[1] || t[0]; }
+          if(isTennis) { home = t[0]; away = t[1] || t[0]; }
           else { home = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away = t.find(x => x.homeAway === 'away') || t[0]; }
           let aName = away?.athlete?.displayName || away?.athlete?.fullName || away?.team?.displayName || away?.team?.shortDisplayName || '';
           let hName = home?.athlete?.displayName || home?.athlete?.fullName || home?.team?.displayName  || home?.team?.shortDisplayName || '';
@@ -3134,10 +3136,10 @@ async function fetchESPNMatchesForGroq() {
           const datetime = isLive ? 'LIVE · идёт' : timeStr;
           const shortDetail = comp.status?.type?.shortDetail || (isLive ? 'идёт' : '');
           const status = isLive ? `🔴 LIVE (${shortDetail})` : `⏰ ${timeStr}`;
-          const matchLine = `${ep.sport} ${aName} — ${hName} | ${ep.league} | ${status}`;
+          const matchLine = `${ep.sport} ${hName} — ${aName} | ${ep.league} | ${status}`;
           matches.push(matchLine);
           rawDateMap.set(matchLine, item._date || '');
-          const normKey = `${aName} — ${hName}`.toLowerCase().replace(/\s+/g,' ').trim();
+          const normKey = `${hName} — ${aName}`.toLowerCase().replace(/\s+/g,' ').trim();
           datetimeMap.set(normKey, datetime);
           // Сохраняем eventId для ESPN Summary запросов
           if(item._eventId) {
@@ -3594,7 +3596,7 @@ async function fetchESPNH2H(sportSlug, leagueSlug, homeTeamId, awayTeamId) {
       const hScore = (typeof home?.score === 'object' ? home?.score?.value : home?.score) || '?';
       const aScore = (typeof away?.score === 'object' ? away?.score?.value : away?.score) || '?';
       const date = e.date ? new Date(e.date).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '';
-      return `${date} ${aName} ${aScore}–${hScore} ${hName}`;
+      return `${date} ${hName} ${hScore}–${aScore} ${aName}`;
     });
     return lines.join(' | ');
   } catch(e) { return null; }
@@ -3822,8 +3824,8 @@ async function fetchESPNStandings(sportSlug, leagueSlug) {
 // Собирает все внешние данные для матча параллельно
 async function fetchExternalMatchData(match, sport) {
   const parts = match.split('—').map(s=>s.trim());
-  const homeName = parts[1] || '';
-  const awayName = parts[0] || '';
+  const homeName = parts[0] || '';
+  const awayName = parts[1] || '';
 
   const normKey = match.toLowerCase().replace(/\s+/g,' ').trim();
   const eventInfo = globalEventMap.get(normKey) || (() => {
@@ -3939,8 +3941,8 @@ function formatExternalData(extData, sport, match) {
     // Ищем команды по имени в fdStandings
     const normName = s => (s||'').toLowerCase().replace(/[^a-zа-яё0-9]/gi,'');
     const parts = (match||'').split('—').map(s=>s.trim());
-    const homeQ = parts[1]||''; // homeName
-    const awayQ = parts[0]||''; // awayName
+    const homeQ = parts[0]||''; // homeName
+    const awayQ = parts[1]||''; // awayName
     let homeEntry = null, awayEntry = null;
     for(const [id, entry] of Object.entries(fdStandings)) {
       const n = normName(entry.name);
@@ -4038,7 +4040,7 @@ function formatExternalData(extData, sport, match) {
   })();
   if(liveD) {
     if(liveD.isLive && liveD.homeScore !== undefined) {
-      lines.push(`LIVE счёт: ${liveD.awayName} ${liveD.awayScore} — ${liveD.homeScore} ${liveD.homeName} (${liveD.detail||liveD.clock||''})`);
+      lines.push(`LIVE счёт: ${liveD.homeName} ${liveD.homeScore} — ${liveD.awayScore} ${liveD.awayName} (${liveD.detail||liveD.clock||''})`);
     }
     if(liveD.homeForm) lines.push(`Форма хозяев (ESPN): ${liveD.homeForm}`);
     if(liveD.awayForm) lines.push(`Форма гостей (ESPN): ${liveD.awayForm}`);
@@ -4098,16 +4100,16 @@ function formatExternalData(extData, sport, match) {
   }
 
   if(isTenn && tennisData && Array.isArray(tennisData)) {
-    const [home, away] = tennisData;
-    if(home) {
-      const rankStr = home.ranking ? ` (рейтинг WTA/ATP: ${home.ranking})` : '';
-      lines.push(`Теннис хозяин (ESPN): ${home.name}${rankStr}`);
-      if(home.stats?.length) lines.push(`Статистика ${home.name}: ${home.stats.slice(0,4).join(', ')}`);
+    const [p1, p2] = tennisData;
+    if(p1) {
+      const rankStr = p1.ranking ? ` (рейтинг WTA/ATP: ${p1.ranking})` : '';
+      lines.push(`Теннис Игрок 1 (ESPN): ${p1.name}${rankStr}`);
+      if(p1.stats?.length) lines.push(`Статистика ${p1.name}: ${p1.stats.slice(0,4).join(', ')}`);
     }
-    if(away) {
-      const rankStr = away.ranking ? ` (рейтинг WTA/ATP: ${away.ranking})` : '';
-      lines.push(`Теннис гость (ESPN): ${away.name}${rankStr}`);
-      if(away.stats?.length) lines.push(`Статистика ${away.name}: ${away.stats.slice(0,4).join(', ')}`);
+    if(p2) {
+      const rankStr = p2.ranking ? ` (рейтинг WTA/ATP: ${p2.ranking})` : '';
+      lines.push(`Теннис Игрок 2 (ESPN): ${p2.name}${rankStr}`);
+      if(p2.stats?.length) lines.push(`Статистика ${p2.name}: ${p2.stats.slice(0,4).join(', ')}`);
     }
   }
 
@@ -4821,7 +4823,7 @@ ${firstHalfContext}${extDataContext}
 - Использовать фразы: "можно предположить", "обычно", "как правило", "скорее всего"
 - Добавлять (~ИИ) к кефам, CLV, Steam Move — эти данные только из реальных источников
 
-✅ Пункт 5 вердикта СТРОГО в формате: "70% — форма +25%, Sharp нейтрально, H2H +10%, мотивация +15%". Если в анализе есть H2H данные — учитывай их (не пиши "нет данных" если данные есть в пункте 3 анализа). Если H2H в пользу фаворита — добавь +5..+15%, против — минус.
+✅ Пункт 5 вердикта СТРОГО в формате: "70% — форма +25%, Sharp П1 (~ИИ) +15%, H2H +10%, мотивация +10%". Если в анализе есть H2H данные — учитывай их (не пиши "нет данных" если данные есть в пункте 3 анализа). Если H2H в пользу фаворита — добавь +5..+15%, против — минус.
 ✅ ТОП-3 СТРОГО в формате: "🥇 П1 — кеф 💛1.85 | причина"
 
 ВАЖНО: Делай анализ безусловно. НЕ придумывай дату — используй ТОЛЬКО поле выше.
@@ -4874,7 +4876,7 @@ ${verdict4Line}
 5. Уверенность: [XX% — фактор +N%, фактор +N%]
 6. X-фактор: [1 конкретный факт с цифрой — например: "Villarreal выиграл 4 из 5 домашних матчей" или "Alavés не проигрывал 3 матча подряд"]
 7. Смарт-прогноз: [1 строка]
-8. Профи-сигнал: Sharp [П1/П2/нейтрально] | CLV [+X% или нет данных] | Steam [Да/Нет]
+8. Профи-сигнал: Sharp [П1(~ИИ)/П2(~ИИ)/нейтрально если равный матч] | CLV [+X% или нет данных] | Steam [Да/Нет]
 9. Движение кефа: [данные или нет данных]
 10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — Alavés выиграл 3 из 4 выездных матчей" или "Риск — вратарь хозяев пропустил 2+ в последних 3 матчах". Не пиши "ничья" без объяснения]
 
@@ -4900,10 +4902,10 @@ VERDICT_END`;
 4. ТОП-3 ставки — ТОЛЬКО формат: 🥇 [ставка] — кеф 💛X.XX | [причина]. Эмодзи 💛 перед кефом ОБЯЗАТЕЛЬНО.
 5. Никаких ** звёздочек, никакого markdown. Только текст и эмодзи из шаблона.
 6. Дату берёшь ТОЛЬКО из поля "Дата и время матча" — не выдумывай.
-7. Уверенность (пункт 5 вердикта): ОБЯЗАТЕЛЬНО пиши XX% и затем обоснование через тире — Sharp +X%, форма +X%, H2H +X%, мотивация +X%. Пример: "65% — форма +25%, Sharp нейтрально +0%, H2H нет данных +0%, мотивация +15%"
+7. Уверенность (пункт 5 вердикта): ОБЯЗАТЕЛЬНО пиши XX% и затем обоснование через тире — Sharp +X%, форма +X%, H2H +X%, мотивация +X%. Пример: "65% — форма +25%, Sharp П1 (~ИИ) +15%, H2H нет данных +0%, мотивация +10%". Sharp НИКОГДА не "нейтрально +0%" если есть edge по другим факторам.
 8. Пункт 10 (Альт.сценарий) ОБЯЗАТЕЛЕН — конкретный риск, не общие слова.
 9. Анализ (9 пунктов): каждый пункт должен содержать минимум 1 конкретный факт. Пункты 2 (статистика), 3 (H2H), 4 (травмы) — заполняй данными ESPN если есть, иначе используй знания модели с пометкой (~ИИ). Пункты 8 и 9 (контекст лиги, серия) ОБЯЗАТЕЛЬНЫ — всегда заполняй из рекордов/формы ESPN или (~ИИ). ЗАПРЕЩЕНО писать "нет данных" если ты знаешь информацию о командах.
-10. Профи-сигнал (пункт 8 вердикта): если реальных данных о Sharp/CLV/Steam нет в контексте — пиши "Sharp нейтрально | CLV нет данных | Steam Нет". ЗАПРЕЩЕНО выдумывать числа CLV.
+10. Профи-сигнал (пункт 8 вердикта): ЗАПРЕЩЕНО выдумывать точные числа CLV и реальные Steam данные. НО Sharp direction ты ОБЯЗАН определить на основе анализа — используй форму команд, мотивацию, движение линии (если есть в ESPN), публичные тенденции. Пример вывода без реальных данных: "Sharp П1 (~ИИ) | CLV нет данных | Steam Нет". НЕЛЬЗЯ писать "Sharp нейтрально" если одна команда явно сильнее по форме, мотивации или позиции в таблице — шарпы всегда идут за edge. "нейтрально" только если матч ДЕЙСТВИТЕЛЬНО равный по всем показателям.
 
 ПРИМЕРЫ ИДЕАЛЬНОГО ВЕРДИКТА ПО КАЖДОМУ ВИДУ СПОРТА:
 
@@ -5859,7 +5861,7 @@ async function smFetchEndpoint(ep, query) {
         var hName = '', aName = '';
         if(teams.length >= 2) {
           var home, away;
-          if(ep.tennis) { away = teams[0]; home = teams[1]; }
+          if(ep.tennis) { home = teams[0]; away = teams[1]; }
           else {
             home = teams.find(function(t){ return t.homeAway === 'home'; }) || teams[1] || teams[0];
             away = teams.find(function(t){ return t.homeAway === 'away'; }) || teams[0];
@@ -5886,7 +5888,7 @@ async function smFetchEndpoint(ep, query) {
         found.push({
           sport: ep.sport,
           league: ep.league,
-          teams: aName + ' — ' + hName,
+          teams: hName + ' — ' + aName,
           score: score,
           time: displayTime,
           live: isLive,
