@@ -2886,7 +2886,7 @@ async function fetchOddsHotMatches() {
       const live     = events.filter(e => e.status?.type?.state === 'in');
       const upcoming = events.filter(e => e.status?.type?.state === 'pre');
       // Для тенниса берём больше матчей с каждого эндпоинта
-      const pickLimit = ep.sport === '🎾' ? 20 : 6;
+      const pickLimit = ep.sport === '🎾' ? 20 : 15;
       const pick     = [...live, ...upcoming].slice(0, pickLimit);
 
       for(const e of pick) {
@@ -2968,7 +2968,7 @@ async function fetchOddsHotMatches() {
     const balanced = [...byLive];
     const TOTAL_LIMIT = 50;
     const SPORTS = ['⚽','🏀','🏒','🎾'];
-    const PER_SPORT = 6;
+    const PER_SPORT = 15;
     for(const sp of SPORTS) {
       const picks = byPre.filter(e => e.sport === sp).slice(0, PER_SPORT);
       balanced.push(...picks);
@@ -4169,7 +4169,7 @@ async function fetchGroqTopPicks() {
 
 ${matchContext}
 
-ЗАДАЧА: Выбери РОВНО 15 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра.
+ЗАДАЧА: Выбери РОВНО 25 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра.
 
 ОБЯЗАТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ (строго соблюдай):
 - ⚽ Футбол: 4-5 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
@@ -4220,7 +4220,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = parsed.slice(0,15).map((p,i) => {
+      topPicks = parsed.slice(0,25).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
