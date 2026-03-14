@@ -2149,7 +2149,7 @@ let analysisResult = "";
 // ===== SHARP MONEY BAR =====
 let sharpData = { direction: null, clv: null, steam: null };
 
-function updateSharpBar(direction, clv, steam) {
+function updateSharpBar(direction, clv, steam, rawText) {
   sharpData = { direction, clv, steam };
 
   // Direction
@@ -2158,15 +2158,25 @@ function updateSharpBar(direction, clv, steam) {
     if(!direction) { dEl.textContent = '— ожидание'; dEl.className = 'sb-direction sb-dir-none'; }
     else {
       dEl.textContent = direction;
-      dEl.className = 'sb-direction ' + (direction.includes('▲') || direction.includes('↑') ? 'sb-dir-up' : 'sb-dir-down');
+      const dirLow = direction.toLowerCase();
+      const dirClass = (direction.includes('▲') || direction.includes('↑') || dirLow.includes('п1') || dirLow.includes('up'))
+        ? 'sb-dir-up'
+        : (dirLow.includes('нейтрально') || dirLow.includes('neutral') || dirLow.includes('нет') || dirLow.includes('—'))
+          ? 'sb-dir-none'
+          : 'sb-dir-down';
+      dEl.className = 'sb-direction ' + dirClass;
     }
   }
 
   // CLV
   const cEl = document.getElementById('sb-clv');
   if(cEl) {
-    if(clv === null || clv === undefined) { cEl.textContent = '—'; cEl.className = 'sb-clv-nil'; }
-    else {
+    if(clv === null || clv === undefined) {
+      // Check if CLV text says "нет данных" explicitly
+      const clvNone = typeof rawText === 'string' && /CLV\s*(нет данных|no data|—|-)/i.test(rawText);
+      cEl.textContent = clvNone ? 'нет данных' : '—';
+      cEl.className = 'sb-clv-nil';
+    } else {
       const num = parseFloat(clv);
       cEl.textContent = (num >= 0 ? '+' : '') + num.toFixed(1) + '%';
       cEl.className = num >= 0 ? 'sb-clv-pos' : 'sb-clv-neg';
@@ -2192,12 +2202,12 @@ function parseSharpFromVerdict(text) {
   const clv        = clvMatch ? parseFloat(clvMatch[1]) : null;
   // CLV keyword present but no number -> show dash explicitly
   const clvPresent = /CLV/i.test(text);
-  // Extract Steam
-  const steamMatch = text.match(/Steam[\s:]*(Да|Нет|Yes|No)/i);
+  // Extract Steam — catches "Steam Нет", "Steam: Да", "Steam Move Нет", "Steam Move: Да"
+  const steamMatch = text.match(/Steam(?:\s*Move)?[\s:]*(Да|Нет|Yes|No)/i);
   const steam      = steamMatch ? (steamMatch[1].toLowerCase() === 'да' || steamMatch[1].toLowerCase() === 'yes') : null;
 
   if(direction || clv !== null || steam !== null || clvPresent) {
-    updateSharpBar(direction, clv, steam);
+    updateSharpBar(direction, clv, steam, text);
   }
 }
 
