@@ -4220,13 +4220,21 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = parsed.slice(0,25).map((p,i) => {
+      const filtered = parsed.filter(p => {
+        const m = (p.match || '').trim();
+        const odds = parseFloat(p.odds || p.coef || 0);
+        const bet = (p.bet || p.stake || '').toLowerCase();
+        if(!m || m.toLowerCase().includes('tbd') || m === '— : —') return false;
+        if(odds === 0 || bet === 'нет ставки' || bet === 'no bet') return false;
+        return true;
+      });
+      topPicks = filtered.slice(0,25).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
       });
       buildTopPicks();
-      logEvent('Groq', true, `OK · топ-${Math.min(parsed.length,15)} прогнозов обновлены`);
+      logEvent('Groq', true, `OK · топ-${Math.min(filtered.length,25)} прогнозов обновлены`);
     } else {
       logEvent('Groq', false, 'Неверный формат JSON ответа');
     }
