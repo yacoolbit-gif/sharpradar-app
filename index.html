@@ -4171,11 +4171,11 @@ ${matchContext}
 
 ЗАДАЧА: Выбери РОВНО 25 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра.
 
-ОБЯЗАТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ (строго соблюдай):
-- ⚽ Футбол: 4-5 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
-- 🏀 Баскетбол: 3-4 матча (приоритет: НБА, плей-офф)
-- 🏒 Хоккей: 3-4 матча (приоритет: НХЛ, плей-офф)
-- 🎾 Теннис: 3-4 матча (приоритет: ATP/WTA 1000, Гранд-Слэм, LIVE)
+ОБЯЗАТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ (строго соблюдай, сумма = 25):
+- ⚽ Футбол: 7-8 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
+- 🏀 Баскетбол: 6-7 матчей (приоритет: НБА, плей-офф)
+- 🏒 Хоккей: 6-7 матчей (приоритет: НХЛ, плей-офф)
+- 🎾 Теннис: 4-5 матчей (приоритет: ATP/WTA 1000, Гранд-Слэм, LIVE)
 
 ПРИОРИТЕТ внутри каждого вида:
 1. LIVE матчи (идут прямо сейчас)
@@ -4189,7 +4189,7 @@ ${matchContext}
 
 В поле match используй ТОЧНО те же названия как в списке выше.
 
-Отвечай ТОЛЬКО JSON массив из 15 объектов без текста и без markdown:
+Отвечай ТОЛЬКО JSON массив из 25 объектов без текста и без markdown:
 [
   {"match":"Команда1 — Команда2","bet":"тип ставки","sport":"эмодзи Лига","odds":"X.XX","conf":"high","confLabel":"XX%"},
   ...
@@ -4220,21 +4220,13 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      const filtered = parsed.filter(p => {
-        const m = (p.match || '').trim();
-        const odds = parseFloat(p.odds || p.coef || 0);
-        const bet = (p.bet || p.stake || '').toLowerCase();
-        if(!m || m.toLowerCase().includes('tbd') || m === '— : —') return false;
-        if(odds === 0 || bet === 'нет ставки' || bet === 'no bet') return false;
-        return true;
-      });
-      topPicks = filtered.slice(0,25).map((p,i) => {
+      topPicks = parsed.slice(0,25).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
       });
       buildTopPicks();
-      logEvent('Groq', true, `OK · топ-${Math.min(filtered.length,25)} прогнозов обновлены`);
+      logEvent('Groq', true, `OK · топ-${Math.min(parsed.length,15)} прогнозов обновлены`);
     } else {
       logEvent('Groq', false, 'Неверный формат JSON ответа');
     }
