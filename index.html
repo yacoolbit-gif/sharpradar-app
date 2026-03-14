@@ -2484,6 +2484,7 @@ function buildLiveMatches() {
       var st = (m.minute||'').toLowerCase();
       var isFinal = st === 'ft' || st === 'final' || st.indexOf('завер') >= 0;
       return {
+        id: m.espnId || '',
         name: m.teams || '',
         homeScore: scoreMatch ? parseInt(scoreMatch[1]) : 0,
         awayScore: scoreMatch ? parseInt(scoreMatch[2]) : 0,
@@ -2917,7 +2918,7 @@ async function fetchOddsHotMatches() {
           if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
           const rawDate = e.date || comp.date || '';
-          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive, eventDate: rawDate });
+          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${aName} — ${hName}`, score, minute: displayTime, live: isLive, eventDate: rawDate, espnId: e.id || comp.id || '' });
         } catch(_){}
       }
     } catch(err) {
@@ -2965,7 +2966,7 @@ async function fetchOddsHotMatches() {
     })();
 
     const balanced = [...byLive];
-    const TOTAL_LIMIT = 30;
+    const TOTAL_LIMIT = 50;
     const SPORTS = ['⚽','🏀','🏒','🎾'];
     const PER_SPORT = 6;
     for(const sp of SPORTS) {
@@ -4300,7 +4301,7 @@ function renderFilteredMatches() {
     return;
   }
   list.innerHTML = filtered.map((m, idx) => `
-    <div class="live-match-card" id="lmc-${idx}" onclick="fillMatch('${m.teams}', '${(m.datetime||'').replace(/'/g,'')}')">
+    <div class="live-match-card" id="lmc-${idx}" onclick="fillMatch('${m.teams}', '${(m.datetime||'').replace(/'/g,'')}', '${m.espnId||''}')">
       <span class="swipe-delete-icon left">🗑</span>
       <span class="swipe-delete-icon right">🗑</span>
       <div class="lm-sport">${m.sport}</div>
@@ -4456,13 +4457,13 @@ function checkSteamFromVerdict(text, matchName) {
   }
 }
 
-function fillMatch(name, datetime) {
+function fillMatch(name, datetime, espnId) {
   document.getElementById('match-input').value = name;
   // Если дата передана явно — используем, иначе ищем в глобальной карте
   currentMatchDatetime = datetime || lookupDatetime(name, globalDatetimeMap) || null;
   // Save for predictions
   window._lastMatchDate = currentMatchDatetime || datetime || null;
-  window._lastEspnMatchId = null;
+  window._lastEspnMatchId = espnId || null;
   updateBtn();
 }
 
@@ -5131,7 +5132,7 @@ function renderText(text, mode) {
         const m = line.match(/^(10|[1-9])\.\s(.*)$/);
         if(m) { badgeNum = m[1]; processedLine = m[2]; }
       }
-      const badge = badgeNum ? `<span class="num-badge">${badgeNum}</span>` : '';
+      const badge = badgeNum ? `<div class="medal-badge medal-rank" style="width:28px;height:28px;border-radius:8px;font-size:13px;flex-shrink:0;margin-right:6px;">${badgeNum}</div>` : '';
       return `<div class="${cls}" style="margin-bottom:1px;line-height:1.5;display:flex;align-items:baseline;gap:2px">${badge}${processedLine}</div>`;
     }
     else if(line.includes('🥇')) { cls='line-top1'; }
@@ -5540,6 +5541,93 @@ function deletePred(id) {
 // ============================================================
 // ESPN AUTO-CHECK: when match is Final, verify saved predictions
 // ============================================================
+
+// Helper: apply verdict checks given final score
+function _applyVerdictCheck(p, homeScore, awayScore) {
+  var total = homeScore + awayScore;
+  var checks = [];
+  var vt = p.verdict || '';
+  // Outcome
+  var outcomeMatch = vt.match(/(?:Исход|П1|П2|Победа)[^\n]*?(П1|П2|Ничья|1X|X2|победит|выиграет)/i);
+  if(outcomeMatch) {
+    var predicted = outcomeMatch[1].toLowerCase();
+    var actualOutcome = homeScore > awayScore ? 'п1' : (awayScore > homeScore ? 'п2' : 'ничья');
+    var ok = predicted === actualOutcome ||
+             (predicted === 'победит' && homeScore !== awayScore) ||
+             (predicted === 'выиграет' && homeScore !== awayScore);
+    checks.push({ label: 'Исход', ok: ok });
+  }
+  // Total
+  var totalMatch = vt.match(/[Тт]отал[^\n]*(Больше|Меньше|ТБ|ТМ)\s*([\d.]+)/i);
+  if(totalMatch) {
+    var direction = totalMatch[1].toLowerCase();
+    var tLine = parseFloat(totalMatch[2]);
+    var ok2 = (direction === 'больше' || direction === 'тб') ? total > tLine : total < tLine;
+    checks.push({ label: 'Тотал ' + (direction === 'больше' || direction === 'тб' ? 'Б' : 'М') + tLine, ok: ok2 });
+  }
+  // Score
+  var scoreMatch2 = vt.match(/[Сс]чёт[^\n]*?(\d+)\s*[:\-]\s*(\d+)/);
+  if(scoreMatch2) {
+    var ph = parseInt(scoreMatch2[1]), pa = parseInt(scoreMatch2[2]);
+    checks.push({ label: 'Счёт ' + ph + ':' + pa, ok: ph === homeScore && pa === awayScore });
+  }
+  // Handicap
+  var foraMatch = vt.match(/[Фф]ора[^\n]*?([+-][\d.]+)/);
+  if(foraMatch) {
+    var fora = parseFloat(foraMatch[1]);
+    var diff = homeScore - awayScore;
+    checks.push({ label: 'Фора ' + foraMatch[1], ok: diff + fora > 0 });
+  }
+  if(checks.length === 0) checks.push({ label: 'Матч завершён', ok: true });
+  p.status = 'done';
+  p.result = { score: homeScore + ' : ' + awayScore, checks: checks };
+}
+
+// Active ESPN fetch for completed matches (runs every 5 min)
+async function checkPredictionsViaESPN() {
+  var preds = loadPredictions();
+  var pending = preds.filter(function(p){ return p.status !== 'done' && p.espnId; });
+  if(!pending.length) return;
+  var slugs = [
+    'soccer/eng.1','soccer/esp.1','soccer/ger.1','soccer/ita.1','soccer/fra.1',
+    'soccer/usa.1','basketball/nba','basketball/mens-college-basketball',
+    'hockey/nhl','tennis/atp','tennis/wta'
+  ];
+  var changed = false;
+  for(var pi = 0; pi < pending.length; pi++) {
+    var p = pending[pi];
+    for(var si = 0; si < slugs.length; si++) {
+      try {
+        var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + slugs[si] + '/summary?event=' + p.espnId, { signal: AbortSignal.timeout(5000) });
+        if(!r.ok) continue;
+        var d = await r.json();
+        var comp = (d.header && d.header.competitions && d.header.competitions[0]) ||
+                   (d.gamepackageJSON && d.gamepackageJSON.header && d.gamepackageJSON.header.competitions && d.gamepackageJSON.header.competitions[0]);
+        if(!comp) continue;
+        if(comp.status && comp.status.type && comp.status.type.state !== 'post') continue;
+        var competitors = comp.competitors || [];
+        var home = competitors.find(function(c){ return c.homeAway === 'home'; }) || competitors[1];
+        var away = competitors.find(function(c){ return c.homeAway === 'away'; }) || competitors[0];
+        if(!home || !away) continue;
+        _applyVerdictCheck(p, parseInt(home.score||0), parseInt(away.score||0));
+        changed = true;
+        break;
+      } catch(_){}
+    }
+  }
+  if(changed) {
+    savePredictions(preds);
+    getPredBadge();
+    var m = document.getElementById('predictions-menu');
+    if(m && m.classList.contains('open')) renderPredList();
+  }
+}
+
+// Run active check every 5 minutes
+setInterval(checkPredictionsViaESPN, 5 * 60 * 1000);
+// Also run once after page load
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(checkPredictionsViaESPN, 10000); });
+
 function checkPredictionsResults(espnMatches) {
   if(!espnMatches || !espnMatches.length) return;
   var preds = loadPredictions();
@@ -5551,11 +5639,11 @@ function checkPredictionsResults(espnMatches) {
     // Try to find matching ESPN event by name similarity or espnId
     var found = null;
     espnMatches.forEach(function(m) {
-      if(p.espnId && m.id === p.espnId) { found = m; return; }
+      if(p.espnId && m.id && m.id === p.espnId) { found = m; return; }
       if(!found && p.match) {
         var matchLower = p.match.toLowerCase();
         var names = (m.name||'').toLowerCase();
-        var parts = matchLower.split(/[\s—\-]+/);
+        var parts = matchLower.split(/[\s\u2014\-]+/);
         var hits = parts.filter(function(w){ return w.length > 3 && names.indexOf(w) >= 0; });
         if(hits.length >= 2) found = m;
       }
@@ -5570,65 +5658,13 @@ function checkPredictionsResults(espnMatches) {
     }
     if(statusType !== 'final' && statusType !== 'ft' && statusType !== 'finished') return;
 
-    // We have a final result — parse score
-    var homeScore = parseInt(found.homeScore || 0);
-    var awayScore = parseInt(found.awayScore || 0);
-    var score = homeScore + ' : ' + awayScore;
-    var total = homeScore + awayScore;
-
-    // Parse verdict text for predictions
-    var checks = [];
-    var vt = p.verdict || '';
-
-    // Outcome check
-    var outcomeMatch = vt.match(/(?:Исход|П1|П2|Победа)[^\n]*?(П1|П2|Ничья|1X|X2|победит|выиграет)/i);
-    if(outcomeMatch) {
-      var predicted = outcomeMatch[1].toLowerCase();
-      var actualOutcome = homeScore > awayScore ? 'п1' : (awayScore > homeScore ? 'п2' : 'ничья');
-      var ok = predicted === actualOutcome ||
-               (predicted === 'победит' && homeScore !== awayScore) ||
-               (predicted === 'выиграет' && homeScore !== awayScore);
-      checks.push({ label: 'Исход', ok: ok });
-    }
-
-    // Total check
-    var totalMatch = vt.match(/[Тт]отал[^\n]*(Больше|Меньше|ТБ|ТМ)\s*([\d.]+)/i);
-    if(totalMatch) {
-      var direction = totalMatch[1].toLowerCase();
-      var line = parseFloat(totalMatch[2]);
-      var ok2 = (direction === 'больше' || direction === 'тб') ? total > line : total < line;
-      checks.push({ label: 'Тотал ' + (direction === 'больше' || direction === 'тб' ? 'Б' : 'М') + line, ok: ok2 });
-    }
-
-    // Score check
-    var scoreMatch = vt.match(/[Сс]чёт[^\n]*?(\d+)\s*[:\-]\s*(\d+)/);
-    if(scoreMatch) {
-      var ph = parseInt(scoreMatch[1]), pa = parseInt(scoreMatch[2]);
-      checks.push({ label: 'Счёт ' + ph + ':' + pa, ok: ph === homeScore && pa === awayScore });
-    }
-
-    // Handicap check
-    var foraMatch = vt.match(/[Фф]ора[^\n]*?([+-][\d.]+)/);
-    if(foraMatch) {
-      var fora = parseFloat(foraMatch[1]);
-      var diff = homeScore - awayScore;
-      var ok3 = diff + fora > 0;
-      checks.push({ label: 'Фора ' + foraMatch[1], ok: ok3 });
-    }
-
-    if(checks.length === 0) {
-      checks.push({ label: 'Матч завершён', ok: true });
-    }
-
-    p.status = 'done';
-    p.result = { score: score, checks: checks };
+    _applyVerdictCheck(p, parseInt(found.homeScore||0), parseInt(found.awayScore||0));
     changed = true;
   });
 
   if(changed) {
     savePredictions(preds);
     getPredBadge();
-    // If panel is open — refresh
     var m = document.getElementById('predictions-menu');
     if(m && m.classList.contains('open')) renderPredList();
   }
