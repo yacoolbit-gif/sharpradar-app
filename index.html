@@ -2468,7 +2468,7 @@ function buildTopPicks() {
   grid.innerHTML = topPicks.map(p => {
     const med = getMedalClass(p.rank);
     return `
-    <div class="pick-card" onclick="fillMatch('${p.match}', '${(p.datetime||'').replace(/'/g,'')}')">
+    <div class="pick-card" onclick="openActionSheet('${p.match}', '${(p.datetime||'').replace(/'/g,'')}', '')">
       <div class="pick-rank"><div class="medal-badge ${med.cls}">${med.label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
@@ -4326,7 +4326,7 @@ function renderFilteredMatches() {
     return;
   }
   list.innerHTML = filtered.map((m, idx) => `
-    <div class="live-match-card" id="lmc-${idx}" onclick="fillMatch('${m.teams}', '${(m.datetime||'').replace(/'/g,'')}', '${m.espnId||''}')">
+    <div class="live-match-card" id="lmc-${idx}" onclick="openActionSheet('${m.teams}', '${(m.datetime||'').replace(/'/g,'')}', '${m.espnId||''}')">
       <span class="swipe-delete-icon left">🗑</span>
       <span class="swipe-delete-icon right">🗑</span>
       <div class="lm-sport">${m.sport}</div>
@@ -4371,7 +4371,7 @@ function buildTopPicks() {
       ? `<div style="font-size:10px;color:rgba(240,240,248,0.3);margin-top:3px;">FT ${liveScore.score}</div>`
       : '';
     return `
-    <div class="pick-card" onclick="fillMatch('${p.match}', '${(p.datetime||'').replace(/'/g,'')}')">
+    <div class="pick-card" onclick="openActionSheet('${p.match}', '${(p.datetime||'').replace(/'/g,'')}', '')">
       <div class="pick-rank"><div class="medal-badge ${getMedalClass(p.rank).cls}">${getMedalClass(p.rank).label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
@@ -4500,6 +4500,89 @@ if(window.visualViewport) {
       setTimeout(() => focused.scrollIntoView({behavior:'smooth', block:'center'}), 100);
     }
   });
+}
+
+// ===== ACTION SHEET =====
+let _asMatchName = null;
+let _asDatetime   = null;
+let _asEspnId     = null;
+let _asSport      = null;
+
+// Строим ESPN URL по sportSlug + eventId
+function buildESPNUrl(matchName, espnId) {
+  // Ищем в globalEventMap
+  const normKey = matchName.toLowerCase().replace(/\s*—\s*/g,' — ').trim();
+  let info = globalEventMap.get(normKey);
+  if(!info) {
+    for(const [k,v] of globalEventMap) {
+      if(normKey.includes(k.split('—')[0]?.trim()) || k.includes(normKey.split('—')[0]?.trim())) {
+        info = v; break;
+      }
+    }
+  }
+  const slug = info?.sportSlug || null;
+  const eid  = info?.eventId || espnId || null;
+  if(!slug || !eid) return null;
+  // sportSlug вида "soccer/eng.1" → первый сегмент
+  const sportPart = slug.split('/')[0]; // soccer | basketball | hockey | tennis
+  const sportPage = {
+    soccer:     'soccer',
+    basketball: 'nba',
+    hockey:     'nhl',
+    tennis:     'tennis'
+  }[sportPart] || sportPart;
+  return `https://www.espn.com/${sportPage}/match/_/gameId/${eid}`;
+}
+
+// Определяем эмодзи спорта по имени матча / espnId
+function guessSportEmoji(matchName, espnId) {
+  const info = (() => {
+    const k = matchName.toLowerCase().replace(/\s*—\s*/g,' — ').trim();
+    let r = globalEventMap.get(k);
+    if(!r) for(const [key,v] of globalEventMap) {
+      if(k.includes(key.split('—')[0]?.trim()) || key.includes(k.split('—')[0]?.trim())) { r=v; break; }
+    }
+    return r;
+  })();
+  if(info?.sport) return info.sport;
+  return '🏟';
+}
+
+function openActionSheet(matchName, datetime, espnId) {
+  _asMatchName = matchName;
+  _asDatetime  = datetime || null;
+  _asEspnId    = espnId   || null;
+
+  // Заполняем шапку
+  document.getElementById('as-sport-badge').textContent  = guessSportEmoji(matchName, espnId);
+  document.getElementById('as-match-title').textContent  = matchName;
+  document.getElementById('as-match-meta').textContent   = datetime || '';
+
+  // ESPN кнопка — показываем/прячем если нет ссылки
+  const espnUrl = buildESPNUrl(matchName, espnId);
+  const espnBtn = document.getElementById('as-btn-espn');
+  espnBtn.style.display = espnUrl ? 'flex' : 'none';
+
+  document.getElementById('action-sheet-overlay').classList.add('open');
+}
+
+function closeActionSheet(e) {
+  // Закрываем только при клике на overlay (не на sheet)
+  if(e && e.target !== document.getElementById('action-sheet-overlay')) return;
+  document.getElementById('action-sheet-overlay').classList.remove('open');
+}
+
+function actionSheetAnalysis() {
+  document.getElementById('action-sheet-overlay').classList.remove('open');
+  fillMatch(_asMatchName, _asDatetime, _asEspnId);
+  // Небольшая задержка чтобы sheet закрылся, потом запуск
+  setTimeout(() => startAnalysis(), 200);
+}
+
+function actionSheetESPN() {
+  const url = buildESPNUrl(_asMatchName, _asEspnId);
+  if(url) window.open(url, '_blank');
+  document.getElementById('action-sheet-overlay').classList.remove('open');
 }
 
 // ===== LOGIN =====
@@ -6126,5 +6209,58 @@ function escSmHtml(s) {
   </div>
 
 <div id="menu-fab" ontouchstart="this.style.background='rgba(108,99,255,0.99)';this.style.transform='scale(0.85)';this.style.boxShadow='0 2px 8px rgba(108,99,255,0.9)'" ontouchend="this.style.background='rgba(108,99,255,0.75)';this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(108,99,255,0.6)';var m=document.getElementById('dropdown-menu');var o=document.getElementById('dm-overlay');if(!m)return;if(m.classList.contains('open')){m.classList.remove('open');if(o)o.classList.remove('open');}else{m.classList.add('open');if(o)o.classList.add('open');}" style="display:none !important;position:fixed;top:14px;right:84px;width:40px;height:40px;background:rgba(108,99,255,0.75);border:1px solid rgba(108,99,255,0.5);border-radius:12px;align-items:center;justify-content:center;font-size:18px;color:#fff;z-index:2147483647;box-shadow:0 4px 20px rgba(108,99,255,0.6);user-select:none;-webkit-user-select:none;touch-action:manipulation;">···</div>
+
+<!-- ===== ACTION SHEET (матч) ===== -->
+<div class="modal-overlay" id="action-sheet-overlay" onclick="closeActionSheet(event)">
+  <div class="modal-sheet" id="action-sheet">
+    <div class="modal-handle"></div>
+    <div style="padding:16px 20px 8px;">
+      <div id="as-sport-badge" style="font-size:22px;margin-bottom:6px;"></div>
+      <div id="as-match-title" style="font-size:17px;font-weight:700;color:#f0f0f8;line-height:1.3;"></div>
+      <div id="as-match-meta" style="font-size:12px;color:rgba(240,240,248,0.4);margin-top:4px;"></div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.07);margin:8px 0;"></div>
+    <div style="padding:8px 16px 0;">
+      <button id="as-btn-analysis" onclick="actionSheetAnalysis()" style="
+        width:100%;padding:15px 20px;margin-bottom:10px;
+        background:linear-gradient(135deg,#2a2560 0%,#1a1840 100%);
+        border:1px solid rgba(108,99,255,0.45);
+        border-radius:14px;color:#f0f0f8;font-size:15px;font-weight:600;
+        display:flex;align-items:center;gap:12px;cursor:pointer;
+        box-shadow:0 4px 16px rgba(108,99,255,0.25),0 1px 0 rgba(255,255,255,0.08) inset;
+        text-align:left;
+      ">
+        <span style="font-size:22px;">📊</span>
+        <span>
+          <div>Анализ матча</div>
+          <div style="font-size:11px;font-weight:400;color:rgba(240,240,248,0.45);margin-top:2px;">AI-анализ · Groq · Analyst 3.0</div>
+        </span>
+      </button>
+      <button id="as-btn-espn" onclick="actionSheetESPN()" style="
+        width:100%;padding:15px 20px;margin-bottom:10px;
+        background:linear-gradient(135deg,#1a0a0a 0%,#200808 100%);
+        border:1px solid rgba(255,69,102,0.45);
+        border-radius:14px;color:#f0f0f8;font-size:15px;font-weight:600;
+        display:flex;align-items:center;gap:12px;cursor:pointer;
+        box-shadow:0 4px 16px rgba(255,69,102,0.2),0 1px 0 rgba(255,255,255,0.05) inset;
+        text-align:left;
+      ">
+        <span style="font-size:22px;">🔴</span>
+        <span>
+          <div>Смотреть на ESPN</div>
+          <div style="font-size:11px;font-weight:400;color:rgba(240,240,248,0.45);margin-top:2px;">Счёт · Статистика · Live</div>
+        </span>
+      </button>
+      <button onclick="closeActionSheet()" style="
+        width:100%;padding:13px;margin-bottom:4px;
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:14px;color:rgba(240,240,248,0.5);font-size:14px;
+        cursor:pointer;
+      ">Отмена</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
