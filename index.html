@@ -2468,7 +2468,7 @@ function buildTopPicks() {
   grid.innerHTML = topPicks.map(p => {
     const med = getMedalClass(p.rank);
     return `
-    <div class="pick-card" onclick="openActionSheet('${p.match}', '${(p.datetime||'').replace(/'/g,'')}', '')">
+    <div class="pick-card" onclick="openActionSheet('${p.match}', '${(p.datetime||'').replace(/'/g,'')}', '${lookupEspnId(p.match)}')">
       <div class="pick-rank"><div class="medal-badge ${med.cls}">${med.label}</div></div>
       <div class="pick-body">
         <div class="pick-match">${p.match}</div>
@@ -4544,6 +4544,8 @@ function buildESPNUrl(matchName, espnId) {
     else if(mn.startsWith('🏀') || /\b(Lakers|Celtics|Warriors|Bulls|Heat|Nets|Knicks|Bucks|Suns|Mavs|Clippers|Spurs)\b/i.test(mn)) sportPart='basketball';
     else if(mn.startsWith('🏒')) sportPart='hockey';
     else if(mn.startsWith('🎾')) sportPart='tennis';
+    // Теннис: имена игроков без эмодзи (формат «Фамилия — Фамилия»)
+    else if(/^[A-ZА-ЯЁ][a-zа-яё]/.test(mn) && mn.includes(' — ') && !mn.includes('FC') && !mn.includes('City')) sportPart='tennis';
   }
   const sportPage = {
     soccer:     'soccer',
