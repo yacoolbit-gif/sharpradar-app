@@ -2909,7 +2909,12 @@ async function fetchOddsHotMatches() {
           const isPre  = state === 'pre';
           const displayTime = isPre ? espnTimeToMSK(e.date || comp.date || '') : (isLive ? (e.status?.type?.shortDetail || comp.status?.type?.shortDetail || 'LIVE') : (e.status?.type?.shortDetail || comp.status?.type?.shortDetail || 'FT'));
           let home_s, away_s;
-          if(isTennis) { home_s = t[0]; away_s = t[1]; }
+          if(isTennis) {
+            const s0 = parseInt(t[0]?.seed || t[0]?.order || '999');
+            const s1 = parseInt(t[1]?.seed || t[1]?.order || '999');
+            home_s = (s0 <= s1) ? t[0] : t[1];
+            away_s = (s0 <= s1) ? (t[1] || t[0]) : t[0];
+          }
           else { home_s = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away_s = t.find(x => x.homeAway === 'away') || t[0]; }
           const score = (isLive || state === 'post')
             ? (comp.status?.type?.shortDetail || `${home_s?.score||0}:${away_s?.score||0}`) : '— : —';
