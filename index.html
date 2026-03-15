@@ -4331,7 +4331,7 @@ function renderFilteredMatches() {
       <span class="swipe-delete-icon right">🗑</span>
       <div class="lm-sport">${m.sport}</div>
       <div class="lm-body">
-        <div class="lm-teams">${m.teams}</div>
+        <div class="lm-teams"><span style="font-size:14px;margin-right:4px;">${m.sport}</span>${m.teams}</div>
         <div class="lm-minute">${m.league ? m.league + ' · ' : ''}${m.minute}</div>
       </div>
       <div class="lm-score">${m.score || ''}</div>
