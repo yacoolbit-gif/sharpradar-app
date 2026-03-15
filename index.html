@@ -1511,7 +1511,7 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   background:rgba(255,255,255,0.08);border:none;color:#F0F0F8;
   width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;
 }
-.pred-view-text { font-size:13px;line-height:1.7;color:rgba(240,240,248,0.85);white-space:pre-wrap; }
+.pred-view-text { font-size:13px;line-height:1.7;color:rgba(240,240,248,0.85); }
 
 
 /* ===== SEARCH PANEL ===== */
@@ -5685,7 +5685,7 @@ function viewPred(id) {
   var modal = document.getElementById('pred-view-modal');
   var text  = document.getElementById('pred-view-text');
   if(!modal || !text) return;
-  text.textContent = p.verdict || '';
+  text.innerHTML = renderText(p.verdict || '', 'verdict');
   modal.classList.add('open');
 }
 function closePredView() {
