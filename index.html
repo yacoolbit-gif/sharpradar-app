@@ -4214,7 +4214,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const res = await fetch(WORKER_URL_GROQ, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages:[{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
+      body: JSON.stringify({ messages:[{role:'system',content:'You are a JSON API. You MUST respond ONLY with a valid JSON array. No explanations, no markdown, no text before or after the JSON array. Start your response with [ and end with ]. Any other format will cause a critical error.'},{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
       signal: AbortSignal.timeout(20000)
     });
     if(!res.ok) {
@@ -4230,12 +4230,15 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     }
     const text = (data.choices?.[0]?.message?.content || '').trim();
     if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
-    const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    const cleanText = text.replace(/```json|```/g,'').trim();
+    // Извлекаем JSON массив на случай если Groq добавил текст до/после
+    const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) { logEvent('Groq', false, 'Нет JSON массива в ответе'); return; }
+    const parsed = JSON.parse(jsonMatch[0]);
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
-      const clean = parsed.filter(p => {
+      const cleanPicks = parsed.filter(p => {
         const m = (p.match || '').trim().toLowerCase();
         const odds = parseFloat(p.odds || p.coef || '0');
         const bet = (p.bet || '').trim().toLowerCase();
@@ -4245,7 +4248,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
         return true;
       });
       // Подставляем реальный datetime из ESPN — Groq его не выдумывает
-      topPicks = clean.slice(0,25).map((p,i) => {
+      topPicks = cleanPicks.slice(0,25).map((p,i) => {
         const realDatetime = lookupDatetime(p.match, datetimeMap);
         const rankLabel = i < 3 ? ranks[i] : String(i+1);
         return { ...p, rank: rankLabel, datetime: realDatetime || p.datetime || '—' };
