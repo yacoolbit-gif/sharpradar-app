@@ -3084,23 +3084,24 @@ async function fetchESPNMatchesForGroq() {
         if(d.leagues) { for(const lg of d.leagues) for(const t of (lg.events||[])) allT.push(t); }
         for(const t of (d.events||[])) allT.push(t);
         for(const tournament of allT) {
+          const _tournId = tournament.id || '';
           for(const grp of (tournament.groupings || [])) {
             for(const comp of (grp.competitions || [])) {
               const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre') continue;
-              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _tournId, _epUrl: ep.url, _sport: ep.sport });
             }
           }
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre') continue;
-            rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
+            rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _tournId, _epUrl: ep.url, _sport: ep.sport });
           }
           for(const draw of (tournament.draws || [])) {
             for(const comp of (draw.events || draw.competitions || [])) {
               const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre') continue;
-              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _tournId, _epUrl: ep.url, _sport: ep.sport });
             }
           }
         }
@@ -3152,7 +3153,7 @@ async function fetchESPNMatchesForGroq() {
             const homeTeamId = homeComp?.team?.id || null;
             const awayTeamId = awayComp?.team?.id || null;
             const leagueSlug = (item._epUrl||'').match(/sports\/[^/]+\/([^/]+)\/scoreboard/)?.[1] || null;
-            globalEventMap.set(normKey, { eventId: item._eventId, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug, eventDate: item._event?.date || null });
+            globalEventMap.set(normKey, { eventId: item._eventId, tournId: item._tournId || null, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug, eventDate: item._event?.date || null });
           }
           // Сохраняем форму команд и live-данные из ESPN
           try {
@@ -4575,13 +4576,17 @@ function buildESPNUrl(matchName, espnId) {
   }[sportPart] || sportPart;
   if(sportPage && eid) {
     // Каждый вид спорта имеет свой формат URL на ESPN
-    if(sportPage === 'tennis')     return `https://www.espn.com/tennis/scoreboard`;
+    if(sportPage === 'tennis') {
+      const tournId = info?.tournId || eid;
+      if(tournId) return `https://www.espn.com/tennis/tournament/_/id/${tournId}`;
+      return `https://www.espn.com/tennis/scoreboard`;
+    }
     if(sportPage === 'soccer')     return `https://www.espn.com/soccer/match/_/gameId/${eid}`;
     // NBA, NHL и остальные — формат /game/_/gameId/
     return `https://www.espn.com/${sportPage}/game/_/gameId/${eid}`;
   }
   if(sportPage) {
-    if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`;
+    if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`; // fallback
     return `https://www.espn.com/${sportPage}/scoreboard`;
   }
   return null;
