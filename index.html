@@ -4574,13 +4574,15 @@ function buildESPNUrl(matchName, espnId) {
     tennis:     'tennis'
   }[sportPart] || sportPart;
   if(sportPage && eid) {
-    // Теннис: URL формат отличается — нет /match/_/gameId/
-    if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`;
-    return `https://www.espn.com/${sportPage}/match/_/gameId/${eid}`;
+    // Каждый вид спорта имеет свой формат URL на ESPN
+    if(sportPage === 'tennis')     return `https://www.espn.com/tennis/scoreboard`;
+    if(sportPage === 'soccer')     return `https://www.espn.com/soccer/match/_/gameId/${eid}`;
+    // NBA, NHL и остальные — формат /game/_/gameId/
+    return `https://www.espn.com/${sportPage}/game/_/gameId/${eid}`;
   }
   if(sportPage) {
     if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`;
-    return `https://www.espn.com/${sportPage}/`;
+    return `https://www.espn.com/${sportPage}/scoreboard`;
   }
   return null;
 }
