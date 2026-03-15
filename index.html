@@ -4573,8 +4573,15 @@ function buildESPNUrl(matchName, espnId) {
     hockey:     'nhl',
     tennis:     'tennis'
   }[sportPart] || sportPart;
-  if(sportPage && eid) return `https://www.espn.com/${sportPage}/match/_/gameId/${eid}`;
-  if(sportPage) return `https://www.espn.com/${sportPage}/`;
+  if(sportPage && eid) {
+    // Теннис: URL формат отличается — нет /match/_/gameId/
+    if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`;
+    return `https://www.espn.com/${sportPage}/match/_/gameId/${eid}`;
+  }
+  if(sportPage) {
+    if(sportPage === 'tennis') return `https://www.espn.com/tennis/scoreboard`;
+    return `https://www.espn.com/${sportPage}/`;
+  }
   return null;
 }
 
