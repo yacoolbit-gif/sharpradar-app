@@ -3088,19 +3088,19 @@ async function fetchESPNMatchesForGroq() {
             for(const comp of (grp.competitions || [])) {
               const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre') continue;
-              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
             }
           }
           for(const comp of (tournament.competitions || [])) {
             const state = comp.status?.type?.state;
             if(state !== 'in' && state !== 'pre') continue;
-            rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+            rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
           }
           for(const draw of (tournament.draws || [])) {
             for(const comp of (draw.events || draw.competitions || [])) {
               const state = comp.status?.type?.state;
               if(state !== 'in' && state !== 'pre') continue;
-              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '' });
+              rawItems.push({ _comp: comp, _date: comp.date || tournament.date || '', _name: comp.name || tournament.name || '', _eventId: comp.id || '', _epUrl: ep.url, _sport: ep.sport });
             }
           }
         }
@@ -4514,9 +4514,29 @@ function lookupEspnId(matchName) {
   const normKey = matchName.toLowerCase().replace(/\s*—\s*/g,' — ').trim();
   let info = globalEventMap.get(normKey);
   if(!info) {
+    // Точный поиск по первой части
     for(const [k,v] of globalEventMap) {
-      if(normKey.includes(k.split('—')[0]?.trim()) || k.includes(normKey.split('—')[0]?.trim())) {
+      if(normKey.includes(k.split(' — ')[0]?.trim()) || k.includes(normKey.split(' — ')[0]?.trim())) {
         info = v; break;
+      }
+    }
+  }
+  if(!info) {
+    // Теннис: Groq даёт "Имя Фамилия — Имя Фамилия", ESPN хранит "Фамилия — Фамилия"
+    // Сравниваем по последнему слову каждой части
+    const parts = normKey.split(' — ');
+    if(parts.length === 2) {
+      const lastName1 = parts[0].trim().split(' ').pop();
+      const lastName2 = parts[1].trim().split(' ').pop();
+      for(const [k,v] of globalEventMap) {
+        const kParts = k.split(' — ');
+        if(kParts.length === 2) {
+          const kL1 = kParts[0].trim().split(' ').pop();
+          const kL2 = kParts[1].trim().split(' ').pop();
+          if((kL1===lastName1 && kL2===lastName2) || (kL1===lastName2 && kL2===lastName1)) {
+            info = v; break;
+          }
+        }
       }
     }
   }
