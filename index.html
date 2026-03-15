@@ -3121,7 +3121,13 @@ async function fetchESPNMatchesForGroq() {
           if(t.length < 1) continue;
           const isTennis = ep.sport === '🎾';
           let home, away;
-          if(isTennis) { home = t[0]; away = t[1] || t[0]; }
+          if(isTennis) {
+            // В теннисе нет home/away — берём по order/seed: меньший seed = первый (хозяин корта)
+            const s0 = parseInt(t[0]?.seed || t[0]?.order || '999');
+            const s1 = parseInt(t[1]?.seed || t[1]?.order || '999');
+            home = (s0 <= s1) ? t[0] : t[1];
+            away = (s0 <= s1) ? (t[1] || t[0]) : t[0];
+          }
           else { home = t.find(x => x.homeAway === 'home') || t[1] || t[0]; away = t.find(x => x.homeAway === 'away') || t[0]; }
           let aName = away?.athlete?.displayName || away?.athlete?.fullName || away?.team?.displayName || away?.team?.shortDisplayName || '';
           let hName = home?.athlete?.displayName || home?.athlete?.fullName || home?.team?.displayName  || home?.team?.shortDisplayName || '';
