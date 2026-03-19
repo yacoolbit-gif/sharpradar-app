@@ -4781,9 +4781,26 @@ let currentSportKey = 'none';
 function detectSport(text) {
   if(!text || text.length < 2) return 'none';
   const t = text.toLowerCase();
+
+  // Сначала проверяем keywords (хоккей первым — приоритет над именами)
   for(const [key, cfg] of Object.entries(SPORT_CONFIG)) {
     if(cfg.keywords.some(kw => t.includes(kw))) return key;
   }
+
+  // Паттерн теннис: "Имя Фамилия — Имя Фамилия" (два личных имени, нет слов команд)
+  // Личное имя = слово с заглавной без командных суффиксов
+  const teamWords = /\b(FC|SC|SK|HK|United|City|Town|Athletic|Sporting|Racing|Club|Bulls|Heat|Nets|Knicks|Bucks|Suns|Mavs|Lakers|Celtics|Warriors|Clippers|Nuggets|Blazers|Thunder|Pacers|Hawks|Raptors|Pistons|Cavaliers|Rockets|Kings|Magic|Wizards|Pelicans|Spurs|Jazz|Grizzlies|Hornets|Wolves|Bruins|Canadiens|Oilers|Flames|Canucks|Senators|Penguins|Capitals|Blackhawks|Flyers|Rangers|Devils|Islanders|Sabres|Predators|Blues|Avalanche|Ducks|Sharks|Stars|Panthers|Lightning|Hurricanes|Wild|Jets|Kraken|Golden Knights)\b/i;
+  const parts = text.split(/\s*[–—−]+\s*/);
+  if(parts.length === 2) {
+    const p1 = parts[0].trim();
+    const p2 = parts[1].trim();
+    // Каждая часть: 1-2 слова, начинаются с заглавной, нет командных слов
+    const isPersonName = (s) => /^[A-ZА-ЯЁ][a-zA-Zа-яА-ЯёЁ]+(?:\s+[A-ZА-ЯЁ][a-zA-Zа-яА-ЯёЁ]+){0,2}$/.test(s.trim());
+    if(isPersonName(p1) && isPersonName(p2) && !teamWords.test(p1) && !teamWords.test(p2)) {
+      return 'tennis';
+    }
+  }
+
   return 'none';
 }
 
