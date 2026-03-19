@@ -4573,7 +4573,7 @@ function buildESPNUrl(matchName, espnId) {
   if(!sportPart) {
     const mn = matchName || '';
     if(mn.startsWith('⚽') || /\b(FC|United|City|Madrid|Barcelona|Liverpool|Arsenal|Chelsea|PSG|Bayern|Juventus|Milan|Roma|Ajax|Porto|Benfica|Dortmund|Atletico|Sevilla|Valencia|Napoli|Inter|Lazio)\b/i.test(mn)) sportPart='soccer';
-    else if(mn.startsWith('🏀') || /\b(Lakers|Celtics|Warriors|Bulls|Heat|Nets|Knicks|Bucks|Suns|Mavs|Clippers|Spurs|Thunder|Timberwolves|Wolves|Nuggets|Blazers|Jazz|Pacers|Hawks|Hornets|Pistons|Cavaliers|Cavs|Rockets|Grizzlies|Kings|Magic|Wizards|Pelicans|Raptors|76ers|Sixers)\b/i.test(mn)) sportPart='basketball';
+    else if(mn.startsWith('🏀') || /\b(Lakers|Celtics|Warriors|Bulls|Heat|Nets|Knicks|Bucks|Suns|Mavs|Mavericks|Clippers|Spurs|Thunder|Timberwolves|Wolves|Nuggets|Blazers|Jazz|Pacers|Hawks|Hornets|Pistons|Cavaliers|Cavs|Rockets|Grizzlies|Kings|Magic|Wizards|Pelicans|Raptors|76ers|Sixers|Ohio State|Ohio St|TCU|Gonzaga|Duke|Kentucky|Michigan|UConn|Villanova|Purdue|Indiana|Marquette|Creighton|Baylor|Houston|Tennessee|Auburn|Iowa State|Buckeyes|Wolverines|Jayhawks|Hoosiers|Wildcats|Blue Devils|Tar Heels|Huskies|Boilermakers|Longhorns|Razorbacks|Gators|Seminoles|Volunteers|Vols|Cyclones|Bruins|Spartans|Hawkeyes|Mountaineers|Sooners|Bearcats|Fighting Irish|Bulldogs|Crimson Tide|Cornhuskers|Red Raiders|Cougars NCAA|Musketeers|Cardinals Louisville|Hokies|Panthers Pitt|Orange Syracuse|Yellow Jackets|Wolfpack)\b/i.test(mn)) sportPart='basketball';
     else if(mn.startsWith('🏒') || /\b(Bruins|Canadiens|Maple Leafs|Rangers|Penguins|Capitals|Blackhawks|Red Wings|Flyers|Avalanche|Lightning|Panthers|Oilers|Flames|Canucks|Senators|Jets|Predators|Blues|Wild|Coyotes|Sharks|Ducks|Kings|Stars|Hurricanes|Blue Jackets|Islanders|Devils|Sabres|Kraken|Golden Knights)\b/i.test(mn)) sportPart='hockey';
     else if(mn.startsWith('🎾')) sportPart='tennis';
     // Теннис: имена игроков — только если явно нет командных слов
@@ -4721,7 +4721,9 @@ const SPORT_CONFIG = {
     svg: `<ellipse cx="14" cy="20" rx="8" ry="2.5" fill="rgba(100,181,246,0.25)" stroke="#64B5F6" stroke-width="1.2"/>
           <path d="M7 20 L7 10 Q7 7 9 7 L10.5 7 Q12 7 12 9 L12 17" stroke="#64B5F6" stroke-width="2" fill="none" stroke-linecap="round"/>
           <path d="M12 9 L19 9 Q21 9 21 11 Q21 13 19 13 L12 13" stroke="#64B5F6" stroke-width="1.8" fill="none"/>`,
-    keywords: ['хоккей','hockey','нхл','nhl','кхл','khl','ска','ак барс','авангард','металлург','трактор','салават','сибирь','барыс','северсталь','куньлунь','витязь','автомобилист','нефтехимик','admiral','адмирал','canadiens','maple leafs','bruins','penguins','blackhawks','red wings','oilers','flames','canucks','senators','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','ducks','sharks','coyotes','golden knights','kraken','devils','islanders','blue jackets','rangers nhl','nhl rangers','jets','winnipeg','kings','los angeles kings','seattle','nashville','columbus','minnesota wild','st. louis','colorado','anaheim','san jose','new jersey','new york rangers','new york islanders','buffalo','ottawa','montreal','toronto maple','vancouver','edmonton','calgary','arizona']
+    keywords: ['хоккей','hockey','нхл','nhl','кхл','khl','ска','ак барс','авангард','металлург','трактор','салават','сибирь','барыс','северсталь','куньлунь','витязь','автомобилист','нефтехимик','admiral','адмирал',
+      'canadiens','maple leafs','bruins','penguins','blackhawks','red wings','oilers','flames','canucks','senators','sabres','flyers','capitals','hurricanes','panthers','lightning','wild','predators','blues','avalanche','ducks','sharks','coyotes','golden knights','kraken','devils','islanders','blue jackets','rangers','jets',
+      'winnipeg jets','nashville predators','columbus blue jackets','st. louis blues','colorado avalanche','anaheim ducks','san jose sharks','new jersey devils','new york rangers','new york islanders','buffalo sabres','ottawa senators','montreal canadiens','toronto maple leafs','vancouver canucks','edmonton oilers','calgary flames','utah hockey','utah hc','dallas stars','stars','boston bruins','pittsburgh penguins','chicago blackhawks','detroit red wings','philadelphia flyers','washington capitals','carolina hurricanes','florida panthers','tampa bay lightning','minnesota wild','seattle kraken','vegas golden knights','los angeles kings','kings nhl']
   },
   football: {
     name: '⚽ Футбол', label: 'Футбол',
@@ -4745,7 +4747,11 @@ const SPORT_CONFIG = {
           <path d="M3 14 Q8 8 14 14 Q20 20 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <path d="M3 14 Q8 20 14 14 Q20 8 25 14" stroke="#FF6B35" stroke-width="1.5" fill="none"/>
           <line x1="14" y1="3" x2="14" y2="25" stroke="#FF6B35" stroke-width="1.5"/>`,
-    keywords: ['нба','nba','баскетбол','basketball','ncaa','ncaab','college basketball','wolverines','buckeyes','jayhawks','tar heels','blue devils','hoosiers','wildcats','razorbacks','longhorns','unc','duke','kentucky','kansas','michigan','ohio state buckeyes','gonzaga','uconn','villanova','purdue','indiana','marquette','creighton','baylor','houston','tennessee','auburn','iowa state','лейкерс','lakers','celtics','селтикс','warriors','голден стэйт','golden state','чикаго булс','bulls','miami heat','heat','бостон селтикс','бруклин','nets','knicks','никс','thunder','oklahoma','клипперс','clippers','nuggets','denver','jazz','utah','suns','phoenix','mavs','mavericks','dallas','rockets','houston','spurs','san antonio','pelicans','new orleans','hawks','atlanta','bucks','milwaukee','sixers','philadelphia','pistons','detroit','cavs','cavaliers','cleveland','raptors','toronto','magic','orlando','timberwolves','minnesota','wolves','grizzlies','memphis','blazers','portland','kings','sacramento','hornets','charlotte','wizards','washington','pacers','indiana']
+    keywords: ['нба','nba','баскетбол','basketball','ncaa','ncaab','college basketball',
+      'lakers','celtics','warriors','bulls','heat','nets','knicks','bucks','suns','mavericks','mavs','clippers','spurs','thunder','timberwolves','wolves','nuggets','blazers','jazz','pacers','hawks','hornets','pistons','cavaliers','cavs','rockets','grizzlies','kings','magic','wizards','pelicans','raptors','76ers','sixers','golden state',
+      'лейкерс','селтикс','голден стэйт','чикаго булс','майами хит','бруклин','никс','бакс','санс','маверикс','клипперс','сперс','тандер','тимбервулвз','наггетс','блейзерс','джаз','пэйсерс','хокс','хорнетс','пистонс','кавальерс','кавс','рокетс','гриззлис','кингс','мэджик','уизардс','пеликанс','рэпторс',
+      'ohio state','ohio st','tcu','horned frogs','michigan','wolverines','duke','blue devils','kentucky','wildcats','kansas','jayhawks','gonzaga','uconn','huskies','houston cougars','purdue','boilermakers','baylor','creighton','bluejays','tennessee','vols','auburn','iowa state','cyclones','indiana','hoosiers','villanova','marquette','arizona','ucla','bruins','north carolina','tar heels','unc','virginia cavaliers','michigan state','spartans','florida gators','florida state','arkansas','razorbacks','longhorns','texas longhorns','alabama','oregon ducks','maryland','connecticut','xavier','seton hall','rutgers','penn state','illinois','iowa hawkeyes','nebraska','northwestern','west virginia','mountaineers','oklahoma sooners','kansas state','texas tech','red raiders','cincinnati','bearcats','memphis tigers','wichita state','butler','notre dame','fighting irish','buckeyes','louisville','cardinals louisville','wake forest','deacons','virginia tech','hokies','pitt','panthers pitt','syracuse','orange','miami hurricanes','georgia tech','yellow jackets','clemson','nc state','wolfpack',
+      'real madrid basketball','barcelona basketball','fenerbahce basketball','panathinaikos','olympiacos','cska basketball','alba berlin','maccabi','baskonia','monaco basketball','olympia milan','zalgiris','virtus bologna','anadolu efes','valencia basket']
   },
   tennis: {
     name: '🎾 Теннис', label: 'Теннис / ATP / WTA',
@@ -4757,7 +4763,9 @@ const SPORT_CONFIG = {
           <path d="M5 14 Q10 18 14 14 Q18 10 23 14" stroke="rgba(205,220,57,0.5)" stroke-width="1" fill="none"/>
           <path d="M21 7 L26 4 Q27 3 27 4 Q27 5 26 6 L23 11" stroke="#CDDC39" stroke-width="1.8" stroke-linecap="round" fill="none"/>
           <path d="M23 11 L21 7" stroke="#CDDC39" stroke-width="2.5" stroke-linecap="round"/>`,
-    keywords: ['теннис','tennis','джокович','djokovic','надаль','nadal','федерер','federer','медведев','medvedev','зверев','zverev','алькарас','alcaraz','синнер','sinner','рублев','rublev','циципас','tsitsipas','берреттини','berrettini','wimbledon','уимблдон','ролан гаррос','roland','us open','australian open','открытый','atp','wta','свитолина','svitolina','соболенко','sabalenka','арына','элина','свентек','swiatek','gauff','рыбакина','rybakina','касаткина','самсонова','александрова','бертран','bertrand','лангмо','langmo','ксилас','рыбаков','нейбур','шварцлер','challenger','хард','грунт','трава']
+    keywords: ['теннис','tennis','atp','wta','challenger','итоговый',
+      'джокович','djokovic','надаль','nadal','федерер','federer','медведев','medvedev','зверев','zverev','алькарас','alcaraz','синнер','sinner','рублев','rublev','циципас','tsitsipas','берреттини','berrettini','фриц','fritz','де минор','de minaur','хуркач','hurkacz','оже-альяссим','auger-aliassime','берреттини','berrettini','норри','norrie','каспер','ruud','руд','евич','djere','коккинакис','kokkinakis','карренья буста','carreño','монфис','monfils','гаске','gasquet','пэр','paire','тим','thiem','чилич','cilic','андерсон','anderson','форо','foro','корда','korda','себастьян корда','оже','циципас','musetti','мусетти','shelton','шелтон','paul','томми пол','arnaldi','арналди','etcheverry','cobolli','коболли','navone','навоне','свентек','swiatek','соболенко','sabalenka','рыбакина','rybakina','гауфф','gauff','пегула','pegula','коллинз','collins','свитолина','svitolina','контавейт','kontaveit','барти','barty','осака','osaka','мугуруса','muguruza','халеп','halep','плишкова','pliskova','квитова','kvitova','касаткина','kasatkina','самсонова','samsonova','александрова','alexandrova','потапова','potapova','шнайдер','schneider','паолини','paolini','навarro','наварро','бенчич','bencic','вондроушова','vondrousova','синьякова','siniakova','крейчикова','krejcikova','хэддад майя','haddad maia','корне','cornet','гарсия','garcia','жабёр','jabeur','тунисель','sakkari','саккари','маринова','marinova',
+      'wimbledon','уимблдон','ролан гаррос','roland garros','us open','australian open','открытый','grand slam','мастерс','masters','indian wells','miami open','madrid open','rome','rolex','доха','doha','монте-карло','monte carlo','барселона atp','гамбург atp','хард','грунт','трава','indoor']
   }
 };
 
@@ -4798,7 +4806,7 @@ function updateSportWidget(sportKey, matchText, confidence) {
       <line x1="3" y1="14" x2="7" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>
       <line x1="21" y1="14" x2="25" y2="14" stroke="rgba(108,99,255,0.5)" stroke-width="1.5"/>`;
     if(badgeEl) badgeEl.style.display = 'none';
-    currentSport = '⚽ Футбол';
+    // НЕ меняем currentSport — оставляем последний определённый спорт
     return;
   }
 
@@ -4899,29 +4907,13 @@ async function startAnalysis() {
   const isBask = currentSport.includes('🏀') || currentSport.toLowerCase().includes('баскет');
   const isTenn = currentSport.includes('🎾') || currentSport.toLowerCase().includes('теннис');
 
-  // Пункты 2, 3, 4 вердикта по виду спорта
-  let verdict2Line = '', verdict3Line = '', verdict4Line = '';
-  if(isFoot) {
-    verdict2Line = `2. Счёт: ⚽ [X:X — ожидаемый счёт матча]`;
-    verdict3Line = `3. Тотал: ⚽ [Б/М X.5 — голов за матч]`;
-    verdict4Line = `4. Гол в 1-м тайме: ⚽ [Да/Нет — обоснование: ${homeTeamName} забивает в 1-м тайме X% матчей дома, ${awayTeamName} пропускает в 1-м тайме Y% в гостях]`;
-  } else if(isBask) {
-    verdict2Line = `2. Счёт: 🏀 [XXX:XXX — ожидаемые очки, например 114:108]`;
-    verdict3Line = `3. Тотал: 🏀 [Б/М XXX.5 — суммарные очки обеих команд, например М 218.5]`;
-    verdict4Line = `4. Тотал очков: 🏀 [Б/М XXX.5 — Pace ${homeTeamName} XX, Pace ${awayTeamName} XX (~ИИ)]`;
-  } else if(isHock) {
-    verdict2Line = `2. Счёт: 🏒 [X:X — ожидаемый счёт матча]`;
-    verdict3Line = `3. Тотал: 🏒 [Б/М X.5 шайб — среднее голов за матч обеих команд]`;
-    verdict4Line = `4. Тотал шайб: 🏒 [Б/М X.5 — вратарь ${homeTeamName} SV% X.XXX, вратарь ${awayTeamName} SV% X.XXX (~ИИ)]`;
-  } else if(isTenn) {
-    verdict2Line = `2. Счёт: 🎾 [X:X (сеты) — например 2:0 или 2:1]`;
-    verdict3Line = `3. Тотал: 🎾 [Б/М XX.5 геймов — суммарное количество геймов в матче]`;
-    verdict4Line = `4. Тотал геймов: 🎾 [Б/М XX.5 — ${homeTeamName} выигрывает матчи за X геймов в среднем (~ИИ)]`;
-  } else {
-    verdict2Line = `2. Счёт: [X:X]`;
-    verdict3Line = `3. Тотал: [Б/М X.5]`;
-    verdict4Line = `4. Тотал: 📊 [Б/М X.5]`;
-  }
+  // Пункт 4 вердикта по виду спорта
+  let verdict4Line = '';
+  if(isFoot) verdict4Line = `4. Гол в 1-м тайме: ⚽ [Да/Нет — обоснование: ${homeTeamName} забивает в 1-м тайме X% матчей дома, ${awayTeamName} пропускает в 1-м тайме Y% в гостях]`;
+  else if(isTenn) verdict4Line = `4. Тотал геймов: 🎾 [Б/М XX.5 — ${homeTeamName} выигрывает матчи за X геймов в среднем (~ИИ)]`;
+  else if(isHock) verdict4Line = `4. Тотал шайб: 🏒 [Б/М X.5 — вратарь ${homeTeamName} SV% X.XXX, вратарь ${awayTeamName} SV% X.XXX (~ИИ)]`;
+  else if(isBask) verdict4Line = `4. Тотал очков: 🏀 [Б/М XXX.5 — Pace ${homeTeamName} XX, Pace ${awayTeamName} XX (~ИИ)]`;
+  else verdict4Line = '4. Тотал: 📊 [Б/М X.5]';
 
   // ESPN данные первого тайма для футбола
   let firstHalfContext = '';
@@ -4976,58 +4968,6 @@ async function startAnalysis() {
     statsPoint2 = '2. Advanced Stats\nESPN данных нет — используй знания модели с пометкой (~ИИ)';
   }
 
-  // Спорт-специфичные строки анализа
-  const analysis1Line = isTenn
-    ? `[${homeTeamName} (П1): рейтинг ATP/WTA, форма последних 5 матчей, результаты на текущем покрытии | ${awayTeamName} (П2): рейтинг ATP/WTA, форма последних 5 матчей, результаты на текущем покрытии — из ESPN или (~ИИ)]`
-    : `[хозяева (${homeTeamName}): форма последних 5 матчей дома, рекорд дома, позиция в таблице | гости (${awayTeamName}): форма последних 5 матчей в гостях, рекорд в гостях, позиция в таблице — только факты из ESPN или (~ИИ)]`;
-
-  const analysis5Line = isTenn
-    ? `[${homeTeamName}: мотивация — покрытие (родное/неудобное), физическое состояние, количество матчей за последние дни | ${awayTeamName}: мотивация — покрытие, усталость, важность турнира для рейтинга (~ИИ)]`
-    : isBask
-    ? `[хозяева (${homeTeamName}): место в конференции, playoff race, back-to-back статус | гости (${awayTeamName}): их playoff race, back-to-back статус, турнирная ситуация — из ESPN или (~ИИ)]`
-    : isHock
-    ? `[хозяева (${homeTeamName}): место в конференции, playoff race, вратарь стартует | гости (${awayTeamName}): playoff race, усталость, вратарь стартует — из ESPN или (~ИИ)]`
-    : `[хозяева (${homeTeamName}): что поставлено на карту, место в таблице, важность матча | гости (${awayTeamName}): их мотивация, турнирная ситуация]`;
-
-  const analysis7Line = isTenn
-    ? `[используй данные подачи/приёма для прогноза геймов и сетов: Ace%, DF%, BPSaved% обоих игроков — или (~ИИ) если ESPN данных нет]`
-    : isBask
-    ? `[используй данные "очков забито за матч" / "очков пропущено за матч" / Pace из ESPN выше для расчёта суммарного тотала — или "нет данных"]`
-    : `[используй данные "голов забито" / "голов пропущено" / "Рекорд дома" / "Рекорд в гостях" из ESPN выше для расчёта среднего — или "нет данных"]`;
-
-  const analysis8Line = isTenn
-    ? `[${homeTeamName}: посев в турнире, важность для рейтинга, стадия турнира | ${awayTeamName}: посев, турнирная ситуация — из ESPN или (~ИИ)]`
-    : isBask
-    ? `[хозяева (${homeTeamName}): место в конференции, разрыв от 1-го seed/play-in зоны | гости (${awayTeamName}): их posиция, playoff контекст — из ESPN или (~ИИ)]`
-    : isHock
-    ? `[хозяева (${homeTeamName}): место в конференции, разрыв от playoff позиции | гости (${awayTeamName}): их позиция, playoff контекст — из ESPN или (~ИИ)]`
-    : `[хозяева (${homeTeamName}): место в таблице, разрыв от топ-4/зоны вылета | гости (${awayTeamName}): их позиция, турнирный контекст — используй данные ESPN или (~ИИ)]`;
-
-  const analysis9Line = isTenn
-    ? `[${homeTeamName}: текущая серия побед/поражений, последний матч (результат, продолжительность) | ${awayTeamName}: серия, последний матч — из ESPN или (~ИИ)]`
-    : `[хозяева (${homeTeamName}): текущая серия дома, последний домашний матч | гости (${awayTeamName}): выездная серия, последний выездной матч — из формы ESPN или (~ИИ)]`;
-
-  // Спорт-специфичные строки вердикта
-  const verdict1Line = isTenn
-    ? `1. Исход: [П1 (${homeTeamName}) / П2 (${awayTeamName}) — ничьей нет]`
-    : `1. Исход: [П1 (${homeTeamName}) / X / П2 (${awayTeamName})]`;
-
-  const verdict6Line = isTenn
-    ? `6. X-фактор: [1 конкретный факт — например: "H2H 6-2 в пользу ${homeTeamName}" или "${awayTeamName} 0 побед на данном покрытии за 5 матчей (~ИИ)"]`
-    : isBask
-    ? `6. X-фактор: [1 конкретный факт — например: "${homeTeamName} выиграл 4 из 5 домашних матчей" или "${awayTeamName} 2-я игра за 2 дня — спад Pace в B2B (~ИИ)"]`
-    : isHock
-    ? `6. X-фактор: [1 конкретный факт — например: "Corsi% ${homeTeamName} 54.2 дома" или "вратарь ${awayTeamName} SV% 0.885 в гостях (~ИИ)"]`
-    : `6. X-фактор: [1 конкретный факт с цифрой — например: "${homeTeamName} выиграл 4 из 5 домашних матчей" или "${awayTeamName} не проигрывал 3 матча подряд в гостях (~ИИ)"]`;
-
-  const verdict10Line = isTenn
-    ? `10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — ${awayTeamName} выиграл последние 2 встречи на этом покрытии (~ИИ)" или "Риск — ${homeTeamName} 3-й матч за 4 дня, уровень усталости высокий"]`
-    : isBask
-    ? `10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — если ${awayTeamName} выйдет из B2B свежим и ключевой игрок наберёт 30+" или "Риск — ${homeTeamName} DRtg просел в последних 3 матчах (~ИИ)"]`
-    : isHock
-    ? `10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — вратарь ${homeTeamName} под вопросом, PP% ${awayTeamName} 24% (~ИИ)" или "Риск — ${awayTeamName} выиграл 3 из 4 выездных матчей (~ИИ)"]`
-    : `10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — ${awayTeamName} выиграл 3 из 4 выездных матчей" или "Риск — вратарь хозяев пропустил 2+ в последних 3 матчах". Не пиши "ничья" без объяснения]`;
-
   const homeAwayNote = (homeTeamName && awayTeamName && !currentSport.includes('🎾'))
     ? `Хозяин (П1): ${homeTeamName} | Гость (П2): ${awayTeamName}`
     : (currentSport.includes('🎾') ? `Игрок 1: ${homeTeamName} | Игрок 2: ${awayTeamName}` : '');
@@ -5066,7 +5006,7 @@ ${matchDateLine}
 📊 АНАЛИЗ 9 ПУНКТОВ
 
 1. Форма и таблица
-${analysis1Line}
+[хозяева (${homeTeamName}): форма последних 5 матчей дома, рекорд дома, позиция в таблице | гости (${awayTeamName}): форма последних 5 матчей в гостях, рекорд в гостях, позиция в таблице — только факты из ESPN или (~ИИ)]
 
 ${statsPoint2}
 
@@ -5077,19 +5017,19 @@ ${statsPoint2}
 [если есть данные ESPN — используй их; иначе — знания модели об актуальных травмах/дисквалификациях с пометкой (~ИИ); если неизвестно — "нет данных"]
 
 5. Мотивация
-${analysis5Line}
+[хозяева (${homeTeamName}): что поставлено на карту, место в таблице, важность матча | гости (${awayTeamName}): их мотивация, турнирная ситуация]
 
 6. Линия / Умные деньги
 [данные из Sharp/CLV/линии ESPN выше — или "нет данных"]
 
-7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : isBask ? ' (очки)' : isTenn ? ' (геймы/сеты)' : ' (шайбы)'}
-${analysis7Line}
+7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
+[используй данные "голов забито" / "голов пропущено" / "Рекорд дома" / "Рекорд в гостях" из ESPN выше для расчёта среднего — или "нет данных"]
 
 8. Контекст лиги / турнира
-${analysis8Line}
+[хозяева (${homeTeamName}): место в таблице, разрыв от топ-4/зоны вылета | гости (${awayTeamName}): их позиция, турнирный контекст — используй данные ESPN или (~ИИ)]
 
 9. Серия и последний результат
-${analysis9Line}
+[хозяева (${homeTeamName}): текущая серия дома, последний домашний матч | гости (${awayTeamName}): выездная серия, последний выездной матч — из формы ESPN или (~ИИ)]
 ANALYSIS_END
 
 VERDICT_START
@@ -5099,16 +5039,16 @@ ${emoji} ${match}
 
 🏆 ВЕРДИКТ
 
-${verdict1Line}
-${verdict2Line}
-${verdict3Line}
+1. Исход: [П1 (${homeTeamName}) / X / П2 (${awayTeamName})]
+2. Счёт: [X:X]
+3. Тотал: [Б/М X.5]
 ${verdict4Line}
 5. Уверенность: [XX% — фактор +N%, фактор +N%]
-${verdict6Line}
+6. X-фактор: [1 конкретный факт с цифрой — например: "Villarreal выиграл 4 из 5 домашних матчей" или "Alavés не проигрывал 3 матча подряд"]
 7. Смарт-прогноз: [1 строка]
 8. Профи-сигнал: Sharp [П1(~ИИ)/П2(~ИИ)/нейтрально если равный матч] | CLV [+X% или нет данных] | Steam [Да/Нет]
 9. Движение кефа: [данные или нет данных]
-${verdict10Line}
+10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — Alavés выиграл 3 из 4 выездных матчей" или "Риск — вратарь хозяев пропустил 2+ в последних 3 матчах". Не пиши "ничья" без объяснения]
 
 ✅ ТОП-3 СТАВКИ
 🥇 [ставка] — кеф 💛X.XX | [причина одной строкой]
