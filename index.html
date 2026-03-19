@@ -1609,9 +1609,9 @@ input::placeholder { color: rgba(240,240,248,0.2); }
 }
 .sm-card-add:active { background:rgba(0,220,130,0.3); }
 .sm-translation-hint {
-  padding: 6px 16px 4px;
+  padding: 5px 16px 2px;
   font-size: 11px;
-  color: rgba(0,220,130,0.7);
+  color: rgba(0,229,160,0.65);
   letter-spacing: 0.3px;
 }
 .sm-translation-hint b { color: #00E5A0; font-weight: 700; }
@@ -5936,96 +5936,138 @@ function onSmInput(val) {
 
 // ===== RU→EN SEARCH TRANSLATION =====
 var RU_EN_DICT = {
-  // НБА команды
-  'лейкерс':'lakers','лос-анджелес лейкерс':'lakers','лос анджелес лейкерс':'lakers',
-  'селтикс':'celtics','бостон':'boston celtics','голден стэйт':'golden state','голден-стэйт':'golden state',
-  'чикаго':'chicago bulls','булс':'bulls','майами':'miami heat','хит':'heat',
-  'бруклин':'brooklyn nets','нетс':'nets','никс':'knicks','нью-йорк никс':'knicks',
-  'бакс':'bucks','милуоки':'milwaukee','санс':'suns','финикс':'phoenix suns',
-  'маверикс':'mavericks','даллас':'dallas','клипперс':'clippers',
-  'сперс':'spurs','сан-антонио':'san antonio','тандер':'thunder','оклахома':'oklahoma',
-  'тимбервулвз':'timberwolves','миннесота':'minnesota','наггетс':'nuggets','денвер':'denver',
-  'блейзерс':'blazers','портленд':'portland','джаз':'jazz','юта':'utah',
-  'пэйсерс':'pacers','индиана':'indiana pacers','хокс':'hawks','атланта':'atlanta',
-  'хорнетс':'hornets','шарлотт':'charlotte','пистонс':'pistons','детройт':'detroit',
-  'кавальерс':'cavaliers','кавс':'cavaliers','кливленд':'cleveland',
-  'рокетс':'rockets','хьюстон':'houston rockets','гриззлис':'grizzlies','мемфис':'memphis',
-  'кингс':'kings','сакраменто':'sacramento','мэджик':'magic','орландо':'orlando',
-  'уизардс':'wizards','вашингтон':'washington','пеликанс':'pelicans','новый орлеан':'new orleans',
-  'рэпторс':'raptors','торонто':'toronto','сиксерс':'sixers','филадельфия':'philadelphia 76ers',
-  'кракен':'kraken','сиэтл':'seattle',
-  // НХЛ команды
-  'кэпиталс':'capitals','сенаторз':'senators','пингвинз':'penguins','питтсбург':'pittsburgh',
-  'блэкхокс':'blackhawks','ред вингс':'red wings','флайерс':'flyers','девилс':'devils',
-  'айлендерс':'islanders','рейнджерс':'rangers','сейбрс':'sabres','буффало':'buffalo',
-  'канадиенс':'canadiens','монреаль':'montreal','мэйпл лифс':'maple leafs','торонто мэйпл':'maple leafs',
-  'кэнакс':'canucks','ванкувер':'vancouver','ойлерс':'oilers','эдмонтон':'edmonton',
-  'флэймс':'flames','калгари':'calgary','уайлд':'wild','предаторз':'predators','нэшвилл':'nashville',
-  'блюз':'blues','сент-луис':'st. louis','эвеланш':'avalanche','колорадо':'colorado',
-  'дакс':'ducks','анахайм':'anaheim','шаркс':'sharks','сан-хосе':'san jose',
-  'кинге':'kings','лос-анджелес кингс':'los angeles kings',
-  'лайтнинг':'lightning','тампа':'tampa bay','пэнтерс':'panthers','флорида':'florida',
-  'харрикейнс':'hurricanes','каролина':'carolina','джекетс':'blue jackets','коламбус':'columbus',
-  'джетс':'jets','виннипег':'winnipeg','голден найтс':'golden knights','вегас':'vegas',
-  // Футбол клубы
+  // ===== ИМЕНА ИГРОКОВ (самое важное) =====
+  // НБА звёзды
+  'джеймс':'james','леброн':'lebron','леброн джеймс':'lebron james',
+  'карри':'curry','стеф карри':'stephen curry','стефен карри':'stephen curry',
+  'дюрант':'durant','кевин дюрант':'kevin durant',
+  'янис':'giannis','адетокунбо':'antetokounmpo','янис адетокунбо':'giannis antetokounmpo',
+  'йокич':'jokic','никола йокич':'nikola jokic',
+  'тейтум':'tatum','джейлен браун':'jaylen brown','браун':'brown',
+  'митчелл':'mitchell','донован митчелл':'donovan mitchell',
+  'ирвинг':'irving','кайри':'kyrie','кайри ирвинг':'kyrie irving',
+  'энтони дэвис':'anthony davis','дэвис':'davis',
+  'баллер':'butler','джимми батлер':'jimmy butler','батлер':'butler',
+  'бил':'beal','брэдли бил':'bradley beal',
+  'лиллард':'lillard','дэмиан лиллард':'damian lillard',
+  'эмбиид':'embiid','джоэль эмбиид':'joel embiid',
+  'харден':'harden','джеймс харден':'james harden',
+  'уэстбрук':'westbrook','расселл уэстбрук':'russell westbrook',
+  'пол':'paul','крис пол':'chris paul',
+  'юта':'utah','буккер':'booker','девин буккер':'devin booker',
+  'сабонис':'sabonis','домантас сабонис':'domantas sabonis',
+  'зайон':'zion','уильямсон':'williamson','зайон уильямсон':'zion williamson',
+  'ламело':'lamelo','болл':'ball','ламело болл':'lamelo ball',
+  'кузма':'kuzma','кайл кузма':'kyle kuzma',
+  'барнс':'barnes','скотти барнс':'scottie barnes',
+  'холидэй':'holiday','джру холидэй':'jrue holiday',
+  'клэй томпсон':'klay thompson','томпсон':'thompson',
+  'пейтон':'payton',
+  // НХЛ звёзды
+  'овечкин':'ovechkin','александр овечкин':'alex ovechkin',
+  'малкин':'malkin','евгений малкин':'evgeni malkin',
+  'кросби':'crosby','сид кросби':'sidney crosby','сидни кросби':'sidney crosby',
+  'макдэвид':'mcdavid','коннор макдэвид':'connor mcdavid',
+  'драйзайтль':'draisaitl','леон драйзайтль':'leon draisaitl',
+  'панарин':'panarin','артемий панарин':'artemi panarin',
+  'кучеров':'kucherov','никита кучеров':'nikita kucherov',
+  'хедман':'hedman','виктор хедман':'victor hedman',
+  'цибанёв':'zibanejad','мика цибанёв':'mika zibanejad',
+  'пастрняк':'pastrnak','давид пастрняк':'david pastrnak',
+  'маккиннон':'mackinnon','нэйтан маккиннон':'nathan mackinnon',
+  'ландескуг':'landeskog',
+  // Теннисисты (дополнение к основному словарю)
+  'джокович':'djokovic','надаль':'nadal','федерер':'federer',
+  'медведев':'medvedev','зверев':'zverev','алькарас':'alcaraz',
+  'синнер':'sinner','рублев':'rublev','циципас':'tsitsipas',
+  'хуркач':'hurkacz','фриц':'fritz','де минор':'de minaur',
+  'шелтон':'shelton','корда':'korda','мусетти':'musetti',
+  'свентек':'swiatek','соболенко':'sabalenka','рыбакина':'rybakina',
+  'гауфф':'gauff','пегула':'pegula','касаткина':'kasatkina',
+  'самсонова':'samsonova','паолини':'paolini','жабёр':'jabeur',
+  'саккари':'sakkari','вондроушова':'vondrousova',
+  'свитолина':'svitolina','александрова':'alexandrova',
+  'бенчич':'bencic','коллинз':'collins',
+  // Футбольные звёзды
+  'мбаппе':'mbappe','килиан мбаппе':'kylian mbappe',
+  'холанд':'haaland','холланд':'haaland','харланд':'haaland','эрлинг холанд':'erling haaland',
+  'винисиус':'vinicius','винисиус жуниор':'vinicius junior',
+  'беллингем':'bellingham','джуд беллингем':'jude bellingham',
+  'салах':'salah','мохамед салах':'mohamed salah',
+  'сон':'son','хын-мин сон':'heung-min son',
+  'де брёйне':'de bruyne','кевин де брёйне':'kevin de bruyne',
+  'левандовски':'lewandowski','роберт левандовски':'robert lewandowski',
+  'педри':'pedri','яшмаль':'yamal','ламин ямаль':'lamine yamal',
+  'дзамбо атангана':'zambo anguissa',
+  'канселу':'cancelo','трент':'trent','арнольд':'arnold',
+  'ван дейк':'van dijk','вирджил':'virgil',
+  'де хеа':'de gea','облак':'oblak','куртуа':'courtois',
+  'бензема':'benzema','мората':'morata','жиру':'giroud',
+  // ===== КЛУБЫ =====
   'реал мадрид':'real madrid','реал':'real madrid','барселона':'barcelona','барса':'barcelona',
   'манчестер юнайтед':'manchester united','манчестер сити':'manchester city',
-  'манюнайтед':'manchester united','мансити':'manchester city','ман сити':'manchester city',
-  'ливерпуль':'liverpool','арсенал':'arsenal','челси':'chelsea','тоттенхэм':'tottenham',
+  'ман юнайтед':'manchester united','ман сити':'manchester city',
+  'ливерпуль':'liverpool','арсенал':'arsenal','челси':'chelsea',
+  'тоттенхэм':'tottenham','сперс':'spurs',
   'ньюкасл':'newcastle','вест хэм':'west ham','астон вилла':'aston villa',
-  'брайтон':'brighton','бурнмут':'bournemouth','фулхэм':'fulham','брентфорд':'brentford',
-  'вулверхэмптон':'wolverhampton','кристал пэлас':'crystal palace','лестер':'leicester',
-  'саутгемптон':'southampton','ипсвич':'ipswich','ноттингем':'nottingham',
+  'брайтон':'brighton','бурнмут':'bournemouth','фулхэм':'fulham',
+  'вулверхэмптон':'wolverhampton','кристал пэлас':'crystal palace',
   'псж':'psg','пари сен-жермен':'psg','лион':'lyon','марсель':'marseille','монако':'monaco',
   'бавария':'bayern','боруссия дортмунд':'dortmund','боруссия':'borussia',
-  'лейпциг':'leipzig','байер леверкузен':'leverkusen','леверкузен':'leverkusen',
-  'штутгарт':'stuttgart','фрайбург':'freiburg','франкфурт':'frankfurt',
+  'лейпциг':'leipzig','леверкузен':'leverkusen','штутгарт':'stuttgart',
   'ювентус':'juventus','интер':'inter','милан':'milan','наполи':'napoli',
   'рома':'roma','лацио':'lazio','аталанта':'atalanta','фиорентина':'fiorentina',
   'атлетико':'atletico','севилья':'sevilla','валенсия':'valencia','вильярреал':'villarreal',
-  'бетис':'betis','хетафе':'getafe','сельта':'celta','осасуна':'osasuna',
   'порту':'porto','бенфика':'benfica','спортинг':'sporting','аякс':'ajax',
-  'зенит':'zenit','спартак':'spartak','цска':'cska','динамо':'dynamo','локомотив':'lokomotiv',
-  'шахтер':'shakhtar','динамо киев':'dynamo kyiv',
-  // Теннисты
-  'джокович':'djokovic','надаль':'nadal','федерер':'federer','медведев':'medvedev',
-  'зверев':'zverev','алькарас':'alcaraz','синнер':'sinner','рублев':'rublev',
-  'циципас':'tsitsipas','хуркач':'hurkacz','фриц':'fritz','де минор':'de minaur',
-  'шелтон':'shelton','томми пол':'tommy paul','корда':'korda',
-  'свентек':'swiatek','соболенко':'sabalenka','рыбакина':'rybakina','гауфф':'gauff',
-  'пегула':'pegula','коллинз':'collins','свитолина':'svitolina','касаткина':'kasatkina',
-  'самсонова':'samsonova','александрова':'alexandrova','паолини':'paolini',
-  'жабёр':'jabeur','саккари':'sakkari','вондроушова':'vondrousova',
-  // Общие термины
-  'нба':'nba','нхл':'nhl','мла':'mls','апл':'epl',
+  'зенит':'zenit','спартак':'spartak','цска':'cska','динамо':'dynamo',
+  // ===== НБА команды =====
+  'лейкерс':'lakers','лос-анджелес лейкерс':'lakers',
+  'селтикс':'celtics','голден стэйт':'golden state',
+  'чикаго':'chicago bulls','булс':'bulls','майами хит':'miami heat','хит':'heat',
+  'бруклин нетс':'brooklyn nets','нетс':'nets','никс':'knicks',
+  'бакс':'bucks','санс':'suns','маверикс':'mavericks','даллас':'dallas mavericks',
+  'клипперс':'clippers','сперс нба':'spurs','тандер':'thunder',
+  'тимбервулвз':'timberwolves','наггетс':'nuggets','блейзерс':'blazers',
+  'джаз':'jazz','пэйсерс':'pacers','хокс':'hawks',
+  'хорнетс':'hornets','пистонс':'pistons','кавальерс':'cavaliers','кавс':'cavaliers',
+  'рокетс':'rockets','гриззлис':'grizzlies','кингс':'kings','мэджик':'magic',
+  'уизардс':'wizards','пеликанс':'pelicans','рэпторс':'raptors','сиксерс':'sixers',
+  // ===== НХЛ команды =====
+  'кэпиталс':'capitals','сенаторс':'senators','пингвинс':'penguins',
+  'блэкхокс':'blackhawks','ред вингс':'red wings','флайерс':'flyers',
+  'девилс':'devils','айлендерс':'islanders','рейнджерс':'rangers','сейберс':'sabres',
+  'канадиенс':'canadiens','монреаль':'montreal','мэйпл лифс':'maple leafs',
+  'кэнакс':'canucks','ойлерс':'oilers','флэймс':'flames',
+  'уайлд':'wild','предаторс':'predators','блюз':'blues','эвеланш':'avalanche',
+  'дакс':'ducks','шаркс':'sharks','лайтнинг':'lightning','пэнтерс':'panthers',
+  'харрикейнс':'hurricanes','голден найтс':'golden knights','кракен':'kraken',
+  // ===== ЛИГИ =====
+  'нба':'nba','нхл':'nhl','мла':'mls','апл':'epl','рпл':'russian premier league',
   'лига чемпионов':'champions league','лч':'champions league',
   'лига европы':'europa league','лига конференций':'conference league',
-  'ла лига':'la liga','серия а':'serie a','бундеслига':'bundesliga',
-  'лига 1':'ligue 1','примера':'la liga',
-  'плей-офф':'playoffs','плейофф':'playoffs',
-  'финал':'final','полуфинал':'semifinal','четвертьфинал':'quarterfinal',
-  'открытый чемпионат':'open','грэнд слэм':'grand slam','мастерс':'masters',
+  'ла лига':'la liga','серия а':'serie a','бундеслига':'bundesliga','лига 1':'ligue 1',
+  'плей-офф':'playoffs','плейофф':'playoffs','финал':'final',
+  'открытый чемпионат':'open','гранд слэм':'grand slam','мастерс':'masters',
+  'индиан уэллс':'indian wells','майами опен':'miami open',
 };
 
 function translateRuToEn(text) {
   var t = text.toLowerCase().trim();
-  // Сначала проверяем полные фразы (длинные сначала)
+  // Сортируем по длине (длинные фразы сначала)
   var phrases = Object.keys(RU_EN_DICT).sort(function(a,b){ return b.length - a.length; });
   var result = t;
   for(var i = 0; i < phrases.length; i++) {
     if(result.indexOf(phrases[i]) >= 0) {
-      result = result.replace(phrases[i], RU_EN_DICT[phrases[i]]);
+      result = result.replace(new RegExp(phrases[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'), RU_EN_DICT[phrases[i]]);
     }
   }
-  // Если русские символы остались — добавляем транслитерацию для неизвестных слов
+  // Если кириллица осталась — транслитерация (последний резерв)
   if(/[а-яёА-ЯЁ]/.test(result)) {
-    var translit = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo',
-      'ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
-      'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
-      'ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
-    result = result.split('').map(function(c){
-      return translit[c.toLowerCase()] !== undefined ? translit[c.toLowerCase()] : c;
-    }).join('');
+    var tr = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z',
+      'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s',
+      'т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'',
+      'ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+    result = result.split('').map(function(c){ return tr[c]!==undefined?tr[c]:c; }).join('');
   }
   return result;
 }
@@ -6036,10 +6078,9 @@ async function doSearch() {
     setSmResults('<div class="sm-empty"><div class="sm-empty-icon">✏️</div>Введи минимум 2 символа</div>');
     return;
   }
-  // Автоперевод: если есть кириллица — переводим на английский
   var hasRu = /[а-яёА-ЯЁ]/.test(rawQuery);
   var query = hasRu ? translateRuToEn(rawQuery) : rawQuery.toLowerCase();
-  var translationHint = hasRu && query !== rawQuery.toLowerCase()
+  var translationHint = (hasRu && query.trim() !== rawQuery.toLowerCase().trim())
     ? '<div class="sm-translation-hint">🌐 Перевод: <b>' + query + '</b></div>' : '';
   if(smSearching) return;
   smSearching = true;
@@ -6253,7 +6294,7 @@ function smPickMatch(idx) {
   var m = list[idx] || smFilteredResults[idx];
   if(!m) return;
 
-  // Заполняем поле и переменные через fillMatch
+  // Заполняем через fillMatch — сохраняет datetime и espnId
   if(typeof fillMatch === 'function') {
     fillMatch(m.teams, m.rawDate || null, m.espnId || null);
   } else {
@@ -6264,7 +6305,6 @@ function smPickMatch(idx) {
 
   closeSearchMenu();
 
-  // Switch to Матч tab
   if(typeof switchTabById === 'function') switchTabById('manual');
   else {
     var matchTab = document.querySelector('[data-tab="match"]') || document.getElementById('tab-match');
