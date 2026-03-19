@@ -4243,7 +4243,9 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const text = (data.choices?.[0]?.message?.content || '').trim();
     if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
     const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    const jsonMatch = clean.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) { logEvent('Groq', false, 'JSON-массив не найден в ответе: ' + clean.slice(0,60)); return; }
+    const parsed = JSON.parse(jsonMatch[0]);
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
