@@ -1608,6 +1608,13 @@ input::placeholder { color: rgba(240,240,248,0.2); }
   touch-action:manipulation;
 }
 .sm-card-add:active { background:rgba(0,220,130,0.3); }
+.sm-translation-hint {
+  padding: 6px 16px 4px;
+  font-size: 11px;
+  color: rgba(0,220,130,0.7);
+  letter-spacing: 0.3px;
+}
+.sm-translation-hint b { color: #00E5A0; font-weight: 700; }
 
 .sm-overlay {
   position:fixed;inset:0;z-index:99998;
@@ -2935,8 +2942,7 @@ async function fetchOddsHotMatches() {
           if(!aName && !hName) continue;
           aName = aName || '?'; hName = hName || '?';
           const rawDate = e.date || comp.date || '';
-          const isNeutral = comp.neutralSite === true || comp.venue?.isNeutral === true || false;
-          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${hName} — ${aName}`, score, minute: displayTime, live: isLive, eventDate: rawDate, espnId: e.id || comp.id || '', neutral: isNeutral });
+          allEvents.push({ sport: ep.sport, league: ep.league, teams: `${hName} — ${aName}`, score, minute: displayTime, live: isLive, eventDate: rawDate, espnId: e.id || comp.id || '' });
         } catch(_){}
       }
     } catch(err) {
@@ -3165,8 +3171,7 @@ async function fetchESPNMatchesForGroq() {
             const homeTeamId = homeComp?.team?.id || null;
             const awayTeamId = awayComp?.team?.id || null;
             const leagueSlug = (item._epUrl||'').match(/sports\/[^/]+\/([^/]+)\/scoreboard/)?.[1] || null;
-            const isNeutralSite = item._event?.competitions?.[0]?.neutralSite === true || false;
-            globalEventMap.set(normKey, { eventId: item._eventId, tournId: item._tournId || null, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug, eventDate: item._event?.date || null, neutral: isNeutralSite });
+            globalEventMap.set(normKey, { eventId: item._eventId, tournId: item._tournId || null, sportSlug, sport: item._sport || ep.sport, homeTeamId, awayTeamId, leagueSlug, eventDate: item._event?.date || null });
           }
           // Сохраняем форму команд и live-данные из ESPN
           try {
@@ -4245,9 +4250,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const text = (data.choices?.[0]?.message?.content || '').trim();
     if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
     const clean = text.replace(/```json|```/g,'').trim();
-    const jsonMatch = clean.match(/\[[\s\S]*\]/);
-    if(!jsonMatch) { logEvent('Groq', false, 'JSON-массив не найден: ' + clean.slice(0,60)); return; }
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(clean);
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
@@ -4911,86 +4914,13 @@ async function startAnalysis() {
   const isBask = currentSport.includes('🏀') || currentSport.toLowerCase().includes('баскет');
   const isTenn = currentSport.includes('🎾') || currentSport.toLowerCase().includes('теннис');
 
-  // Пункты 1, 2, 3, 4 вердикта + строки анализа — по виду спорта
-
-  // Нейтральное поле из globalEventMap
-  const normKeyForNeutral = match.toLowerCase().replace(/\s+/g,' ').trim();
-  const evMapEntry = globalEventMap.get(normKeyForNeutral);
-  const isNeutralVenue = evMapEntry?.neutral === true;
-
-  // Вердикт п.1 — исход
-  let verdict1Line = '';
-  if(isTenn) verdict1Line = `1. Исход: [П1 (${homeTeamName}) / П2 (${awayTeamName}) — ничьей нет]`;
-  else if(isNeutralVenue) verdict1Line = `1. Исход: [Победа ${homeTeamName} / Ничья / Победа ${awayTeamName} — ⚖️ НЕЙТРАЛЬНОЕ ПОЛЕ, используй названия команд]`;
-  else verdict1Line = `1. Исход: [П1 (${homeTeamName}) / X / П2 (${awayTeamName})]`;
-
-  // Вердикт п.2 — счёт
-  let verdict2Line = '';
-  if(isFoot || isHock) verdict2Line = `2. Счёт: [X:X]`;
-  else if(isBask) verdict2Line = `2. Счёт: 🏀 [XXX:XXX — ожидаемые очки, например 108:102]`;
-  else if(isTenn) verdict2Line = `2. Счёт: 🎾 [X:X (сеты), например 2:1]`;
-  else verdict2Line = `2. Счёт: [X:X]`;
-
-  // Вердикт п.3 — тотал
-  let verdict3Line = '';
-  if(isFoot) verdict3Line = `3. Тотал: ⚽ [Б/М X.5 голов]`;
-  else if(isBask) verdict3Line = `3. Тотал: 🏀 [Б/М XXX.5 суммарных очков, например М 218.5]`;
-  else if(isHock) verdict3Line = `3. Тотал: 🏒 [Б/М X.5 шайб]`;
-  else if(isTenn) verdict3Line = `3. Тотал: 🎾 [Б/М XX.5 геймов]`;
-  else verdict3Line = `3. Тотал: [Б/М X.5]`;
-
-  // Вердикт п.4
+  // Пункт 4 вердикта по виду спорта
   let verdict4Line = '';
   if(isFoot) verdict4Line = `4. Гол в 1-м тайме: ⚽ [Да/Нет — обоснование: ${homeTeamName} забивает в 1-м тайме X% матчей дома, ${awayTeamName} пропускает в 1-м тайме Y% в гостях]`;
   else if(isTenn) verdict4Line = `4. Тотал геймов: 🎾 [Б/М XX.5 — ${homeTeamName} выигрывает матчи за X геймов в среднем (~ИИ)]`;
   else if(isHock) verdict4Line = `4. Тотал шайб: 🏒 [Б/М X.5 — вратарь ${homeTeamName} SV% X.XXX, вратарь ${awayTeamName} SV% X.XXX (~ИИ)]`;
   else if(isBask) verdict4Line = `4. Тотал очков: 🏀 [Б/М XXX.5 — Pace ${homeTeamName} XX, Pace ${awayTeamName} XX (~ИИ)]`;
   else verdict4Line = '4. Тотал: 📊 [Б/М X.5]';
-
-  // Вердикт п.6 — X-фактор
-  let verdict6Line = '';
-  if(isTenn) verdict6Line = `6. X-фактор: [H2H — например: "H2H 6-2 в пользу ${homeTeamName}" или "${awayTeamName} 0 побед на данном покрытии (~ИИ)"]`;
-  else if(isBask) verdict6Line = `6. X-фактор: [например: "${homeTeamName} выиграл 4 из 5 дома" или "${awayTeamName} 2-я игра за 2 дня — спад в B2B (~ИИ)"]`;
-  else if(isHock) verdict6Line = `6. X-фактор: [например: "Corsi% ${homeTeamName} 54.2 дома" или "вратарь ${awayTeamName} SV% 0.885 в гостях (~ИИ)"]`;
-  else verdict6Line = `6. X-фактор: [1 конкретный факт с цифрой — например: "${homeTeamName} выиграл 4 из 5 домашних матчей" или "${awayTeamName} не проигрывал 3 матча подряд (~ИИ)"]`;
-
-  // Вердикт п.10 — альт.сценарий
-  let verdict10Line = '';
-  if(isTenn) verdict10Line = `10. Альт.сценарий: [например: "Риск — ${awayTeamName} выиграл последние 2 встречи на этом покрытии (~ИИ)" или "Риск — ${homeTeamName} 3-й матч за 4 дня"]`;
-  else if(isBask) verdict10Line = `10. Альт.сценарий: [например: "Риск — если ${awayTeamName} выйдет из B2B свежим и набрёт 30+" или "Риск — ${homeTeamName} DRtg просел в последних 3 матчах (~ИИ)"]`;
-  else if(isHock) verdict10Line = `10. Альт.сценарий: [например: "Риск — вратарь ${homeTeamName} под вопросом, PP% ${awayTeamName} 24% (~ИИ)"]`;
-  else verdict10Line = `10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — ${awayTeamName} выиграл 3 из 4 выездных матчей" или "Риск — вратарь хозяев пропустил 2+ в последних 3 матчах"]`;
-
-  // Анализ п.1 — форма и таблица
-  let analysis1Line = '';
-  if(isTenn) analysis1Line = `[${homeTeamName} (П1): рейтинг ATP/WTA, форма последних 5 матчей, результаты на текущем покрытии | ${awayTeamName} (П2): рейтинг, форма, покрытие — из ESPN или (~ИИ)]`;
-  else if(isNeutralVenue) analysis1Line = `[${homeTeamName}: форма последних 5 матчей, рекорд сезона, позиция | ${awayTeamName}: форма, рекорд, позиция — ⚖️ нейтральное поле, преимущества хозяев нет]`;
-  else analysis1Line = `[хозяева (${homeTeamName}): форма последних 5 матчей дома, рекорд дома, позиция в таблице | гости (${awayTeamName}): форма в гостях, рекорд в гостях, позиция — из ESPN или (~ИИ)]`;
-
-  // Анализ п.5 — мотивация
-  let analysis5Line = '';
-  if(isTenn) analysis5Line = `[${homeTeamName}: покрытие (родное/неудобное), физическое состояние, кол-во матчей за последние дни | ${awayTeamName}: покрытие, усталость, важность турнира (~ИИ)]`;
-  else if(isBask) analysis5Line = `[хозяева (${homeTeamName}): место в конференции, playoff race, back-to-back статус | гости (${awayTeamName}): playoff race, back-to-back, турнирная ситуация — из ESPN или (~ИИ)]`;
-  else if(isHock) analysis5Line = `[хозяева (${homeTeamName}): место в конференции, playoff race, вратарь стартует | гости (${awayTeamName}): playoff race, усталость, вратарь стартует — из ESPN или (~ИИ)]`;
-  else analysis5Line = `[хозяева (${homeTeamName}): что поставлено на карту, место в таблице, важность матча | гости (${awayTeamName}): их мотивация, турнирная ситуация]`;
-
-  // Анализ п.7 — тоталы
-  let analysis7Line = '';
-  if(isTenn) analysis7Line = `[используй Ace%, DF%, BPSaved% обоих для прогноза геймов/сетов — или (~ИИ)]`;
-  else if(isBask) analysis7Line = `[используй данные "очков забито/пропущено за матч" / Pace из ESPN для расчёта суммарного тотала — или "нет данных"]`;
-  else analysis7Line = `[используй данные "голов забито/пропущено" / "Рекорд дома/в гостях" из ESPN для расчёта среднего — или "нет данных"]`;
-
-  // Анализ п.8 — контекст лиги
-  let analysis8Line = '';
-  if(isTenn) analysis8Line = `[${homeTeamName}: посев в турнире, стадия, важность для рейтинга | ${awayTeamName}: посев, турнирная ситуация — из ESPN или (~ИИ)]`;
-  else if(isBask) analysis8Line = `[хозяева (${homeTeamName}): место в конференции, разрыв от 1-го seed/play-in | гости (${awayTeamName}): позиция, playoff контекст — из ESPN или (~ИИ)]`;
-  else if(isHock) analysis8Line = `[хозяева (${homeTeamName}): место в конференции, разрыв от playoff позиции | гости (${awayTeamName}): позиция, playoff контекст — из ESPN или (~ИИ)]`;
-  else analysis8Line = `[хозяева (${homeTeamName}): место в таблице, разрыв от топ-4/зоны вылета | гости (${awayTeamName}): позиция, турнирный контекст — из ESPN или (~ИИ)]`;
-
-  // Анализ п.9 — серия
-  let analysis9Line = '';
-  if(isTenn) analysis9Line = `[${homeTeamName}: текущая серия побед/поражений, последний матч | ${awayTeamName}: серия, последний матч — из ESPN или (~ИИ)]`;
-  else analysis9Line = `[хозяева (${homeTeamName}): текущая серия дома, последний домашний матч | гости (${awayTeamName}): выездная серия, последний выездной матч — из ESPN или (~ИИ)]`;
 
   // ESPN данные первого тайма для футбола
   let firstHalfContext = '';
@@ -5045,14 +4975,9 @@ async function startAnalysis() {
     statsPoint2 = '2. Advanced Stats\nESPN данных нет — используй знания модели с пометкой (~ИИ)';
   }
 
-  let homeAwayNote = '';
-  if(currentSport.includes('🎾')) {
-    homeAwayNote = `Игрок 1: ${homeTeamName} | Игрок 2: ${awayTeamName}`;
-  } else if(isNeutralVenue) {
-    homeAwayNote = `⚖️ НЕЙТРАЛЬНОЕ ПОЛЕ — понятий "хозяин/гость" нет. Команда 1: ${homeTeamName} | Команда 2: ${awayTeamName}. Вместо П1/П2 используй названия команд.`;
-  } else if(homeTeamName && awayTeamName) {
-    homeAwayNote = `Хозяин (П1): ${homeTeamName} | Гость (П2): ${awayTeamName}`;
-  }
+  const homeAwayNote = (homeTeamName && awayTeamName && !currentSport.includes('🎾'))
+    ? `Хозяин (П1): ${homeTeamName} | Гость (П2): ${awayTeamName}`
+    : (currentSport.includes('🎾') ? `Игрок 1: ${homeTeamName} | Игрок 2: ${awayTeamName}` : '');
   const prompt = `Матч: ${match}
 Вид спорта: ${currentSport}
 ${homeAwayNote ? homeAwayNote + '\n' : ''}Дата и время матча (из ESPN): ${matchDt || 'уточняется'}
@@ -5088,7 +5013,7 @@ ${matchDateLine}
 📊 АНАЛИЗ 9 ПУНКТОВ
 
 1. Форма и таблица
-${analysis1Line}
+[хозяева (${homeTeamName}): форма последних 5 матчей дома, рекорд дома, позиция в таблице | гости (${awayTeamName}): форма последних 5 матчей в гостях, рекорд в гостях, позиция в таблице — только факты из ESPN или (~ИИ)]
 
 ${statsPoint2}
 
@@ -5099,19 +5024,19 @@ ${statsPoint2}
 [если есть данные ESPN — используй их; иначе — знания модели об актуальных травмах/дисквалификациях с пометкой (~ИИ); если неизвестно — "нет данных"]
 
 5. Мотивация
-${analysis5Line}
+[хозяева (${homeTeamName}): что поставлено на карту, место в таблице, важность матча | гости (${awayTeamName}): их мотивация, турнирная ситуация]
 
 6. Линия / Умные деньги
 [данные из Sharp/CLV/линии ESPN выше — или "нет данных"]
 
-7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : isBask ? ' (очки)' : isTenn ? ' (геймы/сеты)' : ' (шайбы)'}
-${analysis7Line}
+7. Тоталы${isFoot ? ' + Гол в 1-м тайме' : ''}
+[используй данные "голов забито" / "голов пропущено" / "Рекорд дома" / "Рекорд в гостях" из ESPN выше для расчёта среднего — или "нет данных"]
 
 8. Контекст лиги / турнира
-${analysis8Line}
+[хозяева (${homeTeamName}): место в таблице, разрыв от топ-4/зоны вылета | гости (${awayTeamName}): их позиция, турнирный контекст — используй данные ESPN или (~ИИ)]
 
 9. Серия и последний результат
-${analysis9Line}
+[хозяева (${homeTeamName}): текущая серия дома, последний домашний матч | гости (${awayTeamName}): выездная серия, последний выездной матч — из формы ESPN или (~ИИ)]
 ANALYSIS_END
 
 VERDICT_START
@@ -5121,16 +5046,16 @@ ${emoji} ${match}
 
 🏆 ВЕРДИКТ
 
-${verdict1Line}
-${verdict2Line}
-${verdict3Line}
+1. Исход: [П1 (${homeTeamName}) / X / П2 (${awayTeamName})]
+2. Счёт: [X:X]
+3. Тотал: [Б/М X.5]
 ${verdict4Line}
 5. Уверенность: [XX% — фактор +N%, фактор +N%]
-${verdict6Line}
+6. X-фактор: [1 конкретный факт с цифрой — например: "Villarreal выиграл 4 из 5 домашних матчей" или "Alavés не проигрывал 3 матча подряд"]
 7. Смарт-прогноз: [1 строка]
 8. Профи-сигнал: Sharp [П1(~ИИ)/П2(~ИИ)/нейтрально если равный матч] | CLV [+X% или нет данных] | Steam [Да/Нет]
 9. Движение кефа: [данные или нет данных]
-${verdict10Line}
+10. Альт.сценарий: [КОНКРЕТНО — например: "Риск — Alavés выиграл 3 из 4 выездных матчей" или "Риск — вратарь хозяев пропустил 2+ в последних 3 матчах". Не пиши "ничья" без объяснения]
 
 ✅ ТОП-3 СТАВКИ
 🥇 [ставка] — кеф 💛X.XX | [причина одной строкой]
@@ -6008,16 +5933,118 @@ function onSmInput(val) {
   // Allow search on enter, don't auto-search on every char
 }
 
+
+// ===== RU→EN SEARCH TRANSLATION =====
+var RU_EN_DICT = {
+  // НБА команды
+  'лейкерс':'lakers','лос-анджелес лейкерс':'lakers','лос анджелес лейкерс':'lakers',
+  'селтикс':'celtics','бостон':'boston celtics','голден стэйт':'golden state','голден-стэйт':'golden state',
+  'чикаго':'chicago bulls','булс':'bulls','майами':'miami heat','хит':'heat',
+  'бруклин':'brooklyn nets','нетс':'nets','никс':'knicks','нью-йорк никс':'knicks',
+  'бакс':'bucks','милуоки':'milwaukee','санс':'suns','финикс':'phoenix suns',
+  'маверикс':'mavericks','даллас':'dallas','клипперс':'clippers',
+  'сперс':'spurs','сан-антонио':'san antonio','тандер':'thunder','оклахома':'oklahoma',
+  'тимбервулвз':'timberwolves','миннесота':'minnesota','наггетс':'nuggets','денвер':'denver',
+  'блейзерс':'blazers','портленд':'portland','джаз':'jazz','юта':'utah',
+  'пэйсерс':'pacers','индиана':'indiana pacers','хокс':'hawks','атланта':'atlanta',
+  'хорнетс':'hornets','шарлотт':'charlotte','пистонс':'pistons','детройт':'detroit',
+  'кавальерс':'cavaliers','кавс':'cavaliers','кливленд':'cleveland',
+  'рокетс':'rockets','хьюстон':'houston rockets','гриззлис':'grizzlies','мемфис':'memphis',
+  'кингс':'kings','сакраменто':'sacramento','мэджик':'magic','орландо':'orlando',
+  'уизардс':'wizards','вашингтон':'washington','пеликанс':'pelicans','новый орлеан':'new orleans',
+  'рэпторс':'raptors','торонто':'toronto','сиксерс':'sixers','филадельфия':'philadelphia 76ers',
+  'кракен':'kraken','сиэтл':'seattle',
+  // НХЛ команды
+  'кэпиталс':'capitals','сенаторз':'senators','пингвинз':'penguins','питтсбург':'pittsburgh',
+  'блэкхокс':'blackhawks','ред вингс':'red wings','флайерс':'flyers','девилс':'devils',
+  'айлендерс':'islanders','рейнджерс':'rangers','сейбрс':'sabres','буффало':'buffalo',
+  'канадиенс':'canadiens','монреаль':'montreal','мэйпл лифс':'maple leafs','торонто мэйпл':'maple leafs',
+  'кэнакс':'canucks','ванкувер':'vancouver','ойлерс':'oilers','эдмонтон':'edmonton',
+  'флэймс':'flames','калгари':'calgary','уайлд':'wild','предаторз':'predators','нэшвилл':'nashville',
+  'блюз':'blues','сент-луис':'st. louis','эвеланш':'avalanche','колорадо':'colorado',
+  'дакс':'ducks','анахайм':'anaheim','шаркс':'sharks','сан-хосе':'san jose',
+  'кинге':'kings','лос-анджелес кингс':'los angeles kings',
+  'лайтнинг':'lightning','тампа':'tampa bay','пэнтерс':'panthers','флорида':'florida',
+  'харрикейнс':'hurricanes','каролина':'carolina','джекетс':'blue jackets','коламбус':'columbus',
+  'джетс':'jets','виннипег':'winnipeg','голден найтс':'golden knights','вегас':'vegas',
+  // Футбол клубы
+  'реал мадрид':'real madrid','реал':'real madrid','барселона':'barcelona','барса':'barcelona',
+  'манчестер юнайтед':'manchester united','манчестер сити':'manchester city',
+  'манюнайтед':'manchester united','мансити':'manchester city','ман сити':'manchester city',
+  'ливерпуль':'liverpool','арсенал':'arsenal','челси':'chelsea','тоттенхэм':'tottenham',
+  'ньюкасл':'newcastle','вест хэм':'west ham','астон вилла':'aston villa',
+  'брайтон':'brighton','бурнмут':'bournemouth','фулхэм':'fulham','брентфорд':'brentford',
+  'вулверхэмптон':'wolverhampton','кристал пэлас':'crystal palace','лестер':'leicester',
+  'саутгемптон':'southampton','ипсвич':'ipswich','ноттингем':'nottingham',
+  'псж':'psg','пари сен-жермен':'psg','лион':'lyon','марсель':'marseille','монако':'monaco',
+  'бавария':'bayern','боруссия дортмунд':'dortmund','боруссия':'borussia',
+  'лейпциг':'leipzig','байер леверкузен':'leverkusen','леверкузен':'leverkusen',
+  'штутгарт':'stuttgart','фрайбург':'freiburg','франкфурт':'frankfurt',
+  'ювентус':'juventus','интер':'inter','милан':'milan','наполи':'napoli',
+  'рома':'roma','лацио':'lazio','аталанта':'atalanta','фиорентина':'fiorentina',
+  'атлетико':'atletico','севилья':'sevilla','валенсия':'valencia','вильярреал':'villarreal',
+  'бетис':'betis','хетафе':'getafe','сельта':'celta','осасуна':'osasuna',
+  'порту':'porto','бенфика':'benfica','спортинг':'sporting','аякс':'ajax',
+  'зенит':'zenit','спартак':'spartak','цска':'cska','динамо':'dynamo','локомотив':'lokomotiv',
+  'шахтер':'shakhtar','динамо киев':'dynamo kyiv',
+  // Теннисты
+  'джокович':'djokovic','надаль':'nadal','федерер':'federer','медведев':'medvedev',
+  'зверев':'zverev','алькарас':'alcaraz','синнер':'sinner','рублев':'rublev',
+  'циципас':'tsitsipas','хуркач':'hurkacz','фриц':'fritz','де минор':'de minaur',
+  'шелтон':'shelton','томми пол':'tommy paul','корда':'korda',
+  'свентек':'swiatek','соболенко':'sabalenka','рыбакина':'rybakina','гауфф':'gauff',
+  'пегула':'pegula','коллинз':'collins','свитолина':'svitolina','касаткина':'kasatkina',
+  'самсонова':'samsonova','александрова':'alexandrova','паолини':'paolini',
+  'жабёр':'jabeur','саккари':'sakkari','вондроушова':'vondrousova',
+  // Общие термины
+  'нба':'nba','нхл':'nhl','мла':'mls','апл':'epl',
+  'лига чемпионов':'champions league','лч':'champions league',
+  'лига европы':'europa league','лига конференций':'conference league',
+  'ла лига':'la liga','серия а':'serie a','бундеслига':'bundesliga',
+  'лига 1':'ligue 1','примера':'la liga',
+  'плей-офф':'playoffs','плейофф':'playoffs',
+  'финал':'final','полуфинал':'semifinal','четвертьфинал':'quarterfinal',
+  'открытый чемпионат':'open','грэнд слэм':'grand slam','мастерс':'masters',
+};
+
+function translateRuToEn(text) {
+  var t = text.toLowerCase().trim();
+  // Сначала проверяем полные фразы (длинные сначала)
+  var phrases = Object.keys(RU_EN_DICT).sort(function(a,b){ return b.length - a.length; });
+  var result = t;
+  for(var i = 0; i < phrases.length; i++) {
+    if(result.indexOf(phrases[i]) >= 0) {
+      result = result.replace(phrases[i], RU_EN_DICT[phrases[i]]);
+    }
+  }
+  // Если русские символы остались — добавляем транслитерацию для неизвестных слов
+  if(/[а-яёА-ЯЁ]/.test(result)) {
+    var translit = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo',
+      'ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o',
+      'п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts',
+      'ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+    result = result.split('').map(function(c){
+      return translit[c.toLowerCase()] !== undefined ? translit[c.toLowerCase()] : c;
+    }).join('');
+  }
+  return result;
+}
+
 async function doSearch() {
-  var query = (document.getElementById('sm-input').value || '').trim().toLowerCase();
-  if(!query || query.length < 2) {
+  var rawQuery = (document.getElementById('sm-input').value || '').trim();
+  if(!rawQuery || rawQuery.length < 2) {
     setSmResults('<div class="sm-empty"><div class="sm-empty-icon">✏️</div>Введи минимум 2 символа</div>');
     return;
   }
+  // Автоперевод: если есть кириллица — переводим на английский
+  var hasRu = /[а-яёА-ЯЁ]/.test(rawQuery);
+  var query = hasRu ? translateRuToEn(rawQuery) : rawQuery.toLowerCase();
+  var translationHint = hasRu && query !== rawQuery.toLowerCase()
+    ? '<div class="sm-translation-hint">🌐 Перевод: <b>' + query + '</b></div>' : '';
   if(smSearching) return;
   smSearching = true;
 
-  setSmResults('<div class="sm-status">⏳ Ищем матчи...</div>');
+  setSmResults(translationHint + '<div class="sm-status">⏳ Ищем матчи...</div>');
   smAllResults = [];
 
   // Fetch all endpoints in parallel
@@ -6098,10 +6125,10 @@ async function smFetchEndpoint(ep, query) {
           names.push((t.team && (t.team.displayName||t.team.shortDisplayName||t.team.name)) || '');
         });
         names.push(e.name || comp.name || '');
-        names.push(ep.league || '');
 
         var nameStr = names.join(' ').toLowerCase();
-        if(nameStr.indexOf(query) < 0) return;
+        var queryWords = query.split(/\s+/).filter(Boolean);
+        if(!queryWords.every(function(w){ return nameStr.indexOf(w) >= 0; })) return;
 
         // Build match object
         var state = (e.status && e.status.type && e.status.type.state) ||
@@ -6226,19 +6253,19 @@ function smPickMatch(idx) {
   var m = list[idx] || smFilteredResults[idx];
   if(!m) return;
 
-  // Fill match input and switch to Матч tab
-  var inp = document.getElementById('match-input');
-  if(inp) {
-    inp.value = m.teams;
-    if(typeof updateBtn === 'function') updateBtn();
-    if(typeof detectSport === 'function') detectSport(m.teams);
-    window._lastMatchDate = m.rawDate || null;
+  // Заполняем поле и переменные через fillMatch
+  if(typeof fillMatch === 'function') {
+    fillMatch(m.teams, m.rawDate || null, m.espnId || null);
+  } else {
+    var inp = document.getElementById('match-input');
+    if(inp) { inp.value = m.teams; if(typeof updateBtn==='function') updateBtn(); }
   }
+  if(typeof detectSport === 'function') detectSport(m.teams);
 
   closeSearchMenu();
 
   // Switch to Матч tab
-  if(typeof switchTabById === 'function') switchTabById('match');
+  if(typeof switchTabById === 'function') switchTabById('manual');
   else {
     var matchTab = document.querySelector('[data-tab="match"]') || document.getElementById('tab-match');
     if(matchTab) matchTab.click();
