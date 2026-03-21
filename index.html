@@ -4200,13 +4200,14 @@ async function fetchGroqTopPicks() {
 
 ${matchContext}
 
-ЗАДАЧА: Выбери РОВНО 25 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра.
+ЗАДАЧА: Выбери до 25 матчей из списка выше для ставок. Только LIVE или предстоящие сегодня/завтра. Минимум 3 матча — ОБЯЗАТЕЛЬНО.
 
-ОБЯЗАТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ (строго соблюдай, сумма = 25):
-- ⚽ Футбол: 7-8 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
-- 🏀 Баскетбол: 6-7 матчей (приоритет: НБА, плей-офф)
-- 🏒 Хоккей: 6-7 матчей (приоритет: НХЛ, плей-офф)
-- 🎾 Теннис: 4-5 матчей (приоритет: ATP/WTA 1000, Гранд-Слэм, LIVE)
+ЖЕЛАЕМОЕ РАСПРЕДЕЛЕНИЕ (по возможности, если матчи есть в списке):
+- ⚽ Футбол: до 8 матчей (приоритет: ЛЧ, ЛЕ, АПЛ, Ла Лига, Серия А)
+- 🏀 Баскетбол: до 7 матчей (приоритет: НБА, плей-офф)
+- 🏒 Хоккей: до 7 матчей (приоритет: НХЛ, плей-офф)
+- 🎾 Теннис: до 5 матчей (приоритет: ATP/WTA 1000, Гранд-Слэм, LIVE)
+Если какого-то вида спорта нет в списке — пропусти его, увеличь квоту других.
 
 ПРИОРИТЕТ внутри каждого вида:
 1. LIVE матчи (идут прямо сейчас)
@@ -4233,7 +4234,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const res = await fetch(WORKER_URL_GROQ, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages:[{role:'system',content:'You are a JSON-only API. You MUST respond with a valid JSON array and absolutely nothing else — no explanations, no markdown, no text before or after the array. If you cannot comply, return an empty array []. Any non-JSON response is a critical failure.'},{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
+      body: JSON.stringify({ messages:[{role:'system',content:'You are a JSON-only API. You MUST respond with a valid JSON array and absolutely nothing else — no explanations, no markdown, no text before or after the array. Always return as many items as you can from the provided match list. Never return an empty array — always pick at least 3 matches.'},{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
       signal: AbortSignal.timeout(20000)
     });
     if(!res.ok) {
@@ -4265,7 +4266,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     let parsed;
     try { parsed = JSON.parse(cleanJson); }
     catch(e) { logEvent('Groq', false, 'JSON.parse fail: ' + e.message.slice(0,60)); return; }
-    if(Array.isArray(parsed) && parsed.length >= 5) {
+    if(Array.isArray(parsed) && parsed.length >= 3) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
       const clean = parsed.filter(p => {
@@ -4287,7 +4288,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
       logEvent('Groq', true, `OK · топ-${topPicks.length} прогнозов обновлены`);
     } else {
       const gotLen = Array.isArray(parsed) ? parsed.length : 'не массив';
-      logEvent('Groq', false, `JSON ок, но элементов: ${gotLen} (нужно ≥5). raw: ${cleanJson.slice(0,80)}`);
+      logEvent('Groq', false, `JSON ок, но элементов: ${gotLen} (нужно ≥3). raw: ${cleanJson.slice(0,80)}`);
     }
   } catch(err) {
     const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
