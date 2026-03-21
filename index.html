@@ -4233,7 +4233,7 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     const res = await fetch(WORKER_URL_GROQ, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages:[{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
+      body: JSON.stringify({ messages:[{role:'system',content:'You are a JSON-only API. You MUST respond with a valid JSON array and absolutely nothing else — no explanations, no markdown, no text before or after the array. If you cannot comply, return an empty array []. Any non-JSON response is a critical failure.'},{role:'user',content:prompt}], temperature:0.2, top_p:0.85 }),
       signal: AbortSignal.timeout(20000)
     });
     if(!res.ok) {
@@ -4249,8 +4249,19 @@ conf = "high" если уверенность >75%, иначе "mid".`;
     }
     const text = (data.choices?.[0]?.message?.content || '').trim();
     if(!text) { logEvent('Groq', false, 'Пустой ответ от модели'); return; }
-    const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    // Умный парсинг: вырезаем JSON-массив даже если Groq добавил текст вокруг
+    let cleanJson = text.replace(/```json|```/g,'').trim();
+    if(!cleanJson.startsWith('[')) {
+      const arrStart = cleanJson.indexOf('[');
+      const arrEnd = cleanJson.lastIndexOf(']');
+      if(arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
+        cleanJson = cleanJson.slice(arrStart, arrEnd + 1);
+      } else {
+        logEvent('Groq', false, 'Не JSON: ' + cleanJson.slice(0,60));
+        return;
+      }
+    }
+    const parsed = JSON.parse(cleanJson);
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
