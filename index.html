@@ -4256,12 +4256,15 @@ conf = "high" если уверенность >75%, иначе "mid".`;
       const arrEnd = cleanJson.lastIndexOf(']');
       if(arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
         cleanJson = cleanJson.slice(arrStart, arrEnd + 1);
+        logEvent('Groq', false, 'Groq добавил текст — JSON вырезан');
       } else {
-        logEvent('Groq', false, 'Не JSON: ' + cleanJson.slice(0,60));
+        logEvent('Groq', false, 'Не JSON: ' + cleanJson.slice(0,80));
         return;
       }
     }
-    const parsed = JSON.parse(cleanJson);
+    let parsed;
+    try { parsed = JSON.parse(cleanJson); }
+    catch(e) { logEvent('Groq', false, 'JSON.parse fail: ' + e.message.slice(0,60)); return; }
     if(Array.isArray(parsed) && parsed.length >= 5) {
       const ranks = ['🥇','🥈','🥉'];  // только первые 3, остальные — числа
       // Фильтруем мусор: TBD, нулевые кефы, нет ставки
@@ -4283,7 +4286,8 @@ conf = "high" если уверенность >75%, иначе "mid".`;
       buildTopPicks();
       logEvent('Groq', true, `OK · топ-${topPicks.length} прогнозов обновлены`);
     } else {
-      logEvent('Groq', false, 'Неверный формат JSON ответа');
+      const gotLen = Array.isArray(parsed) ? parsed.length : 'не массив';
+      logEvent('Groq', false, `JSON ок, но элементов: ${gotLen} (нужно ≥5). raw: ${cleanJson.slice(0,80)}`);
     }
   } catch(err) {
     const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
